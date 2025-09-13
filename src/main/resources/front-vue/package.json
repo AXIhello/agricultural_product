@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "vpm": "^0.0.3",
+    "axios": "^1.12.1",
     "vue": "^3.5.18"
   },
   "devDependencies": {
