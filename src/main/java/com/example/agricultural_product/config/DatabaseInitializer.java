@@ -21,9 +21,10 @@ public class DatabaseInitializer implements CommandLineRunner {
         // 1. 自动建表（如果不存在）
         String createTableSql = """
             CREATE TABLE IF NOT EXISTS users (
-                user_id VARCHAR(50) PRIMARY KEY COMMENT '账号，主键',
+                user_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
+                user_name VARCHAR(50) UNIQUE NOT NULL COMMENT '账号，用于登录',
                 password VARCHAR(255) NOT NULL COMMENT '加密后的密码',
-                user_name VARCHAR(100) UNIQUE COMMENT '用户昵称，唯一',
+                name VARCHAR(100) COMMENT '昵称',
                 email VARCHAR(100),
                 role VARCHAR(50) NOT NULL COMMENT '角色'
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表'
@@ -33,20 +34,20 @@ public class DatabaseInitializer implements CommandLineRunner {
 
         // 2. 检查是否已有 admin 账号
         Long count = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM users WHERE user_id = 'admin'",
+                "SELECT COUNT(*) FROM users WHERE user_name = 'admin'",
                 Long.class
         );
 
         if (count != null && count == 0) {
             // 插入默认管理员
             User user = new User();
-            user.setUser_id("admin");      // 登录账号
-            user.setPassword("admin123"); // 自动加密
-            user.setUser_name("管理员");    // 昵称
+            user.setUserName("admin");   // 登录账号
+            user.setPassword("admin123"); // 会自动加密
+            user.setName("管理员");      // 昵称
             user.setRole("admin");
 
             userMapper.insert(user);
-            System.out.println("初始化管理员成功: admin / admin123");
+            System.out.println("初始化用户成功: admin / admin123");
         }
     }
 }
