@@ -1,6 +1,15 @@
+import '../style.css';
+
 <template>
   <div class="auth-container">
     <h2>{{ isLogin ? '用户登录' : '用户注册' }}</h2>
+
+    <label for="role">选择身份：</label>
+    <select id="role" v-model="selectedRole">
+      <option value="user">用户</option>
+      <option value="admin">管理员</option>
+      <option value="guest">游客</option>
+    </select>
 
     <!-- 用户名和密码输入框 -->
     <input 
