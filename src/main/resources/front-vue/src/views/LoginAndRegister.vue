@@ -19,7 +19,7 @@ import '../style.css';
       <input 
         type="text" 
         placeholder="请输入用户名" 
-        v-model="username"
+        v-model="userName"
         class="input-style"
       />
     </div>
@@ -140,13 +140,13 @@ export default {
       isLogin: true,
 
       loginForm: {
-        username: '',
+        userName: '',
         password: '',
         role:''
       },
 
       registerForm: {
-        username: '',
+        userName: '',
         password: '',
         confirmPassword: '',
         role:''
@@ -180,11 +180,11 @@ export default {
     //重置表单
      resetForm(formType) {
       if (formType === 'login') {
-        this.loginForm.username = '';
+        this.loginForm.userName = '';
         this.loginForm.password = '';
         this.loginForm.role = '';
       } else if (formType === 'register') {
-        this.registerForm.username = '';
+        this.registerForm.userName = '';
         this.registerForm.password = '';
         this.registerForm.confirmPassword = '';
         this.registerForm.role = '';
@@ -195,13 +195,13 @@ export default {
     async handleLogin() {
       this.loginError = '';
 
-      if (!this.loginForm.username || !this.loginForm.password || !this.loginForm.role) {
+      if (!this.loginForm.userName || !this.loginForm.password || !this.loginForm.role) {
         this.loginError = '用户名、密码和角色都不能为空！'; // 也使用数据属性提示
         return;
       }
       
       try {
-        const response = await axios.post('/api/login', this.loginForm);
+        const response = await axios.post('/api/user/login', this.loginForm);
 
         if (response.data.success) {
           alert('登录成功！');
@@ -230,18 +230,18 @@ export default {
       }
 
       const registrationData = {
-        username: this.registerForm.username,
+        userName: this.registerForm.userName,
         password: this.registerForm.password,
         role: this.registerForm.role
       };
 
-      if (!registrationData.username || !registrationData.password || !registrationData.role) {
+      if (!registrationData.userName || !registrationData.password || !registrationData.role) {
         this.registerError = '所有字段都不能为空！';
         return;
       }
 
       try {
-        await axios.post('/api/register', registrationData); 
+        await axios.post('/api/user/register', registrationData);
         if (response.data.success) {
           this.registerSuccess = '注册成功，你现在可以登录了！';
           this.switchToLogin();
