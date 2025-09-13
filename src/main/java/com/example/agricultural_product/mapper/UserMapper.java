@@ -10,5 +10,5 @@ public interface UserMapper extends BaseMapper<User> {
 
     @Select("SELECT * FROM users WHERE user_name = #{userName}")
     User findByUserName(String userName);
-
+    int insertUser(User user);
 }
