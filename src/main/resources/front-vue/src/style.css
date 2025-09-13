@@ -2,11 +2,9 @@
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
+  color: rgba(130, 130, 130, 0.87);
+  background-color: #f2f2f2;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -24,11 +22,15 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
   min-height: 100vh;
+  background-color: #f2f2f2; /* 整个页面背景灰色 */
+  color: rgba(130, 130, 130, 0.87); /* 全局字体颜色 */
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center; /* 中间居中 */
 }
+
 
 h1 {
   font-size: 3.2em;
@@ -53,6 +55,17 @@ button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
+
+.button-group {
+  display: flex;
+  justify-content: space-between; /* 平均分布按钮 */
+  gap: 10px;                      /* 按钮间距 */
+}
+
+.button-group .btn {
+  flex: 1;
+}
+
 
 .card {
   padding: 2em;

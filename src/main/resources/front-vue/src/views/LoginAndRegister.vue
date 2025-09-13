@@ -4,41 +4,55 @@ import '../style.css';
   <div class="auth-container">
     <h2>{{ isLogin ? '用户登录' : '用户注册' }}</h2>
 
-    <label for="role">选择身份：</label>
-    <select id="role" v-model="selectedRole">
-      <option value="user">用户</option>
-      <option value="admin">管理员</option>
-      <option value="guest">游客</option>
-    </select>
+    <!-- 下拉框 -->
+    <div class="form-item">
+      <label for="role">选择身份：</label>
+      <select id="role" v-model="selectedRole" class="input-style">
+        <option value="user">用户</option>
+        <option value="admin">管理员</option>
+        <option value="guest">游客</option>
+      </select>
+    </div>
 
-    <!-- 用户名和密码输入框 -->
-    <input 
-      type="text" 
-      placeholder="请输入用户名" 
-      v-model="username"
-    />
+    <!-- 用户名 -->
+    <div class="form-item">
+      <input 
+        type="text" 
+        placeholder="请输入用户名" 
+        v-model="username"
+        class="input-style"
+      />
+    </div>
 
-    <input 
-      type="password" 
-      placeholder="请输入密码" 
-      v-model="password"
-    />
+    <!-- 密码 -->
+    <div class="form-item">
+      <input 
+        type="password" 
+        placeholder="请输入密码" 
+        v-model="password"
+        class="input-style"
+      />
+    </div>
 
     <!-- 确认密码（注册） -->
-    <input 
-      v-if="!isLogin" 
-      type="password" 
-      placeholder="请确认密码" 
-      v-model="confirmPassword"
-    />
+    <div class="form-item" v-if="!isLogin">
+      <input 
+        type="password" 
+        placeholder="请确认密码" 
+        v-model="confirmPassword"
+        class="input-style"
+      />
+    </div>
 
     <!-- 按钮 -->
-    <button v-if="isLogin" @click="handleLogin">登录</button>
-    <button v-else @click="handleRegister">注册</button>
-    <button @click="resetForm">重置</button>
+    <div class="form-item button-group">
+      <button v-if="isLogin" @click="handleLogin" class="btn">登录</button>
+      <button v-else @click="handleRegister" class="btn">注册</button>
+      <button @click="resetForm" class="btn">重置</button>
+    </div>
 
     <!-- 切换登录/注册 -->
-    <p>
+    <p class="switch-text">
       <span v-if="isLogin">
         还没有账号？ <a href="#" @click.prevent="switchToRegister">去注册</a>
       </span>
@@ -47,9 +61,73 @@ import '../style.css';
       </span>
     </p>
 
-    <button @click="goBack">返回</button>
+    <button @click="goBack" class="btn go-back">返回</button>
   </div>
 </template>
+
+<style>
+.auth-container {
+  width: 320px;
+  margin: auto;
+  padding: 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  color: rgba(0, 0, 0, 0.87);
+}
+
+.input-style {
+  height: 35px;
+  padding: 5px 10px;
+  font-size: 1em;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  color: rgba(255,255,255,0.87);
+  box-sizing: border-box;
+}
+
+select.input-style {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.btn {
+  width: 100%;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.25s, background-color 0.25s;
+  background-color: #42b983;
+  color: white;
+}
+
+.btn:hover {
+  border-color: #646cff;
+  background-color: #369870;
+}
+
+.switch-text {
+  text-align: center;
+  margin-top: 5px;
+  font-size: 0.95em;
+}
+
+.go-back {
+  background-color: #ccc;
+  color: #333;
+}
+</style>
 
 
 <script>
