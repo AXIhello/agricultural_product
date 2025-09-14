@@ -114,7 +114,8 @@ export default {
       form: {
         userName: '',
         password: '',
-        role: 'buyer',
+        // 【优化】在 data 初始化时就给 role 一个明确的默认值
+        role: 'bank', 
         confirmPassword: '',
         email: ''
       },
@@ -135,14 +136,12 @@ export default {
     switchToRegister() {
       this.isLogin = false;
       this.resetForm();
-      this.form.role = 'buyer'; // 默认角色为买家
     },
 
     // 切换到登录
     switchToLogin() {
       this.isLogin = true;
       this.resetForm();
-      this.form.role = 'buyer'; // 默认角色为买家
     },
 
     // 重置表单
@@ -150,17 +149,16 @@ export default {
       this.form = {
         userName: '',
         password: '',
-        role: '',
+        role: this.isLogin ? 'bank' : 'farmer', // 根据当前模式设置默认角色
         confirmPassword: '',
         email: ''
       };
-      this.form.role = this.isLogin ? 'bank' : 'farmer';
       this.clearMessages();
     },
 
     // 处理登录
     async handleLogin() {
-      this.errorMsg = '';
+      this.clearMessages(); // 先清空消息
       const { userName, password, role } = this.form;
 
       if (!userName || !password || !role) {
@@ -169,11 +167,15 @@ export default {
       }
 
       try {
-        const response = await axios.post('/api/user/login', { userName, password, role });
+        
+        const response = await axios.post('/api/user/login', { 
+          user_name: userName, 
+          password: password, 
+          role: role 
+        });
 
         if (response.data.success) {
           this.successMsg = '登录成功！正在跳转...';
-          // 延迟跳转
           setTimeout(() => {
             this.$router.push('/dashboard');
           }, 1500);
@@ -182,14 +184,13 @@ export default {
         }
       } catch (error) {
         console.error('登录失败:', error);
-        this.errorMsg = error.response?.data?.message || '用户名或密码错误。';
+        this.errorMsg = error.response?.data?.message || '服务器连接失败或用户名、密码错误。';
       }
     },
 
     // 处理注册
     async handleRegister() {
-      this.errorMsg = '';
-      this.successMsg = '';
+      this.clearMessages(); // 先清空消息
       const { userName, password, confirmPassword, role, email } = this.form;
 
       if (password !== confirmPassword) {
@@ -203,18 +204,25 @@ export default {
       }
 
       try {
-        const response = await axios.post('/api/user/register', { userName, password, role, email });
+        
+        const response = await axios.post('/api/user/register', { 
+          user_name: userName, 
+          password: password, 
+          role: role, 
+          email: email // 假设后端也需要 email 字段
+        });
+        
         if (response.data.success) {
           this.successMsg = '注册成功，你现在可以登录了！';
           setTimeout(() => {
             this.switchToLogin();
-          }, 2000); // 延迟2秒再切换
+          }, 2000);
         } else {
           this.errorMsg = response.data.message || '注册失败，请稍后重试！';
         }
       } catch (error) {
         console.error('注册失败:', error);
-        this.errorMsg = error.response?.data?.message || '注册失败，请稍后再试。';
+        this.errorMsg = error.response?.data?.message || '注册失败，服务器发生错误。';
       }
     },
 
