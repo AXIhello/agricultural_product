@@ -1,11 +1,13 @@
 <script setup>
-import LoginAndRegister from './views/LoginAndRegister.vue';
+
 </script>
 
 <template>
-  
   <div class="app-container">
-    <LoginAndRegister />
+    <!-- 
+      路由的出口
+    -->
+    <router-view />
   </div>
 </template>
 

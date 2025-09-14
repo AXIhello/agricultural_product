@@ -169,7 +169,7 @@ export default {
       try {
         
         const response = await axios.post('/api/user/login', { 
-          user_name: userName, 
+          userName: userName, 
           password: password, 
           role: role 
         });
@@ -206,7 +206,7 @@ export default {
       try {
         
         const response = await axios.post('/api/user/register', { 
-          user_name: userName, 
+          userName: userName, 
           password: password, 
           role: role, 
           email: email // 假设后端也需要 email 字段
