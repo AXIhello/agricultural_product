@@ -30,15 +30,4 @@ public class User {
     @TableField("role")
     private String role;
 
-    // 静态的BCryptPasswordEncoder实例，确保一致性
-    private static final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-
-    /**
-     * 设置密码时自动加密
-     */
-    public void setPassword(String password) {
-        if (password != null && !password.isEmpty()) {
-            this.password = encoder.encode(password);
-        }
-    }
 }

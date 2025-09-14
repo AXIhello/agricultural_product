@@ -50,11 +50,8 @@ public class UserController {
             return response;
         }
 
-        //测试用，只写了管理员
-        if(role.equals("买家")) role="admin";
-
         // 校验角色
-        if (!user.getRole().equalsIgnoreCase(role)) {
+        if (!userName.equals("admin")&&!user.getRole().equalsIgnoreCase(role)) {
             response.put("success", false);
             response.put("message", "角色不匹配！");
             return response;
@@ -91,7 +88,8 @@ public class UserController {
         // 创建新用户
         User newUser = new User();
         newUser.setUserName(userName);
-        newUser.setPassword(password);
+        // 使用 encoder 加密密码
+        newUser.setPassword(encoder.encode(password));
         newUser.setName(userName); // 默认和账号一样
         newUser.setRole(role);
 

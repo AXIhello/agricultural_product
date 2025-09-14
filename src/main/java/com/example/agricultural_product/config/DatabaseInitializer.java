@@ -3,12 +3,17 @@ package com.example.agricultural_product.config;
 import com.example.agricultural_product.mapper.UserMapper;
 import com.example.agricultural_product.pojo.User;
 import jakarta.annotation.Resource;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
 @Component
 public class DatabaseInitializer implements CommandLineRunner {
+
+    @Autowired
+    private BCryptPasswordEncoder encoder;
 
     @Resource
     private JdbcTemplate jdbcTemplate;
@@ -42,7 +47,7 @@ public class DatabaseInitializer implements CommandLineRunner {
             // 插入默认管理员
             User user = new User();
             user.setUserName("admin");   // 登录账号
-            user.setPassword("123456"); // 会自动加密
+            user.setPassword(encoder.encode("123456")); // 加密密码
             user.setName("管理员");      // 昵称
             user.setRole("admin");
 
