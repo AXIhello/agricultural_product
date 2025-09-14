@@ -12,8 +12,8 @@ import '../style.css';
         <span class="label-colon">：</span>
       </label>
       <select v-model="form.role" class="input-style">
-        <option value="bank" v-if="!isLogin">银行</option>
-        <option value="expert" v-if="!isLogin">专家</option>
+        <option value="bank" v-if="isLogin">银行</option>
+        <option value="expert" v-if="isLogin">专家</option>
         <option value="farmer">农户</option>
         <option value="buyer">买家</option>
       </select>
