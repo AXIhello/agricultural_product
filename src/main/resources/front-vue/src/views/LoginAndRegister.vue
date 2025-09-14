@@ -3,52 +3,83 @@ import '../style.css';
 <template>
   <div class="auth-container">
     <h2>{{ isLogin ? '用户登录' : '用户注册' }}</h2>
+    <p></p>
 
     <!-- 下拉框 -->
     <div class="form-item">
-      <label for="role">选择身份：</label>
-      <select id="role" v-model="selectedRole" class="input-style">
-        <option value="user">用户</option>
-        <option value="admin">管理员</option>
-        <option value="guest">游客</option>
+      <label>
+        <span class="label-text">身份</span>
+        <span class="label-colon">：</span>
+      </label>
+      <select v-model="form.role" class="input-style">
+        <option value="bank" v-if="!isLogin">银行</option>
+        <option value="expert" v-if="!isLogin">专家</option>
+        <option value="farmer">农户</option>
+        <option value="buyer">买家</option>
       </select>
     </div>
 
     <!-- 用户名 -->
     <div class="form-item">
+      <label>
+        <span class="label-text">用户名</span>
+        <span class="label-colon">：</span>
+      </label>
       <input 
         type="text" 
         placeholder="请输入用户名" 
-        v-model="userName"
+        v-model="form.userName"
         class="input-style"
       />
     </div>
 
     <!-- 密码 -->
     <div class="form-item">
+      <label>
+        <span class="label-text">密码</span>
+        <span class="label-colon">：</span>
+      </label>
       <input 
         type="password" 
         placeholder="请输入密码" 
-        v-model="password"
+        v-model="form.password"
         class="input-style"
       />
     </div>
 
     <!-- 确认密码（注册） -->
     <div class="form-item" v-if="!isLogin">
+      <label>
+        <span class="label-text">确认密码</span>
+        <span class="label-colon">：</span>
+      </label>
       <input 
         type="password" 
         placeholder="请确认密码" 
-        v-model="confirmPassword"
+        v-model="form.confirmPassword"
+        class="input-style"
+      />
+    </div>
+
+    <!-- 邮箱 -->
+    <div class="form-item" v-if="!isLogin">
+      <label>
+        <span class="label-text">邮箱</span>
+        <span class="label-colon">：</span>
+      </label>
+      <input 
+        type="email" 
+        placeholder="请输入邮箱" 
+        v-model="form.email"
         class="input-style"
       />
     </div>
 
     <!-- 按钮 -->
     <div class="form-item button-group">
-      <button v-if="isLogin" @click="handleLogin" class="btn">登录</button>
-      <button v-else @click="handleRegister" class="btn">注册</button>
-      <button @click="resetForm" class="btn">重置</button>
+      <button v-if="isLogin" @click="handleLogin" class="btn">登  录</button>
+      <button v-else @click="handleRegister" class="btn">注  册</button>
+      <button @click="resetForm" class="btn">重  置</button>
     </div>
 
     <!-- 切换登录/注册 -->
@@ -61,13 +92,127 @@ import '../style.css';
       </span>
     </p>
 
-    <button @click="goBack" class="btn go-back">返回</button>
+    <button @click="goBack" class="fixed-btn">返 回</button> 
   </div>
 </template>
 
+<script>
+import axios from 'axios';
+
+export default {
+  name: 'LoginAndRegister',
+  data() {
+    return {
+      isLogin: true,
+
+      form: {
+        userName: '',
+        password: '',
+        role: '',
+        confirmPassword: '',
+        email: ''
+      },
+
+      errorMsg: '',
+      successMsg: ''
+    };
+  },
+
+  methods: {
+    // 切换到注册
+    switchToRegister() {
+      this.isLogin = false;
+      this.resetForm();
+      this.errorMsg = '';
+      this.successMsg = '';
+    },
+
+    // 切换到登录
+    switchToLogin() {
+      this.isLogin = true;
+      this.resetForm();
+      this.errorMsg = '';
+      this.successMsg = '';
+    },
+
+    // 重置表单
+    resetForm() {
+      this.form = {
+        userName: '',
+        password: '',
+        role: '',
+        confirmPassword: '',
+        email: ''
+      };
+    },
+
+    // 处理登录
+    async handleLogin() {
+      this.errorMsg = '';
+      const { userName, password, role } = this.form;
+
+      if (!userName || !password || !role) {
+        this.errorMsg = '用户名、密码和角色都不能为空！';
+        return;
+      }
+
+      try {
+        const response = await axios.post('/api/user/login', { userName, password, role });
+
+        if (response.data.success) {
+          alert('登录成功！');
+          this.$router.push('/dashboard');
+        } else {
+          this.errorMsg = response.data.message || '登录失败，请稍后重试！';
+        }
+      } catch (error) {
+        console.error('登录失败:', error);
+        this.errorMsg = error.response?.data?.message || '用户名或密码错误。';
+      }
+    },
+
+    // 处理注册
+    async handleRegister() {
+      this.errorMsg = '';
+      this.successMsg = '';
+      const { userName, password, confirmPassword, role, email } = this.form;
+
+      if (password !== confirmPassword) {
+        this.errorMsg = '两次输入的密码不匹配！';
+        return;
+      }
+
+      if (!userName || !password || !role || !email) {
+        this.errorMsg = '所有字段都不能为空！';
+        return;
+      }
+
+      try {
+        const response = await axios.post('/api/user/register', { userName, password, role, email });
+        if (response.data.success) {
+          this.successMsg = '注册成功，你现在可以登录了！';
+          this.switchToLogin();
+        } else {
+          this.errorMsg = response.data.message || '注册失败，请稍后重试！';
+        }
+      } catch (error) {
+        console.error('注册失败:', error);
+        this.errorMsg = error.response?.data?.message || '注册失败，请稍后再试。';
+      }
+    },
+
+    goBack() {
+      this.$router.go(-1);
+    }
+  }
+};
+</script>
+
+
 <style>
 .auth-container {
-  width: 320px;
+  box-sizing: border-box;  
+  width: 500px;
   margin: auto;
   padding: 2rem;
   text-align: center;
@@ -78,18 +223,52 @@ import '../style.css';
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.3);
   color: rgba(0, 0, 0, 0.87);
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;  
 }
 
-.input-style {
-  height: 35px;
-  padding: 5px 10px;
+.auth-container h2 {
+  width: 50%;               /* 整个标题占容器宽度 50% */
+  margin: 0 auto;           /* 水平居中 */
+  text-align: justify;      /* 左右对齐文字 */
+  text-align-last: center;  /* 最后一行文字居中 */
+  letter-spacing: 0.5em;    /* 每个字之间间距，可调整 */
+  font-size: 1.8em;           /* 标题大小，可根据需要调整 */
+}
+
+
+
+.form-item {
+  width: 80%;
+  display: flex;
+  margin: 10px auto; 
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.label-text {
+  display: inline-block;
+  width: 4em;
+  text-align: justify;
+  text-align-last: justify;
+  margin-right: 10px;
+}
+
+.label-colon {
+  display: inline-block;
+}
+
+.input-style, 
+.form-item select,
+.form-item .btn {
+  flex: 1;
   font-size: 1em;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  color: rgba(255,255,255,0.87);
+  height: 36px;
+  padding: 0 10px;
   box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
 select.input-style {
@@ -98,9 +277,15 @@ select.input-style {
   -moz-appearance: none;
 }
 
+input:-webkit-autofill {
+  background-color: #fff !important;
+  -webkit-box-shadow: 0 0 0px 1000px #fff inset !important;
+  -webkit-text-fill-color: #333 !important;
+}
+
 .btn {
   width: 100%;
-  padding: 0.6em 1.2em;
+  padding: 0 20%; 
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
@@ -110,6 +295,12 @@ select.input-style {
   transition: border-color 0.25s, background-color 0.25s;
   background-color: #42b983;
   color: white;
+  margin-right: 50px;
+  text-align: center;     /* 文字居中 */
+}
+
+.button-group .btn:last-child {
+  margin-right: 0;       /* 最后一个按钮不加右边距 */
 }
 
 .btn:hover {
@@ -128,134 +319,3 @@ select.input-style {
   color: #333;
 }
 </style>
-
-
-<script>
-import axios from 'axios';
-
-export default {
-  name: 'LoginAndRegister',
-  data() {
-    return {
-      isLogin: true,
-
-      loginForm: {
-        userName: '',
-        password: '',
-        role:''
-      },
-
-      registerForm: {
-        userName: '',
-        password: '',
-        confirmPassword: '',
-        role:''
-      },
-
-      loginError: '',
-      registerError: '',
-      registerSuccess: ''
-    };
-  },
-
-  methods: {
-    
-    //切换到注册
-     switchToRegister() {
-      this.isLogin = false; 
-      this.resetForm('login');
-      this.resetForm('register');
-      this.loginError = '';
-      this.registerSuccess = '';
-    },
-
-    //切换到登录
-     switchToLogin() {
-      this.isLogin = true; // 将 isLogin 设为 false，界面将显示注册表单
-      this.resetForm('login');
-      this.resetForm('register');
-      this.registerError = ''; 
-    },
-
-    //重置表单
-     resetForm(formType) {
-      if (formType === 'login') {
-        this.loginForm.userName = '';
-        this.loginForm.password = '';
-        this.loginForm.role = '';
-      } else if (formType === 'register') {
-        this.registerForm.userName = '';
-        this.registerForm.password = '';
-        this.registerForm.confirmPassword = '';
-        this.registerForm.role = '';
-      }
-    },
-
-    //处理登录
-    async handleLogin() {
-      this.loginError = '';
-
-      if (!this.loginForm.userName || !this.loginForm.password || !this.loginForm.role) {
-        this.loginError = '用户名、密码和角色都不能为空！'; // 也使用数据属性提示
-        return;
-      }
-      
-      try {
-        const response = await axios.post('/api/user/login', this.loginForm);
-
-        if (response.data.success) {
-          alert('登录成功！');
-          this.$router.push('/dashboard');
-          
-        } else {
-          this.loginError = response.data.message || '登录失败，请稍后重试！';
-        }
-
-      } catch (error) {
-        console.error('登录失败:', error);
-        const errorMessage = error.response?.data?.message || '用户名或密码错误。';
-        this.loginError = errorMessage;
-      }
-    },
-
-    //处理注册
-    async handleRegister() {
-
-      this.registerError = '';
-      this.registerSuccess = '';
-
-      if (this.registerForm.password !== this.registerForm.confirmPassword) {
-        this.registerError = '两次输入的密码不匹配！';
-        return;
-      }
-
-      const registrationData = {
-        userName: this.registerForm.userName,
-        password: this.registerForm.password,
-        role: this.registerForm.role
-      };
-
-      if (!registrationData.userName || !registrationData.password || !registrationData.role) {
-        this.registerError = '所有字段都不能为空！';
-        return;
-      }
-
-      try {
-        await axios.post('/api/user/register', registrationData);
-        if (response.data.success) {
-          this.registerSuccess = '注册成功，你现在可以登录了！';
-          this.switchToLogin();
-          
-        } else {
-          this.registerError = response.data.message || '注册失败，请稍后重试！';
-        }
-      } catch (error) {
-        console.error('注册失败:', error);
-        // 尝试显示后端返回的错误信息
-        const errorMessage = error.response?.data?.message || '注册失败，请稍后再试。';
-        this.registerError = errorMessage;
-      }
-    }
-  }
-};
-</script>
