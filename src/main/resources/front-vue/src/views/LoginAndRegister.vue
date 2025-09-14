@@ -30,9 +30,9 @@
         <span class="label-text">用户名</span>
         <span class="label-colon">：</span>
       </label>
-      <input 
-        type="text" 
-        placeholder="请输入用户名" 
+      <input
+        type="text"
+        placeholder="请输入用户名"
         v-model="form.userName"
         class="input-style"
       />
@@ -44,9 +44,9 @@
         <span class="label-text">密码</span>
         <span class="label-colon">：</span>
       </label>
-      <input 
-        type="password" 
-        placeholder="请输入密码" 
+      <input
+        type="password"
+        placeholder="请输入密码"
         v-model="form.password"
         class="input-style"
       />
@@ -58,9 +58,9 @@
         <span class="label-text">确认密码</span>
         <span class="label-colon">：</span>
       </label>
-      <input 
-        type="password" 
-        placeholder="请确认密码" 
+      <input
+        type="password"
+        placeholder="请确认密码"
         v-model="form.confirmPassword"
         class="input-style"
       />
@@ -72,9 +72,9 @@
         <span class="label-text">邮箱</span>
         <span class="label-colon">：</span>
       </label>
-      <input 
-        type="email" 
-        placeholder="请输入邮箱" 
+      <input
+        type="email"
+        placeholder="请输入邮箱"
         v-model="form.email"
         class="input-style"
       />
@@ -97,7 +97,7 @@
       </span>
     </p>
 
-    <button @click="goBack" class="btn go-back">返 回</button> 
+    <button @click="goBack" class="btn go-back">返 回</button>
   </div>
 </template>
 
@@ -236,7 +236,7 @@ export default {
 
 <style>
 .auth-container {
-  box-sizing: border-box;  
+  box-sizing: border-box;
   width: 500px;
   margin: auto;
   padding: 2rem;
@@ -249,7 +249,7 @@ export default {
   box-shadow: 0 2px 10px rgba(0,0,0,0.3);
   color: rgba(0, 0, 0, 0.87);
   max-height: calc(100vh - 100px);
-  overflow-y: auto;  
+  overflow-y: auto;
 }
 
 .auth-container h2 {
@@ -288,7 +288,7 @@ export default {
 .form-item {
   width: 80%;
   display: flex;
-  margin: 10px auto; 
+  margin: 10px auto;
   justify-content: center;
   align-items: center;
   margin-bottom: 15px;
@@ -306,7 +306,7 @@ export default {
   display: inline-block;
 }
 
-.input-style, 
+.input-style,
 .form-item select,
 .form-item .btn {
   flex: 1;
@@ -332,7 +332,7 @@ input:-webkit-autofill {
 
 .btn {
   width: 100%;
-  padding: 0 20%; 
+  padding: 0 20%;
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
