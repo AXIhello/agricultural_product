@@ -1,9 +1,14 @@
-import '../style.css';
+
 
 <template>
   <div class="auth-container">
     <h2>{{ isLogin ? '用户登录' : '用户注册' }}</h2>
     <p></p>
+
+
+    <!--消息提示区域-->
+    <p v-if="errorMsg" class="message error-message">{{ errorMsg }}</p>
+    <p v-if="successMsg" class="message success-message">{{ successMsg }}</p>
 
     <!-- 下拉框 -->
     <div class="form-item">
@@ -92,12 +97,13 @@ import '../style.css';
       </span>
     </p>
 
-    <button @click="goBack" class="fixed-btn">返 回</button> 
+    <button @click="goBack" class="btn go-back">返 回</button> 
   </div>
 </template>
 
 <script>
 import axios from 'axios';
+import '../style.css';
 
 export default {
   name: 'LoginAndRegister',
@@ -108,7 +114,7 @@ export default {
       form: {
         userName: '',
         password: '',
-        role: '',
+        role: 'buyer',
         confirmPassword: '',
         email: ''
       },
@@ -119,20 +125,24 @@ export default {
   },
 
   methods: {
+    // 清除消息
+    clearMessages() {
+      this.errorMsg = '';
+      this.successMsg = '';
+    },
+
     // 切换到注册
     switchToRegister() {
       this.isLogin = false;
       this.resetForm();
-      this.errorMsg = '';
-      this.successMsg = '';
+      this.form.role = 'buyer'; // 默认角色为买家
     },
 
     // 切换到登录
     switchToLogin() {
       this.isLogin = true;
       this.resetForm();
-      this.errorMsg = '';
-      this.successMsg = '';
+      this.form.role = 'buyer'; // 默认角色为买家
     },
 
     // 重置表单
@@ -144,6 +154,8 @@ export default {
         confirmPassword: '',
         email: ''
       };
+      this.form.role = this.isLogin ? 'bank' : 'farmer';
+      this.clearMessages();
     },
 
     // 处理登录
@@ -160,8 +172,11 @@ export default {
         const response = await axios.post('/api/user/login', { userName, password, role });
 
         if (response.data.success) {
-          alert('登录成功！');
-          this.$router.push('/dashboard');
+          this.successMsg = '登录成功！正在跳转...';
+          // 延迟跳转
+          setTimeout(() => {
+            this.$router.push('/dashboard');
+          }, 1500);
         } else {
           this.errorMsg = response.data.message || '登录失败，请稍后重试！';
         }
@@ -191,7 +206,9 @@ export default {
         const response = await axios.post('/api/user/register', { userName, password, role, email });
         if (response.data.success) {
           this.successMsg = '注册成功，你现在可以登录了！';
-          this.switchToLogin();
+          setTimeout(() => {
+            this.switchToLogin();
+          }, 2000); // 延迟2秒再切换
         } else {
           this.errorMsg = response.data.message || '注册失败，请稍后重试！';
         }
@@ -234,8 +251,30 @@ export default {
   text-align-last: center;  /* 最后一行文字居中 */
   letter-spacing: 0.5em;    /* 每个字之间间距，可调整 */
   font-size: 1.8em;           /* 标题大小，可根据需要调整 */
+  margin-bottom: 10px;
 }
 
+/* 消息提示的样式 */
+.message {
+  width: 80%;
+  margin: -5px auto 10px auto; /* 调整外边距，让它更紧凑 */
+  padding: 10px;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 0.9em;
+}
+
+.error-message {
+  color: #a94442;
+  background-color: #f2dede;
+  border: 1px solid #ebccd1;
+}
+
+.success-message {
+  color: #3c763d;
+  background-color: #dff0d8;
+  border: 1px solid #d6e9c6;
+}
 
 
 .form-item {
@@ -317,5 +356,9 @@ input:-webkit-autofill {
 .go-back {
   background-color: #ccc;
   color: #333;
+   margin-top: 10px; /* 与上方元素增加一点间距 */
+  width: 80%; /* 与表单项宽度保持一致 */
+  margin-left: auto;
+  margin-right: auto;
 }
 </style>
