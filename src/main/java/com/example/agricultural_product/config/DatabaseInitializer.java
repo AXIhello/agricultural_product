@@ -42,12 +42,12 @@ public class DatabaseInitializer implements CommandLineRunner {
             // 插入默认管理员
             User user = new User();
             user.setUserName("admin");   // 登录账号
-            user.setPassword("admin123"); // 会自动加密
+            user.setPassword("123456"); // 会自动加密
             user.setName("管理员");      // 昵称
             user.setRole("admin");
 
             userMapper.insert(user);
-            System.out.println("初始化用户成功: admin / admin123");
+            System.out.println("初始化用户成功: admin / 123456");
         }
     }
 }

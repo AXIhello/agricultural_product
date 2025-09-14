@@ -9,17 +9,21 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
 
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/user")
 public class UserController {
 
     @Autowired
     private UserService userService;
-    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+    
+    @Autowired
+    private BCryptPasswordEncoder encoder; // 改为注入方式
+    
     //  登录接口
     @PostMapping("/login")
     public Map<String, Object> login(@RequestBody Map<String, String> loginForm) {
-        String userName = loginForm.get("user_name"); // 前端传的账号
+        String userName = loginForm.get("userName"); // 前端传的账号
         String password = loginForm.get("password");
         String role = loginForm.get("role"); // admin / buyer / farmer
 
@@ -47,7 +51,7 @@ public class UserController {
         }
 
         //测试用，只写了管理员
-        if(role.equals("管理员")) role="admin";
+        if(role.equals("买家")) role="admin";
 
         // 校验角色
         if (!user.getRole().equalsIgnoreCase(role)) {
@@ -64,7 +68,7 @@ public class UserController {
 
     @PostMapping("/register")
     public Map<String, Object> register(@RequestBody Map<String, String> registerForm) {
-        String userName = registerForm.get("user_name"); // 账号
+        String userName = registerForm.get("userName"); // 账号
         String password = registerForm.get("password");
         String role = registerForm.get("role"); // admin / buyer / farmer
 

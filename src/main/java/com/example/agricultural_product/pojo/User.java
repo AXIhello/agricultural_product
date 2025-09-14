@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @Data
@@ -29,12 +30,14 @@ public class User {
     @TableField("role")
     private String role;
 
+    // 静态的BCryptPasswordEncoder实例，确保一致性
+    private static final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+
     /**
      * 设置密码时自动加密
      */
     public void setPassword(String password) {
         if (password != null && !password.isEmpty()) {
-            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
             this.password = encoder.encode(password);
         }
     }
