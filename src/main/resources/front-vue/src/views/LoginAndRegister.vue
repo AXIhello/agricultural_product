@@ -1,12 +1,8 @@
-
-
 <template>
   <div class="auth-container">
     <h2>{{ isLogin ? '用户登录' : '用户注册' }}</h2>
-    <p></p>
 
-
-    <!--消息提示区域-->
+    <!-- 消息提示 -->
     <p v-if="errorMsg" class="message error-message">{{ errorMsg }}</p>
     <p v-if="successMsg" class="message success-message">{{ successMsg }}</p>
 
@@ -30,12 +26,7 @@
         <span class="label-text">用户名</span>
         <span class="label-colon">：</span>
       </label>
-      <input
-        type="text"
-        placeholder="请输入用户名"
-        v-model="form.userName"
-        class="input-style"
-      />
+      <input type="text" placeholder="请输入用户名" v-model="form.userName" class="input-style" />
     </div>
 
     <!-- 密码 -->
@@ -44,12 +35,7 @@
         <span class="label-text">密码</span>
         <span class="label-colon">：</span>
       </label>
-      <input
-        type="password"
-        placeholder="请输入密码"
-        v-model="form.password"
-        class="input-style"
-      />
+      <input type="password" placeholder="请输入密码" v-model="form.password" class="input-style" />
     </div>
 
     <!-- 确认密码（注册） -->
@@ -58,33 +44,37 @@
         <span class="label-text">确认密码</span>
         <span class="label-colon">：</span>
       </label>
-      <input
-        type="password"
-        placeholder="请确认密码"
-        v-model="form.confirmPassword"
-        class="input-style"
-      />
+      <input type="password" placeholder="请确认密码" v-model="form.confirmPassword" class="input-style" />
     </div>
 
-    <!-- 邮箱 -->
+    <!-- 邮箱与发送验证码（注册） -->
     <div class="form-item" v-if="!isLogin">
       <label>
         <span class="label-text">邮箱</span>
         <span class="label-colon">：</span>
       </label>
-      <input
-        type="email"
-        placeholder="请输入邮箱"
-        v-model="form.email"
-        class="input-style"
-      />
+      <div style="display: flex; gap: 10px;">
+        <input type="email" placeholder="请输入邮箱" v-model="form.email" class="input-style" style="flex: 1;" />
+        <button @click="sendVerificationCode" :disabled="cooldown > 0" class="btn" style="width: 120px; margin: 0;">
+          {{ cooldown > 0 ? `${cooldown}秒后重试` : '发送验证码' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- 验证码输入框（注册） -->
+    <div class="form-item" v-if="!isLogin">
+      <label>
+        <span class="label-text">验证码</span>
+        <span class="label-colon">：</span>
+      </label>
+      <input type="text" placeholder="请输入验证码" v-model="form.verificationCode" class="input-style" maxlength="6" />
     </div>
 
     <!-- 按钮 -->
     <div class="form-item button-group">
-      <button v-if="isLogin" @click="handleLogin" class="btn">登  录</button>
-      <button v-else @click="handleRegister" class="btn">注  册</button>
-      <button @click="resetForm" class="btn">重  置</button>
+      <button v-if="isLogin" @click="handleLogin" class="btn">登 录</button>
+      <button v-else @click="handleRegister" class="btn">注 册</button>
+      <button @click="resetForm" class="btn">重 置</button>
     </div>
 
     <!-- 切换登录/注册 -->
@@ -110,129 +100,130 @@ export default {
   data() {
     return {
       isLogin: true,
-
       form: {
         userName: '',
         password: '',
-        // 【优化】在 data 初始化时就给 role 一个明确的默认值
-        role: 'bank', 
+        role: 'bank',
         confirmPassword: '',
-        email: ''
+        email: '',
+        verificationCode: ''
       },
-
       errorMsg: '',
-      successMsg: ''
+      successMsg: '',
+      cooldown: 0
     };
   },
-
   methods: {
-    // 清除消息
     clearMessages() {
       this.errorMsg = '';
       this.successMsg = '';
     },
-
-    // 切换到注册
     switchToRegister() {
       this.isLogin = false;
       this.resetForm();
     },
-
-    // 切换到登录
     switchToLogin() {
       this.isLogin = true;
       this.resetForm();
     },
-
-    // 重置表单
     resetForm() {
       this.form = {
         userName: '',
         password: '',
-        role: this.isLogin ? 'bank' : 'farmer', // 根据当前模式设置默认角色
+        role: this.isLogin ? 'bank' : 'farmer',
         confirmPassword: '',
-        email: ''
+        email: '',
+        verificationCode: ''
       };
       this.clearMessages();
     },
-
-    // 处理登录
     async handleLogin() {
-      this.clearMessages(); // 先清空消息
+      this.clearMessages();
       const { userName, password, role } = this.form;
-
       if (!userName || !password || !role) {
         this.errorMsg = '用户名、密码和角色都不能为空！';
         return;
       }
-
       try {
-        
-        const response = await axios.post('/api/user/login', { 
-          userName: userName, 
-          password: password, 
-          role: role 
-        });
-
+        const response = await axios.post('/api/user/login', { userName, password, role });
         if (response.data.success) {
           this.successMsg = '登录成功！正在跳转...';
-          setTimeout(() => {
-            this.$router.push('/dashboard');
-          }, 1500);
+          setTimeout(() => this.$router.push('/dashboard'), 1500);
         } else {
           this.errorMsg = response.data.message || '登录失败，请稍后重试！';
         }
       } catch (error) {
-        console.error('登录失败:', error);
+        console.error(error);
         this.errorMsg = error.response?.data?.message || '服务器连接失败或用户名、密码错误。';
       }
     },
-
-    // 处理注册
     async handleRegister() {
-      this.clearMessages(); // 先清空消息
-      const { userName, password, confirmPassword, role, email } = this.form;
-
+      this.clearMessages();
+      const { userName, password, confirmPassword, role, email, verificationCode } = this.form;
       if (password !== confirmPassword) {
         this.errorMsg = '两次输入的密码不匹配！';
         return;
       }
-
-      if (!userName || !password || !role || !email) {
+      if (!userName || !password || !role || !email || !verificationCode) {
         this.errorMsg = '所有字段都不能为空！';
         return;
       }
-
       try {
-        
-        const response = await axios.post('/api/user/register', { 
-          userName: userName, 
-          password: password, 
-          role: role, 
-          email: email // 假设后端也需要 email 字段
-        });
-        
+        // 验证验证码
+        const verifyRes = await axios.post('/api/email/verify-code', { email, code: verificationCode });
+        if (!verifyRes.data.success) {
+          this.errorMsg = '验证码错误或已过期！';
+          return;
+        }
+        // 注册用户
+        const response = await axios.post('/api/user/register', { userName, password, role, email });
         if (response.data.success) {
           this.successMsg = '注册成功，你现在可以登录了！';
-          setTimeout(() => {
-            this.switchToLogin();
-          }, 2000);
+          setTimeout(() => this.switchToLogin(), 2000);
         } else {
           this.errorMsg = response.data.message || '注册失败，请稍后重试！';
         }
       } catch (error) {
-        console.error('注册失败:', error);
+        console.error(error);
         this.errorMsg = error.response?.data?.message || '注册失败，服务器发生错误。';
       }
     },
-
+    async sendVerificationCode() {
+      if (!this.form.email) {
+        this.errorMsg = '请输入邮箱地址！';
+        return;
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(this.form.email)) {
+        this.errorMsg = '请输入有效的邮箱地址！';
+        return;
+      }
+      try {
+        const response = await axios.get('/api/email/send-code', { params: { email: this.form.email } });
+        if (response.data.success) {
+          this.successMsg = '验证码已发送，请查收邮件！';
+          this.startCooldown();
+        } else {
+          this.errorMsg = response.data.message || '验证码发送失败，请稍后重试！';
+        }
+      } catch (error) {
+        console.error(error);
+        this.errorMsg = error.response?.data?.message || '发送验证码失败，请稍后重试！';
+      }
+    },
+    startCooldown() {
+      this.cooldown = 60;
+      const timer = setInterval(() => {
+        this.cooldown--;
+        if (this.cooldown <= 0) clearInterval(timer);
+      }, 1000);
+    },
     goBack() {
       this.$router.go(-1);
     }
   }
 };
 </script>
-
 
 <style>
 .auth-container {
@@ -251,40 +242,33 @@ export default {
   max-height: calc(100vh - 100px);
   overflow-y: auto;
 }
-
 .auth-container h2 {
-  width: 50%;               /* 整个标题占容器宽度 50% */
-  margin: 0 auto;           /* 水平居中 */
-  text-align: justify;      /* 左右对齐文字 */
-  text-align-last: center;  /* 最后一行文字居中 */
-  letter-spacing: 0.5em;    /* 每个字之间间距，可调整 */
-  font-size: 1.8em;           /* 标题大小，可根据需要调整 */
+  width: 50%;
+  margin: 0 auto;
+  text-align: justify;
+  text-align-last: center;
+  letter-spacing: 0.5em;
+  font-size: 1.8em;
   margin-bottom: 10px;
 }
-
-/* 消息提示的样式 */
 .message {
   width: 80%;
-  margin: -5px auto 10px auto; /* 调整外边距，让它更紧凑 */
+  margin: -5px auto 10px auto;
   padding: 10px;
   border-radius: 4px;
   text-align: center;
   font-size: 0.9em;
 }
-
 .error-message {
   color: #a94442;
   background-color: #f2dede;
   border: 1px solid #ebccd1;
 }
-
 .success-message {
   color: #3c763d;
   background-color: #dff0d8;
   border: 1px solid #d6e9c6;
 }
-
-
 .form-item {
   width: 80%;
   display: flex;
@@ -293,7 +277,6 @@ export default {
   align-items: center;
   margin-bottom: 15px;
 }
-
 .label-text {
   display: inline-block;
   width: 4em;
@@ -301,11 +284,9 @@ export default {
   text-align-last: justify;
   margin-right: 10px;
 }
-
 .label-colon {
   display: inline-block;
 }
-
 .input-style,
 .form-item select,
 .form-item .btn {
@@ -317,19 +298,16 @@ export default {
   border: 1px solid #ccc;
   border-radius: 4px;
 }
-
 select.input-style {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
 }
-
 input:-webkit-autofill {
   background-color: #fff !important;
   -webkit-box-shadow: 0 0 0px 1000px #fff inset !important;
   -webkit-text-fill-color: #333 !important;
 }
-
 .btn {
   width: 100%;
   padding: 0 20%;
@@ -343,29 +321,25 @@ input:-webkit-autofill {
   background-color: #42b983;
   color: white;
   margin-right: 50px;
-  text-align: center;     /* 文字居中 */
+  text-align: center;
 }
-
 .button-group .btn:last-child {
-  margin-right: 0;       /* 最后一个按钮不加右边距 */
+  margin-right: 0;
 }
-
 .btn:hover {
   border-color: #646cff;
   background-color: #369870;
 }
-
 .switch-text {
   text-align: center;
   margin-top: 5px;
   font-size: 0.95em;
 }
-
 .go-back {
   background-color: #ccc;
   color: #333;
-   margin-top: 10px; /* 与上方元素增加一点间距 */
-  width: 80%; /* 与表单项宽度保持一致 */
+  margin-top: 10px;
+  width: 80%;
   margin-left: auto;
   margin-right: auto;
 }
