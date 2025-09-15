@@ -8,7 +8,7 @@
 
     <!-- 下拉框 -->
     <div class="form-item">
-      <label>
+      <label class="form-label">
         <span class="label-text">身份</span>
         <span class="label-colon">：</span>
       </label>
@@ -22,7 +22,7 @@
 
     <!-- 用户名 -->
     <div class="form-item">
-      <label>
+      <label class="form-label">
         <span class="label-text">用户名</span>
         <span class="label-colon">：</span>
       </label>
@@ -31,7 +31,7 @@
 
     <!-- 密码 -->
     <div class="form-item">
-      <label>
+      <label class="form-label">
         <span class="label-text">密码</span>
         <span class="label-colon">：</span>
       </label>
@@ -40,22 +40,31 @@
 
     <!-- 确认密码（注册） -->
     <div class="form-item" v-if="!isLogin">
-      <label>
+      <label class="form-label">
         <span class="label-text">确认密码</span>
         <span class="label-colon">：</span>
       </label>
       <input type="password" placeholder="请确认密码" v-model="form.confirmPassword" class="input-style" />
     </div>
 
-    <!-- 邮箱与发送验证码（注册） -->
+    <!-- 邮箱 + 内嵌发送按钮 -->
     <div class="form-item" v-if="!isLogin">
-      <label>
+      <label class="form-label">
         <span class="label-text">邮箱</span>
         <span class="label-colon">：</span>
       </label>
-      <div style="display: flex; gap: 10px;">
-        <input type="email" placeholder="请输入邮箱" v-model="form.email" class="input-style" style="flex: 1;" />
-        <button @click="sendVerificationCode" :disabled="cooldown > 0" class="btn" style="width: 120px; margin: 0;">
+      <div class="input-wrapper">
+        <input
+          type="email"
+          placeholder="请输入邮箱"
+          v-model="form.email"
+          class="input-style"
+        />
+        <button
+          @click="sendVerificationCode"
+          :disabled="cooldown > 0"
+          class="btn-inside"
+        >
           {{ cooldown > 0 ? `${cooldown}秒后重试` : '发送验证码' }}
         </button>
       </div>
@@ -63,14 +72,14 @@
 
     <!-- 验证码输入框（注册） -->
     <div class="form-item" v-if="!isLogin">
-      <label>
-        <span class="label-text">验证码</span>
-        <span class="label-colon">：</span>
-      </label>
+  <label class="form-label">
+    <span class="label-text">验证码</span>
+    <span class="label-colon">：</span>
+  </label>
       <input type="text" placeholder="请输入验证码" v-model="form.verificationCode" class="input-style" maxlength="6" />
     </div>
 
-    <!-- 按钮 -->
+    <!-- 按钮组 -->
     <div class="form-item button-group">
       <button v-if="isLogin" @click="handleLogin" class="btn">登 录</button>
       <button v-else @click="handleRegister" class="btn">注 册</button>
@@ -87,9 +96,129 @@
       </span>
     </p>
 
-    <button @click="goBack" class="btn go-back">返 回</button>
+    <button @click="goBack" class="fixed-btn">返 回</button>
   </div>
 </template>
+
+<style>
+.auth-container {
+  box-sizing: border-box;
+  width: 700px;
+  margin: auto;
+  padding: 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  color: rgba(0, 0, 0, 0.87);
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+
+.auth-container h2 {
+  width: 50%;
+  margin: 0 auto 10px auto;
+  text-align: center;
+  letter-spacing: 0.5em;
+  font-size: 1.8em;
+}
+
+.message {
+  width: 80%;
+  margin: -5px auto 10px auto;
+  padding: 10px;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 0.9em;
+}
+.error-message { color: #a94442; background-color: #f2dede; border: 1px solid #ebccd1; }
+.success-message { color: #3c763d; background-color: #dff0d8; border: 1px solid #d6e9c6; }
+
+.form-item {
+  width: 80%;
+  display: flex;
+  align-items: center;
+  margin: 0 auto 15px auto;
+}
+
+
+.form-label {
+  display: flex;
+  align-items: center;
+  margin-right: 10px;
+  min-width: 6em;
+}
+
+.label-text {
+  flex: 1;
+  text-align: justify;
+  text-align-last: justify;
+}
+
+.label-colon {
+  width: 1em;
+  text-align: justify;
+  margin-left: 2px;
+}
+
+
+.input-style,
+.form-item select,
+.form-item .btn {
+  flex: 1;
+  font-size: 1em;
+  height: 36px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.input-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.input-wrapper .input-style {
+  width: 100%;
+  padding-right: 130px;
+  box-sizing: border-box;
+}
+
+.btn-inside {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 70%;
+  padding: 0 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn {
+  width: 100%;
+  padding: 0 20%;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.25s, background-color 0.25s;
+  background-color: #42b983;
+  color: white;
+  margin-right: 50px;
+  text-align: center;
+}
+.button-group .btn:last-child { margin-right: 0; }
+.btn:hover { border-color: #646cff; background-color: #369870; }
+.switch-text { text-align: center; margin-top: 5px; font-size: 0.95em; }
+</style>
+
 
 <script>
 import axios from 'axios';
@@ -130,7 +259,7 @@ export default {
       this.form = {
         userName: '',
         password: '',
-        role: this.isLogin ? 'bank' : 'farmer',
+        role: '',
         confirmPassword: '',
         email: '',
         verificationCode: ''
@@ -224,123 +353,3 @@ export default {
   }
 };
 </script>
-
-<style>
-.auth-container {
-  box-sizing: border-box;
-  width: 500px;
-  margin: auto;
-  padding: 2rem;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-  color: rgba(0, 0, 0, 0.87);
-  max-height: calc(100vh - 100px);
-  overflow-y: auto;
-}
-.auth-container h2 {
-  width: 50%;
-  margin: 0 auto;
-  text-align: justify;
-  text-align-last: center;
-  letter-spacing: 0.5em;
-  font-size: 1.8em;
-  margin-bottom: 10px;
-}
-.message {
-  width: 80%;
-  margin: -5px auto 10px auto;
-  padding: 10px;
-  border-radius: 4px;
-  text-align: center;
-  font-size: 0.9em;
-}
-.error-message {
-  color: #a94442;
-  background-color: #f2dede;
-  border: 1px solid #ebccd1;
-}
-.success-message {
-  color: #3c763d;
-  background-color: #dff0d8;
-  border: 1px solid #d6e9c6;
-}
-.form-item {
-  width: 80%;
-  display: flex;
-  margin: 10px auto;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 15px;
-}
-.label-text {
-  display: inline-block;
-  width: 4em;
-  text-align: justify;
-  text-align-last: justify;
-  margin-right: 10px;
-}
-.label-colon {
-  display: inline-block;
-}
-.input-style,
-.form-item select,
-.form-item .btn {
-  flex: 1;
-  font-size: 1em;
-  height: 36px;
-  padding: 0 10px;
-  box-sizing: border-box;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-select.input-style {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-}
-input:-webkit-autofill {
-  background-color: #fff !important;
-  -webkit-box-shadow: 0 0 0px 1000px #fff inset !important;
-  -webkit-text-fill-color: #333 !important;
-}
-.btn {
-  width: 100%;
-  padding: 0 20%;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  border-radius: 8px;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: border-color 0.25s, background-color 0.25s;
-  background-color: #42b983;
-  color: white;
-  margin-right: 50px;
-  text-align: center;
-}
-.button-group .btn:last-child {
-  margin-right: 0;
-}
-.btn:hover {
-  border-color: #646cff;
-  background-color: #369870;
-}
-.switch-text {
-  text-align: center;
-  margin-top: 5px;
-  font-size: 0.95em;
-}
-.go-back {
-  background-color: #ccc;
-  color: #333;
-  margin-top: 10px;
-  width: 80%;
-  margin-left: auto;
-  margin-right: auto;
-}
-</style>
