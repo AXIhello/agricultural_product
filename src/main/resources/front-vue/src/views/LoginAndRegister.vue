@@ -348,7 +348,8 @@ export default {
       }, 1000);
     },
     goBack() {
-      this.$router.go(-1);
+      //this.$router.go(-1);
+      window.location.href = "/main";
     }
   }
 };

@@ -1,17 +1,21 @@
 <template>
   <div class="main-bg">
-    <!-- 主体面板：农户入口 -->
-    <div class="panel">
-      <header>
-        <h1>农产通</h1>
-        <p>农户入口</p>
-      </header>
+    <header class="header">
+      <h1>农产品交易平台</h1>
+      <nav>
+        <ul>
+          <li><a href="#">首页</a></li>
+          <li><a href="#">融资服务</a></li>
+          <li><a href="#">专家助力</a></li>
+          <li><a href="#">农产品交易</a></li>
+        </ul>
+      </nav>
+    </header>
 
-      <!-- 农户按钮 -->
-      <button class="choice" @click="$emit('select', 'farmer')">
-        <span>🌾 农户</span>
-      </button>
-    </div>
+    <section class="content">
+      <h2>欢迎使用农产通平台</h2>
+      <p>这里是主要内容区域，可以根据需要添加更多内容。</p>
+    </section>
   </div>
 </template>
 
@@ -21,32 +25,71 @@
 
 <style scoped>
 .main-bg {
-  min-height: 100vh;
   display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 1800px; /* 固定宽度 */
+  background-color: #F0F9F4; /* 浅绿色背景色 */
+  border-radius: 8px; /* 圆角样式 */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Header样式 */
+.header {
+  width: 100%;
+  background: #2D7D4F; /* 深绿色背景色 */
+  color: white;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  background: #000;
-  color: #fff;
+  padding: 0 20px;
+  height: 60px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 8px; /* 圆角样式 */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* 面板区域 */
-.panel {
-  text-align: center;
+/* 导航栏样式 */
+nav ul {
+  list-style: none;
+  display: flex;
+  padding: 0;
+  margin: 0;
+}
+
+nav li {
+  margin-right: 80px; /* 间距 */
+}
+
+nav a {
+  text-decoration: none;
+  color: white;
+  font-weight: 600;
+  font-size: 20px;
+  transition: color 0.3s;
+}
+
+nav a:hover {
+  color: #B7E4C7; /* 鼠标悬停时变为淡绿色 */
+}
+
+/* 内容区样式 */
+.content {
+  width: 100%;
+  flex: 1;
   padding: 20px;
-  border: 1px solid #444;
-  border-radius: 8px;
+  background: white;
+  color: #333; /* 深灰色文字 */
+  font-size: 18px;
+  border-radius: 8px; /* 圆角样式 */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.choice {
-  margin-top: 16px;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 6px;
-  background: #222;
-  color: #fff;
-  cursor: pointer;
-}
-.choice:hover {
-  background: #333;
+/* 内容标题 */
+.content h2 {
+  color: #2D7D4F; /* 深绿色标题 */
+  font-weight: 700;
+  margin-bottom: 10px;
 }
 </style>

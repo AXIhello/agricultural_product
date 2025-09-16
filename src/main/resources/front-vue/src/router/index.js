@@ -2,6 +2,7 @@
 
 import { createRouter, createWebHistory } from 'vue-router';
 import LoginAndRegister from '../views/LoginAndRegister.vue';
+import MainInterface from '../views/MainInterface.vue';
 
 const routes = [
   {
@@ -11,9 +12,15 @@ const routes = [
   },
 
   {
-     path: '/auth',
+    path: '/auth',
     name: 'LoginAndRegister',
     component: LoginAndRegister 
+  },
+
+  {
+    path: '/main',
+    name: 'MainInterface',
+    component: MainInterface
   },
   
 ];
