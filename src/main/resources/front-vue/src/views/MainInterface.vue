@@ -8,6 +8,7 @@
           <li><a href="#">融资服务</a></li>
           <li><a href="#">专家助力</a></li>
           <li><a href="#">农产品交易</a></li>
+          <li><a href="#">个人信息</a></li>
         </ul>
       </nav>
     </header>
@@ -28,13 +29,12 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  width: 1800px; /* 固定宽度 */
+  width: 1800px;
   background-color: #F0F9F4; /* 浅绿色背景色 */
-  border-radius: 8px; /* 圆角样式 */
+  border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Header样式 */
 .header {
   width: 100%;
   background: #2D7D4F; /* 深绿色背景色 */
@@ -46,11 +46,10 @@
   height: 60px;
   font-size: 15px;
   font-weight: 600;
-  border-radius: 8px; /* 圆角样式 */
+  border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* 导航栏样式 */
 nav ul {
   list-style: none;
   display: flex;
@@ -59,7 +58,7 @@ nav ul {
 }
 
 nav li {
-  margin-right: 80px; /* 间距 */
+  margin-right: 80px;
 }
 
 nav a {
@@ -74,7 +73,6 @@ nav a:hover {
   color: #B7E4C7; /* 鼠标悬停时变为淡绿色 */
 }
 
-/* 内容区样式 */
 .content {
   width: 100%;
   flex: 1;
@@ -82,11 +80,11 @@ nav a:hover {
   background: white;
   color: #333; /* 深灰色文字 */
   font-size: 18px;
-  border-radius: 8px; /* 圆角样式 */
+  border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* 内容标题 */
+
 .content h2 {
   color: #2D7D4F; /* 深绿色标题 */
   font-weight: 700;
