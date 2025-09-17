@@ -5,9 +5,14 @@ import com.example.agricultural_product.pojo.User;
 import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
+import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
+
+import java.nio.charset.StandardCharsets;
 
 @Component
 public class DatabaseInitializer implements CommandLineRunner {
@@ -23,21 +28,48 @@ public class DatabaseInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        // 1. 自动建表（如果不存在）
-        String createTableSql = """
-            CREATE TABLE IF NOT EXISTS users (
-                user_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
-                user_name VARCHAR(50) UNIQUE NOT NULL COMMENT '账号，用于登录',
-                password VARCHAR(255) NOT NULL COMMENT '加密后的密码',
-                name VARCHAR(100) COMMENT '昵称',
-                email VARCHAR(100),
-                role VARCHAR(50) NOT NULL COMMENT '角色'
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表'
-            """;
+        // 1. 从 SQL 文件加载并执行脚本来建表
+        org.springframework.core.io.Resource sqlScriptResource = new ClassPathResource("agriculture.sql");
 
-        jdbcTemplate.execute(createTableSql);
+        if (sqlScriptResource.exists()) {
+            System.out.println("正在执行 SQL 脚本: agriculture.sql");
+            try {
+                // 使用 ResourceDatabasePopulator 来执行 SQL 脚本
+                ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
+
+                // 设置 SQL 脚本的编码
+                populator.setSqlScriptEncoding(StandardCharsets.UTF_8.name());
+
+                // 添加 SQL 脚本资源，现在直接添加 ClassPathResource 即可
+                populator.addScript(sqlScriptResource);
+
+                // 配置脚本执行选项 (这些都是 ScriptUtils 内部使用的默认值，但你可以明确设置)
+                populator.setContinueOnError(false); // 遇到错误是否继续执行后续语句
+                populator.setIgnoreFailedDrops(false); // 是否忽略删除表失败的错误
+                populator.setSeparator(ScriptUtils.DEFAULT_STATEMENT_SEPARATOR); // SQL语句分隔符，默认是分号 ";"
+                populator.setCommentPrefix(ScriptUtils.DEFAULT_COMMENT_PREFIX); // 注释前缀，默认是 "--"
+                populator.setBlockCommentStartDelimiter(ScriptUtils.DEFAULT_BLOCK_COMMENT_START_DELIMITER); // 块注释开始，默认 "/*"
+                populator.setBlockCommentEndDelimiter(ScriptUtils.DEFAULT_BLOCK_COMMENT_END_DELIMITER);   // 块注释结束，默认 "*/"
+
+                // 执行脚本。ResourceDatabasePopulator 会从 JdbcTemplate 获取 DataSource
+                populator.execute(jdbcTemplate.getDataSource());
+
+                System.out.println("SQL 脚本 agriculture.sql 执行成功！");
+            } catch (Exception e) {
+                System.err.println("SQL 脚本 agriculture.sql 执行失败: " + e.getMessage());
+                // 根据需要，你可以选择在此处抛出异常或更优雅地处理
+                throw new RuntimeException("初始化数据库失败：无法执行 SQL 脚本。", e);
+            }
+        } else {
+            System.err.println("未找到 SQL 脚本文件: src/main/resources/agriculture.sql");
+            // 如果文件不存在，你可能希望程序停止或打印警告
+            // throw new RuntimeException("初始化数据库失败：未找到 SQL 脚本文件 agriculture.sql");
+        }
+
 
         // 2. 检查是否已有 admin 账号
+        // 注意：如果 agriculture.sql 中没有创建 users 表，那么这里的查询会失败。
+        // 请确保 agriculture.sql 包含 users 表的创建语句。
         Long count = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM users WHERE user_name = 'admin'",
                 Long.class
@@ -50,6 +82,7 @@ public class DatabaseInitializer implements CommandLineRunner {
             user.setPassword(encoder.encode("123456")); // 加密密码
             user.setName("管理员");      // 昵称
             user.setRole("admin");
+            user.setEmail("admin@example.com"); //
 
             userMapper.insert(user);
             System.out.println("初始化用户成功: admin / 123456");

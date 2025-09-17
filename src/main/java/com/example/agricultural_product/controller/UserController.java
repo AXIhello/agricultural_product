@@ -16,10 +16,10 @@ public class UserController {
 
     @Autowired
     private UserService userService;
-    
+
     @Autowired
     private BCryptPasswordEncoder encoder; // 改为注入方式
-    
+
     //  登录接口
     @PostMapping("/login")
     public Map<String, Object> login(@RequestBody Map<String, String> loginForm) {
@@ -68,6 +68,7 @@ public class UserController {
         String userName = registerForm.get("userName"); // 账号
         String password = registerForm.get("password");
         String role = registerForm.get("role"); // admin / buyer / farmer
+        String email = registerForm.get("email");
 
         Map<String, Object> response = new HashMap<>();
 
@@ -92,6 +93,7 @@ public class UserController {
         newUser.setPassword(encoder.encode(password));
         newUser.setName(userName); // 默认和账号一样
         newUser.setRole(role);
+        newUser.setEmail(email); // 设置邮箱
 
         int result = userService.registerUser(newUser);
         if (result > 0) {
