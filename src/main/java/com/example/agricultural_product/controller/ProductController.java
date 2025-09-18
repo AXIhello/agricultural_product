@@ -45,4 +45,11 @@ public class ProductController {
     public ResponseEntity<Product> getProduct(@PathVariable Integer id) {
         return ResponseEntity.ok(productService.getById(id));
     }
+
+    // 发布商品
+    @PostMapping("/publish")
+    public ResponseEntity<Boolean> publishProduct(@RequestBody Product product) {
+        boolean success = productService.publishProduct(product);
+        return ResponseEntity.ok(success);
+    }
 }
