@@ -2,14 +2,14 @@
   <div class="main-bg">
     <!-- 顶部主导航栏 (保持不变) -->
     <header class="header">
-      <h1>农产品交易中心</h1>
+      <h1>农产品交易平台</h1>
       <nav>
         <ul>
           <li><router-link to="/main">首页</router-link></li>
-          <li><a href="#">融资服务</a></li>
-          <li><a href="#">专家助力</a></li>
+          <li><router-link to="/finance">融资服务</router-link></li>
+          <li><router-link to="/expert">专家助力</router-link></li>
           <li><router-link to="/trading">农产品交易</router-link></li>
-          <li><a href="#">个人信息</a></li>
+          <li><router-link to="/profile">个人信息</router-link></li>
         </ul>
       </nav>
     </header>
@@ -26,7 +26,7 @@
             我的农产品
           </button>
           <button @click="switchView('addProduct')" :class="{ active: currentView === 'addProduct' }">
-            添加商品
+            上架商品
           </button>
         </nav>
 
@@ -77,7 +77,62 @@
 
 
     <!-- 非农户视图 -->
+      <div v-if="role === 'buyer'" class="farmer-view-container">
+        <h2>农产品交易市场</h2>
+        <p>在这里，您可以浏览和购买农产品。</p>
+        <nav class="farmer-nav">
+          <button @click="switchView('products')" :class="{ active: currentView === 'products' }">
+            我的农产品
+          </button>
+          <button @click="switchView('addProduct')" :class="{ active: currentView === 'addProduct' }">
+            上架商品
+          </button>
+        </nav>
 
+        <!-- 根据标签页切换显示的内容 -->
+        <div class="view-content-wrapper">
+          <!-- 我的商品视图 -->
+          <div v-if="currentView === 'products'">
+            <h2>我的农产品货架</h2>
+            <div class="product-list">
+              <div v-for="product in myProducts" :key="product.id" class="product-card">
+                <h3>{{ product.name }}</h3>
+                <p>价格: ¥{{ product.price }} / {{ product.unit }}</p>
+                <p>库存: {{ product.stock }} {{ product.unit }}</p>
+                <div class="card-actions">
+                  <button class="edit-btn">编辑</button>
+                  <button class="delete-btn">下架</button>
+                </div>
+              </div>
+              <p v-if="!myProducts.length" class="empty-state">您还没有发布任何产品，快去“添加商品”吧！</p>
+            </div>
+          </div>
+
+          <!-- 添加商品视图 -->
+          <div v-if="currentView === 'addProduct'">
+            <h2>发布新商品</h2>
+            <form @submit.prevent="handleAddProduct" class="add-product-form">
+              <div class="form-group">
+                <label for="name">商品名称:</label>
+                <input type="text" id="name" v-model="newProduct.name" required>
+              </div>
+              <div class="form-group">
+                <label for="price">价格 (元):</label>
+                <input type="number" id="price" v-model.number="newProduct.price" required min="0.01" step="0.01">
+              </div>
+              <div class="form-group">
+                <label for="unit">单位:</label>
+                <input type="text" id="unit" v-model="newProduct.unit" placeholder="例如: 斤, 个, 箱" required>
+              </div>
+              <div class="form-group">
+                <label for="stock">库存量:</label>
+                <input type="number" id="stock" v-model.number="newProduct.stock" required min="1">
+              </div>
+              <button type="submit" class="submit-btn">确认发布</button>
+            </form>
+          </div>
+        </div>
+      </div>
     </section>
   </div>
 </template>
@@ -123,44 +178,63 @@ onMounted(() => {
 </script>
 
 <style scoped>
-
 .main-bg {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  /* 移除了固定宽度，使其自适应 */
-  background-color: #F0F9F4;
+  width: 1800px;
+  background-color: #F0F9F4; /* 浅绿色背景色 */
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
-
 
 .header {
   width: 100%;
-  background: #2D7D4F;
+  background: #2D7D4F; /* 深绿色背景色 */
   color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 40px;
+  padding: 0 20px;
   height: 60px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  flex-shrink: 0; /* 防止 header 在 flex 布局中被压缩 */
-}
-.header h1 { font-size: 1.5rem; }
-.header nav ul { list-style: none; display: flex; padding: 0; margin: 0; }
-.header nav li { margin-right: 50px; }
-.header nav a { text-decoration: none; color: white; font-weight: 600; font-size: 1.1rem; transition: color 0.3s; }
-.header nav a:hover { color: #B7E4C7; }
-
-
-.content {
-  flex: 1; /* 占据剩余所有空间 */
-  padding: 20px;
-  margin: 20px; /* 添加外边距，使其与背景有间隙 */
-  background: white;
-  color: #333;
+  font-size: 15px;
+  font-weight: 600;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  overflow-y: auto; /* 当内容超出时，允许滚动 */
+}
+
+nav ul {
+  list-style: none;
+  display: flex;
+  padding: 0;
+  margin: 0;
+}
+
+nav li {
+  margin-right: 50px;
+}
+
+nav a {
+  text-decoration: none;
+  color: white;
+  font-weight: 600;
+  font-size: 20px;
+  transition: color 0.3s;
+}
+
+nav a:hover {
+  color: #B7E4C7; /* 鼠标悬停时变为淡绿色 */
+}
+
+.content {
+  width: 100%;
+  flex: 1;
+  padding: 20px;
+  background: white;
+  color: #333; /* 深灰色文字 */
+  font-size: 18px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 .welcome-text {
   font-size: 1.2rem;
@@ -174,7 +248,6 @@ onMounted(() => {
   padding-bottom: 10px;
   border-bottom: 1px solid #eee;
 }
-
 
 .farmer-nav {
   display: flex;
@@ -214,13 +287,12 @@ onMounted(() => {
 .product-card:hover { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
 .product-card h3 { margin-top: 0; color: #2D7D4F; }
 .card-actions { margin-top: 15px; display: flex; gap: 10px; }
-.card-actions button { /* 样式与之前类似，保持不变 */ }
 
-.add-product-form { max-width: 600px; margin-top: 20px; }
+
+.add-product-form { margin: 0 auto;  display: flex ; flex-direction: column; align-content: center; max-width: 600px; margin-top: 20px; }
 .form-group { display: flex; align-items: center; margin-bottom: 20px; }
 .form-group label { width: 120px; font-weight: bold; }
 .form-group input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
-.submit-btn { /* 样式与之前类似，保持不变 */ }
 
 .empty-state {
   grid-column: 1 / -1;
