@@ -1,33 +1,40 @@
-// src/router/index.js
-
-import { createRouter, createWebHistory } from 'vue-router';
-import LoginAndRegister from '../views/LoginAndRegister.vue';
-import MainInterface from '../views/MainInterface.vue';
+import { createRouter, createWebHistory } from 'vue-router'
+import LoginAndRegister from '../views/LoginAndRegister.vue'
+import MainInterface from '../views/MainInterface.vue'
+import ProductList from '../views/ProductList.vue'
 
 const routes = [
   {
-    // 规则1：用户访问根目录时，重定向到 /auth
     path: '/',
     redirect: '/auth'
   },
-
   {
     path: '/auth',
     name: 'LoginAndRegister',
-    component: LoginAndRegister 
+    component: LoginAndRegister
   },
-
   {
     path: '/main',
     name: 'MainInterface',
-    component: MainInterface
-  },
-  
-];
+    component: MainInterface,
+    children: [  // 添加子路由
+      {
+        path: '/products',
+        name: 'ProductList',
+        component: ProductList
+      },
+      {
+        path: '/products/:id',
+        name: 'ProductDetail',
+        component: () => import('../views/ProductDetail.vue')
+      }
+    ]
+  }
+]
 
 const router = createRouter({
   history: createWebHistory(),
   routes
-});
+})
 
-export default router; // 必须导出
+export default router

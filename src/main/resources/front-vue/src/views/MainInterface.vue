@@ -4,18 +4,17 @@
       <h1>农产品交易平台</h1>
       <nav>
         <ul>
-          <li><a href="#">首页</a></li>
-          <li><a href="#">融资服务</a></li>
-          <li><a href="#">专家助力</a></li>
-          <li><a href="#">农产品交易</a></li>
-          <li><a href="#">个人信息</a></li>
+          <li><router-link to="/main">首页</router-link></li>
+          <li><router-link to="/finance">融资服务</router-link></li>
+          <li><router-link to="/expert">专家助力</router-link></li>
+          <li><router-link to="/products">农产品交易</router-link></li>
+          <li><router-link to="/profile">个人信息</router-link></li>
         </ul>
       </nav>
     </header>
 
     <section class="content">
-      <h2>欢迎使用农产通平台</h2>
-      <p>这里是主要内容区域，可以根据需要添加更多内容。</p>
+      <router-view></router-view>
     </section>
   </div>
 </template>
