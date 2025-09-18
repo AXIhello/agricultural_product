@@ -277,7 +277,14 @@ export default {
         const response = await axios.post('/api/user/login', { userName, password, role });
         if (response.data.success) {
           this.successMsg = '登录成功！正在跳转...';
-          setTimeout(() => this.$router.push('/dashboard'), 1500);
+          //存储用户身份信息
+          const userInfo = {
+            userName: userName,
+            role: role
+          }
+          //用户信息存入localStorage
+          localStorage.setItem('userInfo', JSON.stringify(userInfo));
+          setTimeout(() => this.$router.push('/main'), 1500);
         } else {
           this.errorMsg = response.data.message || '登录失败，请稍后重试！';
         }
