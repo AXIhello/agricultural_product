@@ -1,6 +1,5 @@
 <template>
   <div class="main-bg">
-    <!-- 顶部主导航栏 -->
     <header class="header">
       <h1>农产品交易平台</h1>
       <nav>
@@ -8,29 +7,24 @@
           <li><router-link to="/main">首页</router-link></li>
           <li><router-link to="/finance">融资服务</router-link></li>
           <li><router-link to="/expert">专家助力</router-link></li>
-          <li><router-link to="/trading">农产品交易</router-link></li>
+          <li><router-link to="/trading" style="color: #B7E4C7;">农产品交易</router-link></li>
           <li><router-link to="/profile">个人信息</router-link></li>
         </ul>
       </nav>
     </header>
 
-    <!-- 主内容 -->
     <section class="content">
       <p class="welcome-text">欢迎您 {{ userName }}！</p>
 
       <!-- 农户视图 -->
       <div v-if="role === 'farmer'" class="farmer-view-container">
         <nav class="farmer-nav">
-          <button @click="switchView('myProducts')" :class="{ active: currentView === 'myProducts' }">
-            我的农产品
-          </button>
-          <button @click="switchView('addProduct')" :class="{ active: currentView === 'addProduct' }">
-            上架商品
-          </button>
+          <button @click="switchView('myProducts')" :class="{ active: currentView === 'myProducts' }">我的农产品</button>
+          <button @click="switchView('addProduct')" :class="{ active: currentView === 'addProduct' }">上架商品</button>
+          <button @click="switchView('purchaseRequests')" :class="{ active: currentView === 'purchaseRequests' }">求购需求</button>
         </nav>
 
         <div class="view-content-wrapper">
-          <!-- 我的商品 -->
           <div v-if="currentView === 'myProducts'">
             <h2>我的农产品货架</h2>
             <div class="product-list">
@@ -43,11 +37,10 @@
                   <button class="delete-btn">下架</button>
                 </div>
               </div>
-              <p v-if="!myProducts.length" class="empty-state">您还没有发布任何产品，快去“添加商品”吧！</p>
+              <p v-if="!myProducts.length" class="empty-state">您还没有发布任何产品</p>
             </div>
           </div>
 
-          <!-- 添加商品 -->
           <div v-if="currentView === 'addProduct'">
             <h2>发布新商品</h2>
             <form @submit.prevent="handleAddProduct" class="add-product-form">
@@ -70,23 +63,30 @@
               <button type="submit" class="submit-btn">确认发布</button>
             </form>
           </div>
+
+          <div v-if="currentView === 'purchaseRequests'">
+            <h2>求购需求</h2>
+            <div class="request-list">
+              <div v-for="request in purchaseRequests" :key="request.id" class="product-card">
+                <h3>{{ request.title }}</h3>
+                <p>需求量: {{ request.quantity }} {{ request.unit }}</p>
+                <p>备注: {{ request.note }}</p>
+              </div>
+              <p v-if="!purchaseRequests.length" class="empty-state">暂无求购需求</p>
+            </div>
+          </div>
         </div>
       </div>
 
       <!-- 普通用户视图 -->
       <div v-else class="customer-view-container">
-        <h2>农产品交易市场</h2>
         <nav class="customer-nav">
-          <button @click="switchView('products')" :class="{ active: currentView === 'products' }">
-            商品浏览
-          </button>
-          <button @click="switchView('cart')" :class="{ active: currentView === 'cart' }">
-            我的购物车
-          </button>
+          <button @click="switchView('products')" :class="{ active: currentView === 'products' }">商品浏览</button>
+          <button @click="switchView('cart')" :class="{ active: currentView === 'cart' }">我的购物车</button>
+          <button @click="switchView('purchaseRequests')" :class="{ active: currentView === 'purchaseRequests' }">求购需求</button>
         </nav>
 
         <div class="view-content-wrapper">
-          <!-- 商品浏览 -->
           <div v-if="currentView === 'products'">
             <h2>全部商品</h2>
             <div class="product-list">
@@ -103,7 +103,6 @@
             </div>
           </div>
 
-          <!-- 购物车 -->
           <div v-if="currentView === 'cart'">
             <h2>我的购物车</h2>
             <div class="cart-item" v-for="item in cartItems" :key="item.id">
@@ -115,6 +114,18 @@
             <p v-if="!cartItems.length" class="empty-state">购物车是空的。</p>
             <button v-if="cartItems.length" class="submit-btn" @click="submitOrder">提交订单</button>
           </div>
+
+          <div v-if="currentView === 'purchaseRequests'">
+            <h2>求购需求</h2>
+            <div class="request-list">
+              <div v-for="request in purchaseRequests" :key="request.id" class="product-card">
+                <h3>{{ request.title }}</h3>
+                <p>需求量: {{ request.quantity }} {{ request.unit }}</p>
+                <p>备注: {{ request.note }}</p>
+              </div>
+              <p v-if="!purchaseRequests.length" class="empty-state">暂无求购需求</p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -125,8 +136,8 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 
-const role = ref(null)
-const userName = ref('')
+const role = ref('customer')
+const userName = ref('测试用户')
 const currentView = ref('products')
 
 // 农户数据
@@ -137,11 +148,11 @@ const newProduct = ref({ name: '', price: null, unit: '', stock: null })
 const products = ref([])
 const cartItems = ref([])
 
-function switchView(view) {
-  currentView.value = view
-}
+// 求购需求数据
+const purchaseRequests = ref([])
 
-// 农户发布商品
+function switchView(view) { currentView.value = view }
+
 async function handleAddProduct() {
   try {
     const res = await axios.post('/api/products/publish', newProduct.value)
@@ -151,19 +162,13 @@ async function handleAddProduct() {
       newProduct.value = { name: '', price: null, unit: '', stock: null }
       currentView.value = 'myProducts'
     }
-  } catch (err) {
-    alert('发布失败')
-  }
+  } catch (err) { alert('发布失败') }
 }
 
-// 普通用户添加购物车
 function addToCart(product) {
   const exist = cartItems.value.find(item => item.id === product.id)
-  if (exist) {
-    exist.quantity += 1
-  } else {
-    cartItems.value.push({ ...product, quantity: 1 })
-  }
+  if (exist) exist.quantity += 1
+  else cartItems.value.push({ ...product, quantity: 1 })
 }
 
 function removeFromCart(id) {
@@ -171,22 +176,17 @@ function removeFromCart(id) {
 }
 
 function submitOrder() {
-  alert('订单提交成功！（这里可以对接订单接口）')
+  alert('订单提交成功')
   cartItems.value = []
 }
 
 onMounted(async () => {
-  // 模拟登录信息
-  role.value = 'customer' // 改成 'farmer' 测试农户视图
-  userName.value = '测试用户'
-
-  // 加载商品列表
   try {
     const res = await axios.get('/api/products')
     products.value = res.data.records
-  } catch (err) {
-    console.error('获取商品失败', err)
-  }
+    const reqRes = await axios.get('/api/purchaseRequests')
+    purchaseRequests.value = reqRes.data.records
+  } catch (err) { console.error('获取数据失败', err) }
 })
 </script>
 
