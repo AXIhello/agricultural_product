@@ -2,7 +2,11 @@ import { createRouter, createWebHistory } from 'vue-router'
 import LoginAndRegister from '../views/LoginAndRegister.vue'
 import MainInterface from '../views/MainInterface.vue'
 import ProductList from '../views/ProductList.vue'
-import TradingPage from '../views/TradingPage.vue';
+import TradingPage from '../views/TradingPage.vue'
+import FinanceService from '../views/FinanceService.vue'
+import ExpertAssistance from '../views/ExpertAssistance.vue'
+import UserProfile from '../views/UserProfile.vue';
+
 
 const routes = [
   {
@@ -38,8 +42,26 @@ const routes = [
     path: '/trading',
     name: 'TradingPage',
     component: TradingPage
-  }
+  },
   
+  {
+    path: '/finance',
+    name: 'FinanceService',
+    component: FinanceService
+  },
+
+  {
+    path: '/expert',
+    name: 'ExpertAssistance',
+    component: ExpertAssistance
+  },
+
+  {
+    path: '/profile',
+    name: 'UserProfile',
+    component: UserProfile
+  }
+
 ]
 
 const router = createRouter({
