@@ -8,7 +8,7 @@
           <li><router-link to="/finance">融资服务</router-link></li>
           <li><router-link to="/expert">专家助力</router-link></li>
           <li><router-link to="/trading">农产品交易</router-link></li>
-          <li><router-link to="/profile">个人信息</router-link></li>
+          <li><router-link to="/profile" style="color: #B7E4C7;">个人信息</router-link></li>
         </ul>
       </nav>
     </header>
