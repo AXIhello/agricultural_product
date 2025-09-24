@@ -3,6 +3,8 @@ package com.example.agricultural_product.controller;
 import com.example.agricultural_product.pojo.User;
 import com.example.agricultural_product.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -106,6 +108,20 @@ public class UserController {
 
         return response;
     }
-
+    
+    @GetMapping("/get-userid")
+    public ResponseEntity<?> getUserId(@RequestParam String userName) {
+        try {
+            Long userId = userService.getUserIdByUserName(userName); //  根据用户名获取用户ID
+            if (userId != null) {
+                return ResponseEntity.ok(Map.of("userId", userId)); // 返回 userID
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "用户不存在")); // 用户不存在
+            }
+        } catch (Exception e) {
+            //  处理异常
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "获取用户ID失败"));
+        }
+    }
 }
 

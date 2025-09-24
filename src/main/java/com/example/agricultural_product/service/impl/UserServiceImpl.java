@@ -20,5 +20,15 @@ public class UserServiceImpl implements UserService {
     public int registerUser(User user) {
         return userMapper.insert(user);
     }
+
+    @Override
+    public Long getUserIdByUserName(String userName) {
+        // 根据用户名查询用户，并返回用户 ID
+        User user = findByUserName(userName); //  调用 findByUserName 获取用户
+        if (user != null) {
+            return user.getUserId(); //  如果找到用户，返回用户 ID
+        }
+        return null; // 如果用户不存在，返回 null
+    }
 }
 

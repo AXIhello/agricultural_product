@@ -13,13 +13,196 @@
       </nav>
     </header>
 
-    <section class="content">
-      <router-view></router-view>
-    </section>
+    <!-- 提问表单 -->
+    <div class="question-form">
+      <h3>提问</h3>
+      <label for="title">标题:</label>
+      <input type="text" id="title" v-model="newQuestion.title" required>
+
+      <label for="content">问题描述:</label>
+      <textarea id="content" v-model="newQuestion.content" rows="4" required></textarea>
+
+      <button @click="publishQuestion">提交</button>
+      <p v-if="publishMessage" class="success-message">{{ publishMessage }}</p>
+    </div>
+
+    
+    <!-- 搜索 -->
+    <div class="search-bar">
+      <input type="text" v-model="searchKeyword" placeholder="搜索问题">
+      <button @click="searchQuestions">搜索</button>
+    </div>
+
+    <!-- 问题列表 -->
+    <div class="question-list">
+      <h3>待回答问题</h3>
+      <div v-if="loading">加载中...</div>
+      <div v-else-if="questions.length === 0">暂无问题</div>
+      <div v-else>
+        <div v-for="question in questions" :key="question.questionId" class="question-item">
+          <h4>{{ question.title }}</h4>
+          <p>{{ question.content }}</p>
+          <p>提问时间: {{ formatDate(question.createTime) }}</p>
+          <p v-if="question.answerContent">专家回答: {{ question.answerContent }}</p>
+          <p v-else>状态: 待回答</p>
+        </div>
+        <!-- 分页 -->
+        <div class="pagination">
+          <button @click="changePage(currentPage - 1)" :disabled="currentPage === 1">上一页</button>
+          <span>{{ currentPage }} / {{ totalPages }}</span>
+          <button @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">下一页</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
 <script setup>
+import { ref, onMounted, computed } from 'vue';
+import axios from 'axios';
+
+
+const questions = ref([]);
+const newQuestion = ref({
+  title: '',
+  content: '',
+});
+const publishMessage = ref('');
+
+//获取用户信息
+const getUserInfo = () => {
+    const userInfoString = localStorage.getItem('userInfo');
+    if (userInfoString) {
+        try {
+            return JSON.parse(userInfoString);
+        } catch (error) {
+            console.error("Error parsing userInfo from localStorage:", error);
+            localStorage.removeItem('userInfo'); // 清除损坏的数据
+            return null; // 或者返回一个默认的 user 对象
+        }
+    }
+    return null; // 没有找到用户信息
+};
+
+const user = computed(() => getUserInfo());
+const isFarmer = computed(() => user.value?.role === 'farmer'); 
+
+const searchKeyword = ref('');
+const loading = ref(true); // 加载状态
+const currentPage = ref(1);
+const pageSize = ref(5);
+const totalItems = ref(0); // 总的问题数量
+const totalPages = computed(() => Math.ceil(totalItems.value / pageSize));
+
+// 格式化日期
+const formatDate = (dateTimeString) => {
+    if (!dateTimeString) return '';
+    const date = new Date(dateTimeString);
+    return date.toLocaleString();
+};
+
+
+// 获取问题列表
+const fetchQuestions = async () => {
+  loading.value = true;
+  try {
+    const pageSizeNumber = Number(pageSize.value);
+
+    console.log("pageSize type:", typeof pageSize.value, "pageSize value:", pageSize.value); 
+    
+if (isNaN(pageSizeNumber)) {
+      console.error("Invalid pageSize:", pageSize.value);
+      loading.value = false;
+      return; //  阻止后续请求
+    }
+
+    let url = `/api/expert-questions?pageNum=${currentPage.value}&pageSize=${pageSizeNumber}`;
+
+    if (searchKeyword.value) {
+      url = `/api/expert-questions/search?keyword=${searchKeyword.value}&pageNum=${currentPage.value}&pageSize=${pageSizeNumber}`;
+    }
+
+    console.log("Fetching questions from:", url);  // 调试： 检查生成的 URL
+
+    const response = await axios.get(url);
+    questions.value = response.data.records;
+    totalItems.value = response.data.total;
+  } catch (error) {
+    console.error('获取问题列表失败', error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 切换分页
+const changePage = (page) => {
+    if (page < 1 || page > totalPages.value) return;
+    currentPage.value = page;
+    fetchQuestions();
+};
+
+// 发布问题
+const publishQuestion = async () => {
+  try {
+
+    const userData = getUserInfo();
+    console.log("User data:", userData);
+
+    if(!userData|| !isFarmer.value){
+      alert('您不是农民，无法发布问题。');
+      return;
+    }
+
+    const farmerId = userData.userId; // 假设用户Id即为农户ID
+    console.log("farmerId:", farmerId);
+
+    const requestBody = {
+        title: newQuestion.value.title,
+        content: newQuestion.value.content,
+        farmerId: farmerId
+    };
+    
+    console.log("Request Body:", requestBody);
+
+    const response = await axios.post('/api/expert-questions', requestBody);
+
+    if (response.data) {
+      publishMessage.value = '问题发布成功！';
+      newQuestion.value = { title: '', content: '' }; // 清空表单
+      fetchQuestions(); // 刷新列表
+    } else {
+      publishMessage.value = '问题发布失败。';
+    }
+  } catch (error) {
+    console.error('发布问题失败', error);
+     if (error.response) {
+            console.error("Response data:", error.response.data);
+            console.error("Response status:", error.response.status);
+            console.error("Response headers:", error.response.headers);
+            publishMessage.value = '发布问题时发生错误。';
+        } else if (error.request) {          
+            console.error("Request error:", error.request);
+            publishMessage.value = '发布问题时发生网络错误。';
+        } else {
+            console.error('Error', error.message);
+            publishMessage.value = '发布问题时发生未知错误。';
+        }
+  }
+  setTimeout(() => {
+    publishMessage.value = '';
+  }, 3000); // 3秒后清除消息
+};
+
+// 搜索问题
+const searchQuestions = () => {
+    currentPage.value = 1; // 搜索时重置页码
+    fetchQuestions();
+};
+
+onMounted(() => {
+  fetchQuestions();
+});
 
 </script>
 
@@ -88,5 +271,177 @@ nav a:hover {
   color: #2D7D4F; /* 深绿色标题 */
   font-weight: 700;
   margin-bottom: 10px;
+}
+
+.expert-questions {
+  padding: 20px;
+}
+
+.question-form {
+  background-color: #f9f9f9; /* 浅灰色背景 */
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.question-form h3 {
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+  color: #333; /* 更深的标题颜色 */
+  text-align: center;
+}
+
+.question-form label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #555; /* 更柔和的标签颜色 */
+  text-align: left;
+}
+
+.question-form input[type="text"],
+.question-form textarea {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  box-sizing: border-box; /* 包含内边距在总宽度中 */
+  transition: border-color 0.2s; /* 添加过渡效果 */
+  
+}
+
+.question-form input[type="text"]:focus,
+.question-form textarea:focus {
+  border-color: #4CAF50; /* 获得焦点时改变边框颜色 */
+  outline: none; /* 移除默认的 focus outline */
+  
+}
+
+.question-form textarea {
+  resize: vertical; /* 允许垂直调整大小 */
+  min-height: 100px; /* 最小高度 */
+  
+}
+
+.question-form button {
+  background-color: #4CAF50;
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1.1rem; /* 增加字体大小 */
+  font-weight: 500;
+  transition: background-color 0.3s;
+  display: inline-block; /*  按钮变为行内块元素, 可以设置 margin */
+  margin-top: 10px;
+}
+
+.question-form button:hover {
+  background-color: #3e8e41;
+}
+
+.success-message {
+  color: #4CAF50;
+  background-color: #e8f5e9;
+  padding: 10px;
+  border-radius: 4px;
+  margin-top: 10px;
+  border: 1px solid #c8e6c9;
+}
+
+.search-bar {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center; /* 垂直居中 */
+}
+
+.search-bar input[type="text"] {
+  flex-grow: 1;
+  padding: 10px;
+  margin-right: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  box-sizing: border-box;
+  
+}
+
+.search-bar button {
+  background-color: #008CBA;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+.search-bar button:hover {
+  background-color: #0077a3;
+}
+
+.question-list {
+  background-color: #f9f9f9; /* 浅灰色背景 */
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.question-list h3 {
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.question-item {
+  background-color: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.question-item h4 {
+  font-size: 1.2rem;
+  margin-bottom: 8px;
+  color: #2D7D4F;
+}
+
+.question-item p {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #555;
+}
+
+.pagination {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.pagination button {
+  background-color: #eee;
+  color: #333;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin: 0 5px;
+  font-size: 1rem;
+  transition: background-color 0.3s;
+}
+
+.pagination button:hover {
+  background-color: #ddd;
+}
+
+.pagination button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>

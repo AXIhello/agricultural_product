@@ -277,10 +277,29 @@ export default {
         const response = await axios.post('/api/user/login', { userName, password, role });
         if (response.data.success) {
           this.successMsg = '登录成功！正在跳转...';
+
+          let userId = null;
+          try {
+              const userIdResponse = await axios.get('/api/user/get-userid', { //  后端需要提供这个 API.
+                    params: { userName: userName }  //  将用户名传递给后端
+              });
+              if (userIdResponse.data && userIdResponse.data.userId) {
+                    userId = userIdResponse.data.userId;
+              } else {
+                  this.errorMsg = '无法获取用户ID，请联系管理员。';
+                  return; // 阻止跳转
+              }
+          } catch (error) {
+              console.error('获取用户ID失败', error);
+              this.errorMsg = '获取用户ID失败，请联系管理员。';
+              return; // 阻止跳转
+          }
+          
           //存储用户身份信息
           const userInfo = {
             userName: userName,
-            role: role
+            role: role,
+            userId: userId
           }
           //用户信息存入localStorage
           localStorage.setItem('userInfo', JSON.stringify(userInfo));

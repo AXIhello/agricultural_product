@@ -3,4 +3,6 @@ import com.example.agricultural_product.pojo.User;
 public interface UserService {
     User findByUserName(String userName);
     int registerUser(User newUser);
+     Long getUserIdByUserName(String userName); 
 }
+
