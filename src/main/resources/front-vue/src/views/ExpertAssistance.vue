@@ -105,47 +105,55 @@ const formatDate = (dateTimeString) => {
 
 // 获取问题列表
 const fetchQuestions = async () => {
-  loading.value = true;
-  try {
-    const pageSizeNumber = Number(pageSize.value);
+      loading.value = true;
+      try {
+        const pageSizeNumber = Number(pageSize.value);       
+        if (isNaN(pageSizeNumber)) {
+            console.error("Invalid pageSize:", pageSize.value);
+            loading.value = false;
+            return; //  阻止后续请求
+        }
 
-    console.log("pageSize type:", typeof pageSize.value, "pageSize value:", pageSize.value); 
-    
-if (isNaN(pageSizeNumber)) {
-      console.error("Invalid pageSize:", pageSize.value);
-      loading.value = false;
-      return; //  阻止后续请求
-    }
+        let url = `/api/expert-questions?pageNum=${currentPage.value}&pageSize=${pageSizeNumber}`;
 
-    let url = `/api/expert-questions?pageNum=${currentPage.value}&pageSize=${pageSizeNumber}`;
+        if (searchKeyword.value) {
+          url = `/api/expert-questions/search?keyword=${searchKeyword.value}&pageNum=${currentPage.value}&pageSize=${pageSizeNumber}`;
+        }
 
-    if (searchKeyword.value) {
-      url = `/api/expert-questions/search?keyword=${searchKeyword.value}&pageNum=${currentPage.value}&pageSize=${pageSizeNumber}`;
-    }
+        console.log("Fetching questions from:", url);  // 调试： 检查生成的 URL
 
-    console.log("Fetching questions from:", url);  // 调试： 检查生成的 URL
-
-    const response = await axios.get(url);
-    questions.value = response.data.records;
-    totalItems.value = response.data.total;
-  } catch (error) {
-    console.error('获取问题列表失败', error);
-  } finally {
-    loading.value = false;
-  }
+        const response = await axios.get(url);
+        console.log("API Response:", response.data);  // 查看整个 API 响应
+        console.log("Total from API:", response.data.total);  // 查看总数
+        questions.value = response.data.records;
+        totalItems.value = response.data.total;
+        totalPages.value = Math.ceil(totalItems.value / pageSize);
+        console.log("Total items:", totalItems.value);
+        console.log("Page size:", pageSize.value);
+        console.log("Total pages:", totalPages.value);
+        
+      } catch (error) {
+        console.error('获取问题列表失败', error);
+      } finally {
+        loading.value = false;
+      }
 };
 
 // 切换分页
 const changePage = (page) => {
-    if (page < 1 || page > totalPages.value) return;
+     console.log("Changing page to:", page); //  1: 打印要跳转的页码
+    if (page < 1 || page > totalPages.value) {
+        console.warn("Invalid page number:", page);
+        return;
+    }
     currentPage.value = page;
+    console.log("Current page after change:", currentPage.value); // 2: 打印当前页码
     fetchQuestions();
 };
 
 // 发布问题
 const publishQuestion = async () => {
   try {
-
     const userData = getUserInfo();
     console.log("User data:", userData);
 

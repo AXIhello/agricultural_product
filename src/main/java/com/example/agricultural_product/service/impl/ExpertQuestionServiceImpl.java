@@ -6,9 +6,11 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.agricultural_product.mapper.ExpertQuestionMapper;
 import com.example.agricultural_product.pojo.ExpertQuestion;
 import com.example.agricultural_product.service.ExpertQuestionService;
+
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class ExpertQuestionServiceImpl extends ServiceImpl<ExpertQuestionMapper, ExpertQuestion> implements ExpertQuestionService {
@@ -44,7 +46,11 @@ public class ExpertQuestionServiceImpl extends ServiceImpl<ExpertQuestionMapper,
 		       .or()
 		       .like(ExpertQuestion::getContent, keyword)
 		       .orderByDesc(ExpertQuestion::getCreateTime);
-		return page(page, wrapper);
+		long total = this.count(wrapper);  // 使用 count() 方法
+		page.setTotal(total);
+		List<ExpertQuestion> records = this.list(wrapper.last("LIMIT " + (pageNum - 1) * pageSize + "," + pageSize));
+		page.setRecords(records);
+		return page;
 	}
 
 	@Override
