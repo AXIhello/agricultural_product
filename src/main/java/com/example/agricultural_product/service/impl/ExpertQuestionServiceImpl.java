@@ -6,9 +6,11 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.agricultural_product.mapper.ExpertQuestionMapper;
 import com.example.agricultural_product.pojo.ExpertQuestion;
 import com.example.agricultural_product.service.ExpertQuestionService;
+
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class ExpertQuestionServiceImpl extends ServiceImpl<ExpertQuestionMapper, ExpertQuestion> implements ExpertQuestionService {
@@ -44,7 +46,11 @@ public class ExpertQuestionServiceImpl extends ServiceImpl<ExpertQuestionMapper,
 		       .or()
 		       .like(ExpertQuestion::getContent, keyword)
 		       .orderByDesc(ExpertQuestion::getCreateTime);
-		return page(page, wrapper);
+		long total = this.count(wrapper);  // 使用 count() 方法
+		page.setTotal(total);
+		List<ExpertQuestion> records = this.list(wrapper.last("LIMIT " + (pageNum - 1) * pageSize + "," + pageSize));
+		page.setRecords(records);
+		return page;
 	}
 
 	@Override
@@ -56,23 +62,17 @@ public class ExpertQuestionServiceImpl extends ServiceImpl<ExpertQuestionMapper,
 	}
 
 	@Override
-	public boolean answerQuestion(Integer questionId, Long expertId, String answerContent) {
-		if (questionId == null || expertId == null || answerContent == null || answerContent.trim().isEmpty()) {
+	public boolean acceptAnswer(Integer questionId, Integer answerId) {
+		if (questionId == null || answerId == null) {
 			return false;
 		}
-		ExpertQuestion record = getById(questionId);
-		if (record == null) {
+		ExpertQuestion q = getById(questionId);
+		if (q == null) {
 			return false;
 		}
-		if (!"open".equalsIgnoreCase(record.getStatus())) {
-			return false;
-		}
-		// 简化：此处默认专家ID有效；若需强校验，请在控制层或此处联表校验 tb_expert_profiles 是否存在
-		record.setAnswerExpertId(expertId);
-		record.setAnswerContent(answerContent);
-		record.setAnswerTime(LocalDateTime.now());
-		record.setStatus("answered");
-		record.setUpdateTime(LocalDateTime.now());
-		return updateById(record);
+		q.setAcceptedAnswerId(answerId);
+		q.setStatus("answered");
+		q.setUpdateTime(LocalDateTime.now());
+		return updateById(q);
 	}
 } 

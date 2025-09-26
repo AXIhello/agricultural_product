@@ -9,25 +9,22 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("tb_expert_questions")
-public class ExpertQuestion {
-	@TableId(value = "question_id", type = IdType.AUTO)
+@TableName("tb_expert_answers")
+public class ExpertAnswer {
+	@TableId(value = "answer_id", type = IdType.AUTO)
+	private Integer answerId;
+
+	@TableField("question_id")
 	private Integer questionId;
 
-	@TableField("farmer_id")
-	private Long farmerId;
-
-	@TableField("title")
-	private String title;
+	@TableField("responder_id")
+	private Long responderId;
 
 	@TableField("content")
 	private String content;
 
-	@TableField("status")
-	private String status; // open / answered
-
-	@TableField("accepted_answer_id")
-	private Integer acceptedAnswerId; // 可为空
+	@TableField("is_accepted")
+	private Integer isAccepted; // 0/1
 
 	@TableField("create_time")
 	private LocalDateTime createTime;

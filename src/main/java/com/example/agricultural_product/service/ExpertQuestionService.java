@@ -13,5 +13,7 @@ public interface ExpertQuestionService extends IService<ExpertQuestion> {
 
 	Page<ExpertQuestion> listByFarmer(Long farmerId, Integer pageNum, Integer pageSize);
 
-	boolean answerQuestion(Integer questionId, Long expertId, String answerContent);
+	// legacy single-answer method will be removed; use answer service instead
+
+	boolean acceptAnswer(Integer questionId, Integer answerId);
 } 
