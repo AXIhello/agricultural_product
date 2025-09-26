@@ -60,21 +60,41 @@
                 <label for="stock">库存量:</label>
                 <input type="number" id="stock" v-model.number="newProduct.stock" required min="1">
               </div>
+              <div class="form-group">
+                <label for="description">描述:</label>
+                <textarea
+                    id="description"
+                    v-model="newProduct.description"
+                    placeholder="请输入商品的详细说明"
+                ></textarea>
+              </div>
               <button type="submit" class="submit-btn">确认发布</button>
             </form>
           </div>
 
+          <!-- 求购需求 -->
           <div v-if="currentView === 'purchaseRequests'">
             <h2>求购需求</h2>
             <div class="request-list">
-              <div v-for="request in purchaseRequests" :key="request.id" class="product-card">
-                <h3>{{ request.title }}</h3>
-                <p>需求量: {{ request.quantity }} {{ request.unit }}</p>
-                <p>备注: {{ request.note }}</p>
+              <!-- 求购需求卡片 -->
+              <div
+                  v-for="request in purchaseRequests"
+                  :key="request.demandId"
+                  class="request-card"
+              >
+                <p class="request-title"><strong>用户 {{ request.buyerId }}： 我想要  </strong> {{ request.productNameDesired }}</p>
+                <p class="request-quantity">需求量： {{ request.quantityDesired }} {{ request.unitDesired }}</p>
+                <p class="request-details">需求描述： {{ request.details }}</p>
               </div>
+
+
               <p v-if="!purchaseRequests.length" class="empty-state">暂无求购需求</p>
+
+              <button v-if="!purchaseRequests.length" @click="switchView('addDemand')" class="add-demand-btn">发布求购需求</button>
             </div>
           </div>
+
+
         </div>
       </div>
 
@@ -84,9 +104,11 @@
           <button @click="switchView('products')" :class="{ active: currentView === 'products' }">商品浏览</button>
           <button @click="switchView('cart')" :class="{ active: currentView === 'cart' }">我的购物车</button>
           <button @click="switchView('purchaseRequests')" :class="{ active: currentView === 'purchaseRequests' }">求购需求</button>
+          <button @click="switchView('addDemand')" :class="{ active: currentView === 'addDemand' }">发布求购需求</button>
         </nav>
 
         <div class="view-content-wrapper">
+          <!-- 所有商品 -->
           <div v-if="currentView === 'products'">
             <h2>全部商品</h2>
             <div class="product-list">
@@ -103,6 +125,7 @@
             </div>
           </div>
 
+          <!-- 购物车 -->
           <div v-if="currentView === 'cart'">
             <h2>我的购物车</h2>
             <div class="cart-item" v-for="item in cartItems" :key="item.id">
@@ -115,18 +138,62 @@
             <button v-if="cartItems.length" class="submit-btn" @click="submitOrder">提交订单</button>
           </div>
 
+          <!-- 求购需求 -->
           <div v-if="currentView === 'purchaseRequests'">
             <h2>求购需求</h2>
             <div class="request-list">
-              <div v-for="request in purchaseRequests" :key="request.id" class="product-card">
-                <h3>{{ request.title }}</h3>
-                <p>需求量: {{ request.quantity }} {{ request.unit }}</p>
-                <p>备注: {{ request.note }}</p>
+              <!-- 求购需求卡片 -->
+              <div
+                  v-for="request in purchaseRequests"
+                  :key="request.demandId"
+                  class="request-card"
+              >
+                <p class="request-title"><strong>用户 {{ request.buyerId }}： 我想要  </strong> {{ request.productNameDesired }}</p>
+                <p class="request-quantity">需求量： {{ request.quantityDesired }} {{ request.unitDesired }}</p>
+                <p class="request-details">需求描述： {{ request.details }}</p>
               </div>
+
+
               <p v-if="!purchaseRequests.length" class="empty-state">暂无求购需求</p>
+
+              <button v-if="!purchaseRequests.length" @click="switchView('addDemand')" class="add-demand-btn">发布求购需求</button>
             </div>
           </div>
+
+          <!-- 发布求购需求 -->
+          <div v-if="currentView === 'addDemand'">
+            <h2>发布求购需求</h2>
+            <form @submit.prevent="handleAddDemand" class="add-product-form">
+              <div class="form-group">
+                <label for="demandName">需求商品名称:</label>
+                <input type="text" id="demandName" v-model="newDemand.productNameDesired" required>
+              </div>
+              <div class="form-group">
+                <label for="demandQuantity">需求数量:</label>
+                <input type="number" id="demandQuantity" v-model.number="newDemand.quantityDesired" required min="1">
+              </div>
+              <div class="form-group">
+                <label for="demandUnit">单位:</label>
+                <input type="text" id="demandUnit" v-model="newDemand.unitDesired" placeholder="例如: 斤, 箱" required>
+              </div>
+              <div class="form-group">
+                <label for="maxPrice">期望最高单价 (元):</label>
+                <input type="number" id="maxPrice" v-model.number="newDemand.maxPricePerUnit" required min="0.01" step="0.01">
+              </div>
+              <div class="form-group">
+                <label for="deliveryDate">期望交货日期:</label>
+                <input type="date" id="deliveryDate" v-model="newDemand.deliveryDateDesired" required>
+              </div>
+              <div class="form-group">
+                <label for="details">补充说明:</label>
+                <textarea id="details" v-model="newDemand.details" rows="3" placeholder="可选"></textarea>
+              </div>
+              <button type="submit" class="submit-btn">确认发布</button>
+            </form>
+          </div>
+
         </div>
+
       </div>
     </section>
   </div>
@@ -136,8 +203,11 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 
-const role = ref('customer')
+//const role = ref('customer')
+const role = ref('farmer')
+const user_id = ref(1)
 const userName = ref('测试用户')
+
 const currentView = ref('products')
 
 // 农户数据
@@ -150,6 +220,17 @@ const cartItems = ref([])
 
 // 求购需求数据
 const purchaseRequests = ref([])
+
+// 求购需求数据
+const newDemand = ref({
+  productNameDesired: '',
+  quantityDesired: null,
+  unitDesired: '',
+  maxPricePerUnit: null,
+  deliveryDateDesired: '',
+  details: ''
+})
+
 
 function switchView(view) { currentView.value = view }
 
@@ -180,11 +261,44 @@ function submitOrder() {
   cartItems.value = []
 }
 
+async function handleAddDemand() {
+  try {
+    const demandToSend = {
+      ...newDemand.value,
+      buyerId: user_id.value
+    }
+
+    const res = await axios.post('/api/purchase-demands', demandToSend)
+
+    if (res.data) {
+      alert('求购需求发布成功！')
+      newDemand.value = {
+        productNameDesired: '',
+        quantityDesired: null,
+        unitDesired: '',
+        maxPricePerUnit: null,
+        deliveryDateDesired: '',
+        details: ''
+      }
+      currentView.value = role.value === 'farmer' ? 'myProducts' : 'products'
+    }
+  } catch (err) {
+    console.error(err.response?.data || err)
+    alert('发布失败')
+  }
+}
+
+
 onMounted(async () => {
   try {
     const res = await axios.get('/api/products')
     products.value = res.data.records
-    const reqRes = await axios.get('/api/purchaseRequests')
+    const reqRes = await axios.get('/api/purchase-demands')
+    // 打印整个响应对象
+    console.log(reqRes)
+
+    // 打印响应体
+    console.log(reqRes.data)
     purchaseRequests.value = reqRes.data.records
   } catch (err) { console.error('获取数据失败', err) }
 })
@@ -331,6 +445,7 @@ nav a:hover {
 .form-group { display: flex; align-items: center; margin-bottom: 20px; }
 .form-group label { width: 120px; font-weight: bold; }
 .form-group input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+.form-group textarea { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
 
 .empty-state {
   grid-column: 1 / -1;
@@ -338,4 +453,59 @@ nav a:hover {
   color: #888;
   padding: 3rem;
 }
+
+.request-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px; /* 卡片间距稍微小一点 */
+}
+
+.request-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* 上下居中 */
+  align-items: flex-start; /* 左对齐 */
+  border: 1px solid #e9e9e9;
+  border-radius: 8px;
+  padding: 12px 16px; /* 内边距缩小 */
+  height: 80px; /* 总高度小一点 */
+  background-color: #fafafa;
+  transition: box-shadow 0.3s;
+  line-height: 0.8; /* 行间距小一点 */
+}
+
+.request-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.request-title {
+  font-weight: bold;
+  margin-bottom: 0;
+}
+
+.request-quantity {
+  font-size: 0.9rem;
+  margin-bottom: 0;
+}
+
+.request-details {
+  font-size: 0.8rem;
+  color: #555;
+}
+
+
+.add-demand-btn {
+  margin-top: 16px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background-color: #4CAF50;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+.add-demand-btn:hover {
+  background-color: #45a049;
+}
+
 </style>
