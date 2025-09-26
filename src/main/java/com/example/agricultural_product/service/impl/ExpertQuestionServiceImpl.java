@@ -62,23 +62,17 @@ public class ExpertQuestionServiceImpl extends ServiceImpl<ExpertQuestionMapper,
 	}
 
 	@Override
-	public boolean answerQuestion(Integer questionId, Long expertId, String answerContent) {
-		if (questionId == null || expertId == null || answerContent == null || answerContent.trim().isEmpty()) {
+	public boolean acceptAnswer(Integer questionId, Integer answerId) {
+		if (questionId == null || answerId == null) {
 			return false;
 		}
-		ExpertQuestion record = getById(questionId);
-		if (record == null) {
+		ExpertQuestion q = getById(questionId);
+		if (q == null) {
 			return false;
 		}
-		if (!"open".equalsIgnoreCase(record.getStatus())) {
-			return false;
-		}
-		// 简化：此处默认专家ID有效；若需强校验，请在控制层或此处联表校验 tb_expert_profiles 是否存在
-		record.setAnswerExpertId(expertId);
-		record.setAnswerContent(answerContent);
-		record.setAnswerTime(LocalDateTime.now());
-		record.setStatus("answered");
-		record.setUpdateTime(LocalDateTime.now());
-		return updateById(record);
+		q.setAcceptedAnswerId(answerId);
+		q.setStatus("answered");
+		q.setUpdateTime(LocalDateTime.now());
+		return updateById(q);
 	}
 } 

@@ -249,27 +249,42 @@ CREATE TABLE IF NOT EXISTS `tb_purchase_demands`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '买家求购需求表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
--- Expert Q&A: Questions posted by farmers, answers by experts
+-- Expert Q&A: Questions posted by farmers, multiple answers, acceptance supported
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS `tb_expert_questions` (
   `question_id` int NOT NULL AUTO_INCREMENT COMMENT '问题ID',
   `farmer_id` bigint NOT NULL COMMENT '提问农户用户ID，关联users表',
   `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '问题标题',
   `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '问题内容',
-  `status` enum('open','answered') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'open' COMMENT '问题状态：open（未回答）、answered（已回答）',
-  `answer_expert_id` bigint NULL DEFAULT NULL COMMENT '回答专家用户ID（可为空）',
-  `answer_content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '回答内容',
-  `answer_time` datetime NULL DEFAULT NULL COMMENT '回答时间',
+  `status` enum('open','answered') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'open' COMMENT '问题状态：open（未采纳）、answered（已采纳）',
+  `accepted_answer_id` int NULL DEFAULT NULL COMMENT '被采纳的回答ID（可为空）',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`question_id`) USING BTREE,
   INDEX `idx_farmer_id`(`farmer_id` ASC) USING BTREE,
   INDEX `idx_status`(`status` ASC) USING BTREE,
-  INDEX `idx_answer_expert_id`(`answer_expert_id` ASC) USING BTREE,
-  CONSTRAINT `fk_question_farmer` FOREIGN KEY (`farmer_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT `fk_question_answer_expert_user` FOREIGN KEY (`answer_expert_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `fk_question_answer_expert_profile` FOREIGN KEY (`answer_expert_id`) REFERENCES `tb_expert_profiles` (`expert_id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '专家问答-问题表（含回答字段）' ROW_FORMAT = DYNAMIC;
+  CONSTRAINT `fk_question_farmer` FOREIGN KEY (`farmer_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '专家问答-问题表' ROW_FORMAT = DYNAMIC;
+
+CREATE TABLE IF NOT EXISTS `tb_expert_answers` (
+  `answer_id` int NOT NULL AUTO_INCREMENT COMMENT '回答ID',
+  `question_id` int NOT NULL COMMENT '对应问题ID',
+  `responder_id` bigint NOT NULL COMMENT '回答者用户ID（不限专家）',
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '回答内容',
+  `is_accepted` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否被采纳（冗余标识）',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`answer_id`) USING BTREE,
+  INDEX `idx_question_id`(`question_id` ASC) USING BTREE,
+  INDEX `idx_responder_id`(`responder_id` ASC) USING BTREE,
+  CONSTRAINT `fk_answer_question` FOREIGN KEY (`question_id`) REFERENCES `tb_expert_questions` (`question_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_answer_user` FOREIGN KEY (`responder_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '专家问答-回答表' ROW_FORMAT = DYNAMIC;
+
+-- 将问题表中的 accepted_answer_id 与回答表建立外键关系
+ALTER TABLE `tb_expert_questions`
+  ADD CONSTRAINT `fk_question_accepted_answer`
+  FOREIGN KEY (`accepted_answer_id`) REFERENCES `tb_expert_answers` (`answer_id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 
 SET FOREIGN_KEY_CHECKS = 1; -- 重新启用外键检查
