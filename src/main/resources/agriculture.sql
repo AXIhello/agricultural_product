@@ -263,7 +263,8 @@ CREATE TABLE IF NOT EXISTS `tb_expert_questions` (
   PRIMARY KEY (`question_id`) USING BTREE,
   INDEX `idx_farmer_id`(`farmer_id` ASC) USING BTREE,
   INDEX `idx_status`(`status` ASC) USING BTREE,
-  CONSTRAINT `fk_question_farmer` FOREIGN KEY (`farmer_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE
+  CONSTRAINT `fk_question_farmer` FOREIGN KEY (`farmer_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_question_accepted_answer` FOREIGN KEY (`accepted_answer_id`) REFERENCES `tb_expert_answers` (`answer_id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '专家问答-问题表' ROW_FORMAT = DYNAMIC;
 
 CREATE TABLE IF NOT EXISTS `tb_expert_answers` (
@@ -280,11 +281,5 @@ CREATE TABLE IF NOT EXISTS `tb_expert_answers` (
   CONSTRAINT `fk_answer_question` FOREIGN KEY (`question_id`) REFERENCES `tb_expert_questions` (`question_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_answer_user` FOREIGN KEY (`responder_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '专家问答-回答表' ROW_FORMAT = DYNAMIC;
-
--- 将问题表中的 accepted_answer_id 与回答表建立外键关系
-ALTER TABLE `tb_expert_questions`
-  ADD CONSTRAINT `fk_question_accepted_answer`
-  FOREIGN KEY (`accepted_answer_id`) REFERENCES `tb_expert_answers` (`answer_id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
 
 SET FOREIGN_KEY_CHECKS = 1; -- 重新启用外键检查
