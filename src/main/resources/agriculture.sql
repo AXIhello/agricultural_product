@@ -282,6 +282,10 @@ CREATE TABLE IF NOT EXISTS `tb_expert_answers` (
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '专家问答-回答表' ROW_FORMAT = DYNAMIC;
 
 -- 将问题表中的 accepted_answer_id 与回答表建立外键关系
+--  如果存在，先删除外键约束
+ALTER TABLE `tb_expert_questions`
+DROP FOREIGN KEY `fk_question_accepted_answer`;
+
 ALTER TABLE `tb_expert_questions`
   ADD CONSTRAINT `fk_question_accepted_answer`
   FOREIGN KEY (`accepted_answer_id`) REFERENCES `tb_expert_answers` (`answer_id`) ON DELETE SET NULL ON UPDATE CASCADE;
