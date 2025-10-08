@@ -236,7 +236,6 @@ CREATE TABLE IF NOT EXISTS `tb_purchase_demands`  (
   `buyer_id` bigint NOT NULL COMMENT '发起求购的买家ID，关联users表',
   `product_name_desired` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '期望产品名称/类别',
   `quantity_desired` decimal(10, 2) NOT NULL COMMENT '期望数量',
-  `unit_desired` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT 'kg' COMMENT '期望单位（如：kg, 斤, 个, 箱）',
   `max_price_per_unit` decimal(10, 2) NULL DEFAULT NULL COMMENT '最高接受单价',
   `details` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '详细需求描述',
   `delivery_date_desired` date NULL DEFAULT NULL COMMENT '期望交货日期',

@@ -52,4 +52,12 @@ public class ProductController {
         boolean success = productService.publishProduct(product);
         return ResponseEntity.ok(success);
     }
+
+    // 修改商品库存
+    @PutMapping("/{id}/stock")
+    public ResponseEntity<Boolean> updateStock(@PathVariable("id") Integer productId,
+                                               @RequestParam("stock") Integer stock) {
+        boolean success = productService.updateStock(productId, stock);
+        return ResponseEntity.ok(success);
+    }
 }
