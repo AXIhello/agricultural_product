@@ -16,4 +16,7 @@ public interface ProductService extends IService<Product> {
 
 	// 发布商品
 	boolean publishProduct(Product product);
+
+	// 修改商品库存
+	boolean updateStock(Integer productId, Integer newStock);
 }

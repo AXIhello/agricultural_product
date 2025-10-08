@@ -58,4 +58,18 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
 		product.setUpdateTime(now);
 		return this.save(product);
 	}
+
+	@Override
+	public boolean updateStock(Integer productId, Integer newStock) {
+		if (productId == null || newStock == null || newStock < 0) {
+			return false;
+		}
+		Product product = getById(productId);
+		if (product == null) {
+			return false;
+		}
+		product.setStock(newStock);
+		product.setUpdateTime(LocalDateTime.now());
+		return updateById(product);
+	}
 }

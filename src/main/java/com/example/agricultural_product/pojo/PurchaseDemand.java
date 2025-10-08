@@ -25,9 +25,6 @@ public class PurchaseDemand {
 	@TableField("quantity_desired")
 	private BigDecimal quantityDesired;
 
-	@TableField("unit_desired")
-	private String unitDesired;
-
 	@TableField("max_price_per_unit")
 	private BigDecimal maxPricePerUnit;
 
