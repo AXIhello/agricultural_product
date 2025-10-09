@@ -2,6 +2,7 @@ package com.example.agricultural_product.controller;
 
 import com.example.agricultural_product.pojo.User;
 import com.example.agricultural_product.service.UserService;
+import com.example.agricultural_product.utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,9 +22,9 @@ public class UserController {
     @Autowired
     private BCryptPasswordEncoder encoder; // 改为注入方式
 
-    //  登录接口
+    //  登录接口（修改后，返回 token）
     @PostMapping("/login")
-    public Map<String, Object> login(@RequestBody Map<String, String> loginForm) {
+    public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> loginForm) {
         String userName = loginForm.get("userName"); // 前端传的账号
         String password = loginForm.get("password");
         String role = loginForm.get("role"); // admin / buyer / farmer
@@ -33,7 +34,7 @@ public class UserController {
         if (userName == null || password == null || role == null) {
             response.put("success", false);
             response.put("message", "用户名、密码和角色不能为空！");
-            return response;
+            return ResponseEntity.badRequest().body(response);
         }
 
         // 查找用户
@@ -41,29 +42,35 @@ public class UserController {
         if (user == null) {
             response.put("success", false);
             response.put("message", "用户不存在！");
-            return response;
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         }
 
         // 校验密码
         if (!encoder.matches(password, user.getPassword())) {
             response.put("success", false);
             response.put("message", "密码错误！");
-            return response;
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         }
 
         // 校验角色
-        if (!userName.equals("admin")&&!user.getRole().equalsIgnoreCase(role)) {
+        if (!userName.equals("admin") && !user.getRole().equalsIgnoreCase(role)) {
             response.put("success", false);
             response.put("message", "角色不匹配！");
-            return response;
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         }
+
+        //  登录成功，生成 JWT Token
+        String token = JwtUtil.generateToken(user.getUserId(), user.getUserName());
 
         response.put("success", true);
         response.put("message", "登录成功！");
         response.put("user", user);
-        return response;
+        response.put("token", token); //  把 token 返回给前端
+
+        return ResponseEntity.ok(response);
     }
 
+    // 注册接口
     @PostMapping("/register")
     public Map<String, Object> register(@RequestBody Map<String, String> registerForm) {
         String userName = registerForm.get("userName"); // 账号
@@ -90,11 +97,10 @@ public class UserController {
         // 创建新用户
         User newUser = new User();
         newUser.setUserName(userName);
-        // 使用 encoder 加密密码
-        newUser.setPassword(encoder.encode(password));
+        newUser.setPassword(encoder.encode(password)); // 使用 encoder 加密密码
         newUser.setName(userName); // 默认和账号一样
         newUser.setRole(role);
-        newUser.setEmail(email); // 设置邮箱
+        newUser.setEmail(email);
 
         int result = userService.registerUser(newUser);
         if (result > 0) {
@@ -108,20 +114,21 @@ public class UserController {
 
         return response;
     }
-    
+
+    // 根据用户名获取用户ID
     @GetMapping("/get-userid")
     public ResponseEntity<?> getUserId(@RequestParam String userName) {
         try {
-            Long userId = userService.getUserIdByUserName(userName); //  根据用户名获取用户ID
+            Long userId = userService.getUserIdByUserName(userName);
             if (userId != null) {
-                return ResponseEntity.ok(Map.of("userId", userId)); // 返回 userID
+                return ResponseEntity.ok(Map.of("userId", userId));
             } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "用户不存在")); // 用户不存在
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "用户不存在"));
             }
         } catch (Exception e) {
-            //  处理异常
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "获取用户ID失败"));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "获取用户ID失败"));
         }
     }
 }
-
