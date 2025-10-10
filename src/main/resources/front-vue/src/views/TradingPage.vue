@@ -253,7 +253,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch} from 'vue'
-import axios from 'axios'
+import axios from '../utils/axios'
 
 const role = ref('customer')
 //const role = ref('farmer')
@@ -312,7 +312,7 @@ async function handleAddProduct() {
     ...newProduct.value,
     farmerId: user_id.value
   }
-    const res = await axios.post('/api/products/publish', productToSend)
+    const res = await axios.post('/products/publish', productToSend)
     if (res.data) {
       alert('商品发布成功！')
       myProducts.value.push({ ...newProduct.value, id: Date.now() })
@@ -457,7 +457,7 @@ async function handleAddDemand() {
       buyerId: user_id.value
     }
 
-    const res = await axios.post('/api/purchase-demands', demandToSend)
+    const res = await axios.post('/purchase-demands', demandToSend)
 
     if (res.data) {
       alert('求购需求发布成功！')

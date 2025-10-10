@@ -57,7 +57,7 @@ const searchKeyword = ref('')
 // 获取商品列表
 const loadProducts = async () => {
   try {
-    const response = await axios.get('/api/products', {
+    const response = await axios.get('/products', {
       params: {
         pageNum: currentPage.value,
         pageSize: pageSize.value
@@ -78,7 +78,7 @@ const handleSearch = async () => {
     return
   }
   try {
-    const response = await axios.get('/api/products/search', {
+    const response = await axios.get('/products/search', {
       params: {
         keyword: searchKeyword.value,
         pageNum: currentPage.value,

@@ -20,12 +20,10 @@ public class AddressServiceImpl implements AddressService {
     @Override
     @Transactional
     public Address addAddress(Address address) {
-        // 如果该用户没有地址，则自动设为默认地址
         List<Address> existing = addressRepository.findByUserId(address.getUserId());
         if (existing.isEmpty()) {
             address.setIsDefault(true);
         } else if (Boolean.TRUE.equals(address.getIsDefault())) {
-            // 如果新地址标记为默认，取消旧的默认地址
             Address defaultAddress = addressRepository.findByUserIdAndIsDefaultTrue(address.getUserId());
             if (defaultAddress != null) {
                 defaultAddress.setIsDefault(false);
@@ -52,6 +50,11 @@ public class AddressServiceImpl implements AddressService {
         }
 
         Address existing = optional.get();
+        // 校验地址是否属于当前用户
+        if (!existing.getUserId().equals(address.getUserId())) {
+            throw new RuntimeException("Cannot update address that does not belong to the current user");
+        }
+
         existing.setRecipientName(address.getRecipientName());
         existing.setPhoneNumber(address.getPhoneNumber());
         existing.setProvince(address.getProvince());
@@ -65,24 +68,36 @@ public class AddressServiceImpl implements AddressService {
     }
 
     @Override
-    public void deleteAddress(Integer addressId) {
-        addressRepository.deleteById(addressId);
+    @Transactional
+    public void deleteAddress(Long userId, Integer addressId) {
+        Optional<Address> optional = addressRepository.findById(addressId);
+        if (optional.isEmpty()) {
+            throw new RuntimeException("Address not found with id: " + addressId);
+        }
+
+        Address address = optional.get();
+        if (!address.getUserId().equals(userId)) {
+            throw new RuntimeException("Cannot delete address that does not belong to the current user");
+        }
+
+        addressRepository.delete(address);
     }
 
     @Override
     @Transactional
     public void setDefaultAddress(Long userId, Integer addressId) {
-        // 取消旧的默认地址
         Address oldDefault = addressRepository.findByUserIdAndIsDefaultTrue(userId);
         if (oldDefault != null) {
             oldDefault.setIsDefault(false);
             addressRepository.save(oldDefault);
         }
 
-        // 设置新的默认地址
         Optional<Address> newDefault = addressRepository.findById(addressId);
         if (newDefault.isPresent()) {
             Address addr = newDefault.get();
+            if (!addr.getUserId().equals(userId)) {
+                throw new RuntimeException("Cannot set default address that does not belong to the current user");
+            }
             addr.setIsDefault(true);
             addr.setUpdateTime(LocalDateTime.now());
             addressRepository.save(addr);
