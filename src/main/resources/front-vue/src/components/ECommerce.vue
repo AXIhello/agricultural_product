@@ -4,7 +4,7 @@
       <img :src="product.imageUrl" alt="农产品图片" style="width: 100%; height: 150px; object-fit: cover; margin-bottom: 10px;">
       <h4 style="font-size: 16px; margin-bottom: 5px;">{{ product.name }}</h4>
       <p style="font-size: 14px; color: #666; margin-bottom: 5px;">{{ product.description }}</p>
-      <p style="font-weight: bold; font-size: 14px;">价格：{{ product.price }}</p>
+      <p style="font-weight: bold; font-size: 14px;">价格：{{ product.price }} /Kg</p>
       <button style="background: #2D7D4F; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px;">购买</button>
     </div>
   </div>

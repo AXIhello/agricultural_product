@@ -6,6 +6,7 @@ import TradingPage from '../views/TradingPage.vue'
 import FinanceService from '../views/FinanceService.vue'
 import ExpertAssistance from '../views/ExpertAssistance.vue'
 import UserProfile from '../views/UserProfile.vue';
+import OrderConfirm from "@/views/OrderConfirm.vue";
 
 
 const routes = [
@@ -60,8 +61,13 @@ const routes = [
     path: '/profile',
     name: 'UserProfile',
     component: UserProfile
-  }
+  },
 
+  {
+    path: '/order',
+    name: 'OrderConfirm',
+    component: OrderConfirm
+  }
 ]
 
 const router = createRouter({
