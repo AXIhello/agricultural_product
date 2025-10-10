@@ -55,15 +55,15 @@
       </label>
       <div class="input-wrapper">
         <input
-          type="email"
-          placeholder="请输入邮箱"
-          v-model="form.email"
-          class="input-style"
+            type="email"
+            placeholder="请输入邮箱"
+            v-model="form.email"
+            class="input-style"
         />
         <button
-          @click="sendVerificationCode"
-          :disabled="cooldown > 0"
-          class="btn-inside"
+            @click="sendVerificationCode"
+            :disabled="cooldown > 0"
+            class="btn-inside"
         >
           {{ cooldown > 0 ? `${cooldown}秒后重试` : '发送验证码' }}
         </button>
@@ -72,10 +72,10 @@
 
     <!-- 验证码输入框（注册） -->
     <div class="form-item" v-if="!isLogin">
-  <label class="form-label">
-    <span class="label-text">验证码</span>
-    <span class="label-colon">：</span>
-  </label>
+      <label class="form-label">
+        <span class="label-text">验证码</span>
+        <span class="label-colon">：</span>
+      </label>
       <input type="text" placeholder="请输入验证码" v-model="form.verificationCode" class="input-style" maxlength="6" />
     </div>
 
@@ -101,6 +101,7 @@
 </template>
 
 <style>
+/* 样式保持不变，可直接使用你原来的 */
 .auth-container {
   box-sizing: border-box;
   width: 700px;
@@ -117,7 +118,6 @@
   max-height: calc(100vh - 100px);
   overflow-y: auto;
 }
-
 .auth-container h2 {
   width: 50%;
   margin: 0 auto 10px auto;
@@ -125,7 +125,6 @@
   letter-spacing: 0.5em;
   font-size: 1.8em;
 }
-
 .message {
   width: 80%;
   margin: -5px auto 10px auto;
@@ -136,35 +135,28 @@
 }
 .error-message { color: #a94442; background-color: #f2dede; border: 1px solid #ebccd1; }
 .success-message { color: #3c763d; background-color: #dff0d8; border: 1px solid #d6e9c6; }
-
 .form-item {
   width: 80%;
   display: flex;
   align-items: center;
   margin: 0 auto 15px auto;
 }
-
-
 .form-label {
   display: flex;
   align-items: center;
   margin-right: 10px;
   min-width: 6em;
 }
-
 .label-text {
   flex: 1;
   text-align: justify;
   text-align-last: justify;
 }
-
 .label-colon {
   width: 1em;
   text-align: justify;
   margin-left: 2px;
 }
-
-
 .input-style,
 .form-item select,
 .form-item .btn {
@@ -176,18 +168,15 @@
   border: 1px solid #ccc;
   border-radius: 4px;
 }
-
 .input-wrapper {
   position: relative;
   flex: 1;
 }
-
 .input-wrapper .input-style {
   width: 100%;
   padding-right: 130px;
   box-sizing: border-box;
 }
-
 .btn-inside {
   position: absolute;
   right: 5px;
@@ -198,7 +187,6 @@
   font-size: 14px;
   cursor: pointer;
 }
-
 .btn {
   width: 100%;
   padding: 0 20%;
@@ -219,9 +207,9 @@
 .switch-text { text-align: center; margin-top: 5px; font-size: 0.95em; }
 </style>
 
-
 <script>
 import axios from 'axios';
+
 import '../style.css';
 
 export default {
@@ -273,37 +261,19 @@ export default {
         this.errorMsg = '用户名、密码和角色都不能为空！';
         return;
       }
+
       try {
         const response = await axios.post('/api/user/login', { userName, password, role });
         if (response.data.success) {
           this.successMsg = '登录成功！正在跳转...';
 
-          let userId = null;
-          try {
-              const userIdResponse = await axios.get('/api/user/get-userid', { //  后端需要提供这个 API.
-                    params: { userName: userName }  //  将用户名传递给后端
-              });
-              if (userIdResponse.data && userIdResponse.data.userId) {
-                    userId = userIdResponse.data.userId;
-              } else {
-                  this.errorMsg = '无法获取用户ID，请联系管理员。';
-                  return; // 阻止跳转
-              }
-          } catch (error) {
-              console.error('获取用户ID失败', error);
-              this.errorMsg = '获取用户ID失败，请联系管理员。';
-              return; // 阻止跳转
-          }
-          
-          //存储用户身份信息
-          const userInfo = {
-            userName: userName,
-            role: role,
-            userId: userId
-          }
-          //用户信息存入localStorage
-          localStorage.setItem('userInfo', JSON.stringify(userInfo));
+          // 保存 token 和用户信息
+          localStorage.setItem('token', response.data.token);
+          localStorage.setItem('user', JSON.stringify(response.data.user));
+
+          // 延迟跳转主页
           setTimeout(() => this.$router.push('/main'), 1500);
+
         } else {
           this.errorMsg = response.data.message || '登录失败，请稍后重试！';
         }
@@ -315,14 +285,17 @@ export default {
     async handleRegister() {
       this.clearMessages();
       const { userName, password, confirmPassword, role, email, verificationCode } = this.form;
+
       if (password !== confirmPassword) {
         this.errorMsg = '两次输入的密码不匹配！';
         return;
       }
+
       if (!userName || !password || !role || !email || !verificationCode) {
         this.errorMsg = '所有字段都不能为空！';
         return;
       }
+
       try {
         // 验证验证码
         const verifyRes = await axios.post('/api/email/verify-code', { email, code: verificationCode });
@@ -330,6 +303,7 @@ export default {
           this.errorMsg = '验证码错误或已过期！';
           return;
         }
+
         // 注册用户
         const response = await axios.post('/api/user/register', { userName, password, role, email });
         if (response.data.success) {
@@ -374,7 +348,6 @@ export default {
       }, 1000);
     },
     goBack() {
-      //this.$router.go(-1);
       window.location.href = "/main";
     }
   }
