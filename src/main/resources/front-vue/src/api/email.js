@@ -10,7 +10,7 @@ export const emailApi = {
      * @returns {Promise} - 请求Promise
      */
     sendVerificationCode(email) {
-        return axios.get('/api/email/send-code', {
+        return axios.get('/email/send-code', {
             params: { email }
         })
     },
@@ -22,7 +22,7 @@ export const emailApi = {
      * @returns {Promise} - 请求Promise
      */
     verifyCode(email, code) {
-        return axios.post('/api/email/verify-code', null, {
+        return axios.post('/email/verify-code', null, {
             params: {
                 email,
                 code

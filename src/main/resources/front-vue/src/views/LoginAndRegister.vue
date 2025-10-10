@@ -208,7 +208,7 @@
 </style>
 
 <script>
-import axios from 'axios';
+import axios from '../utils/axios';
 
 import '../style.css';
 
@@ -263,7 +263,7 @@ export default {
       }
 
       try {
-        const response = await axios.post('/api/user/login', { userName, password, role });
+        const response = await axios.post('/user/login', { userName, password, role });
         if (response.data.success) {
           this.successMsg = '登录成功！正在跳转...';
 
@@ -298,14 +298,14 @@ export default {
 
       try {
         // 验证验证码
-        const verifyRes = await axios.post('/api/email/verify-code', { email, code: verificationCode });
+        const verifyRes = await axios.post('/email/verify-code', { email, code: verificationCode });
         if (!verifyRes.data.success) {
           this.errorMsg = '验证码错误或已过期！';
           return;
         }
 
         // 注册用户
-        const response = await axios.post('/api/user/register', { userName, password, role, email });
+        const response = await axios.post('/user/register', { userName, password, role, email });
         if (response.data.success) {
           this.successMsg = '注册成功，你现在可以登录了！';
           setTimeout(() => this.switchToLogin(), 2000);
@@ -328,7 +328,7 @@ export default {
         return;
       }
       try {
-        const response = await axios.get('/api/email/send-code', { params: { email: this.form.email } });
+        const response = await axios.get('/email/send-code', { params: { email: this.form.email } });
         if (response.data.success) {
           this.successMsg = '验证码已发送，请查收邮件！';
           this.startCooldown();

@@ -201,7 +201,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import axios from '../utils/axios'
 
 //const role = ref('customer')
 const role = ref('farmer')
@@ -236,7 +236,7 @@ function switchView(view) { currentView.value = view }
 
 async function handleAddProduct() {
   try {
-    const res = await axios.post('/api/products/publish', newProduct.value)
+    const res = await axios.post('/products/publish', newProduct.value)
     if (res.data) {
       alert('商品发布成功！')
       myProducts.value.push({ ...newProduct.value, id: Date.now() })
@@ -268,7 +268,7 @@ async function handleAddDemand() {
       buyerId: user_id.value
     }
 
-    const res = await axios.post('/api/purchase-demands', demandToSend)
+    const res = await axios.post('/purchase-demands', demandToSend)
 
     if (res.data) {
       alert('求购需求发布成功！')
@@ -291,9 +291,9 @@ async function handleAddDemand() {
 
 onMounted(async () => {
   try {
-    const res = await axios.get('/api/products')
+    const res = await axios.get('/products')
     products.value = res.data.records
-    const reqRes = await axios.get('/api/purchase-demands')
+    const reqRes = await axios.get('/purchase-demands')
     // 打印整个响应对象
     console.log(reqRes)
 

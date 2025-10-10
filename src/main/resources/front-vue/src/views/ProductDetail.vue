@@ -52,7 +52,7 @@ const quantity = ref(1)
 // 获取商品详情
 const loadProductDetail = async () => {
   try {
-    const response = await axios.get(`/api/products/${route.params.id}`)
+    const response = await axios.get(`/products/${route.params.id}`)
     product.value = response.data
   } catch (error) {
     console.error('获取商品详情失败:', error)
@@ -63,7 +63,7 @@ const loadProductDetail = async () => {
 // 加入购物车
 const addToCart = async () => {
   try {
-    await axios.post('/api/cart/add', {
+    await axios.post('/cart/add', {
       productId: product.value.productId,
       quantity: quantity.value
     })

@@ -35,6 +35,7 @@ instance.interceptors.response.use(
                     ElMessage.error('登录过期，请重新登录')
                     localStorage.removeItem('token')
                     localStorage.removeItem('userInfo')
+                    localStorage.removeItem('user')
                     router.push('/login')
                     break
                 case 403:

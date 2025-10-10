@@ -83,7 +83,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import axios from 'axios';
+import axios from '../utils/axios';
 
 
 const questions = ref([]);
@@ -138,10 +138,10 @@ const fetchQuestions = async () => {
       return;
     }
 
-    let url = `/api/expert-questions?pageNum=${currentPage.value}&pageSize=${pageSizeNumber}`;
+    let url = `/expert-questions?pageNum=${currentPage.value}&pageSize=${pageSizeNumber}`;
 
     if (searchKeyword.value) {
-      url = `/api/expert-questions/search?keyword=${searchKeyword.value}&pageNum=${currentPage.value}&pageSize=${pageSizeNumber}`;
+      url = `/expert-questions/search?keyword=${searchKeyword.value}&pageNum=${currentPage.value}&pageSize=${pageSizeNumber}`;
     }
 
     const response = await axios.get(url);
@@ -163,7 +163,7 @@ const fetchQuestions = async () => {
     // 获取问题的回答
     await Promise.all(questions.value.map(async question => {
         try {
-            const answersResponse = await axios.get(`/api/expert-questions/${question.questionId}/answers`);
+            const answersResponse = await axios.get(`/expert-questions/${question.questionId}/answers`);
             question.answers = answersResponse.data.records;
         } catch (error) {
             console.error(`获取问题 ${question.questionId} 的回答失败`, error);
@@ -202,7 +202,7 @@ const publishQuestion = async () => {
             farmerId: userId //  提问者id就是用户id
         };
 
-        const response = await axios.post('/api/expert-questions', requestBody);
+        const response = await axios.post('/expert-questions', requestBody);
 
         if (response.data) {
             publishMessage.value = '问题发布成功！';
@@ -243,7 +243,7 @@ const submitAnswer = async (questionId) => {
   console.log("请求体:", requestBody); 
 
   try {
-    const response = await axios.post(`/api/expert-questions/${questionId}/answers`, {
+    const response = await axios.post(`/expert-questions/${questionId}/answers`, {
       content: content,
       responderName: user.value?.userName ,//  回答者id是用户id
       responderId: user.value?.userId
@@ -268,7 +268,7 @@ const submitAnswer = async (questionId) => {
 // 采纳回答
 const acceptAnswer = async (questionId, answerId) => {
     try {
-        const response = await axios.post(`/api/expert-questions/${questionId}/accept/${answerId}`);
+        const response = await axios.post(`/expert-questions/${questionId}/accept/${answerId}`);
         if (response.data) {
             fetchQuestions();  // 刷新问题列表
         } else {
