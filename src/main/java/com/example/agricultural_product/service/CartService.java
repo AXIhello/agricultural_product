@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.agricultural_product.pojo.Cart;
 import com.example.agricultural_product.pojo.CartItem;
 
-import java.util.List;
+// import java.util.List; // 不再需要
 
 public interface CartService extends IService<Cart> {
 	boolean addToCart(Long userId, Integer productId, Integer quantity);
@@ -18,5 +18,5 @@ public interface CartService extends IService<Cart> {
 
 	boolean clearCart(Long userId);
 
-	Integer checkout(Long userId, Integer addressId, List<Integer> productIds);
+    // 购物车不再提供结算功能
 }

@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+// import java.util.List; // 已移除结算接口，不再需要
 
 @RestController
 @RequestMapping("/api/cart")
@@ -57,13 +57,7 @@ public class CartController {
 		return ResponseEntity.ok(cartService.clearCart(userId));
 	}
 
-	@PostMapping("/checkout")
-	public ResponseEntity<Integer> checkout(HttpServletRequest request,
-											@RequestParam Integer addressId,
-											@RequestParam List<Integer> productIds) {
-		Long userId = getUserIdFromToken(request);
-		return ResponseEntity.ok(cartService.checkout(userId, addressId, productIds));
-	}
+	// 购物车不再提供结算功能，请通过订单模块创建订单
 
 	@GetMapping
 	public ResponseEntity<Page<CartItem>> list(HttpServletRequest request,
