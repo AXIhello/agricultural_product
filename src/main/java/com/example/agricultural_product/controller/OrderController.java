@@ -21,14 +21,17 @@ public class OrderController {
     @Autowired
     private OrderService orderService;
 
-    // ===== JWT 鉴权方法 =====
-    private boolean checkToken(HttpServletRequest request) {
+    // ===== JWT 鉴权工具方法 =====
+    private Long getUserIdFromToken(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return false;
+            throw new RuntimeException("未提供有效的 JWT token");
         }
         String token = authHeader.substring(7);
-        return JwtUtil.validateToken(token);
+        if (!JwtUtil.validateToken(token)) {
+            throw new RuntimeException("无效的 JWT token");
+        }
+        return JwtUtil.getUserId(token);
     }
 
     /**
@@ -36,11 +39,10 @@ public class OrderController {
      */
     @PostMapping
     public ResponseEntity<Integer> createOrder(HttpServletRequest request,
-                                               @RequestBody CreateOrderRequest req,
-                                               @RequestParam Long userId) {
-        if (!checkToken(request)) return ResponseEntity.status(401).build();
-
+                                               @RequestBody CreateOrderRequest req) {
         try {
+            Long userId = getUserIdFromToken(request);
+
             // 转换请求数据
             List<OrderItem> orderItems = req.getOrderItems().stream()
                     .map(item -> {
@@ -62,14 +64,13 @@ public class OrderController {
     }
 
     /**
-     * 获取用户订单列表
+     * 获取当前用户订单列表
      */
     @GetMapping
     public ResponseEntity<Page<Order>> getUserOrders(HttpServletRequest request,
-                                                     @RequestParam Long userId,
                                                      @RequestParam(defaultValue = "1") Integer pageNum,
                                                      @RequestParam(defaultValue = "10") Integer pageSize) {
-        if (!checkToken(request)) return ResponseEntity.status(401).build();
+        Long userId = getUserIdFromToken(request);
         return ResponseEntity.ok(orderService.getOrdersByUserId(userId, pageNum, pageSize));
     }
 
@@ -79,10 +80,9 @@ public class OrderController {
     @GetMapping("/status/{status}")
     public ResponseEntity<Page<Order>> getOrdersByStatus(HttpServletRequest request,
                                                          @PathVariable String status,
-                                                         @RequestParam Long userId,
                                                          @RequestParam(defaultValue = "1") Integer pageNum,
                                                          @RequestParam(defaultValue = "10") Integer pageSize) {
-        if (!checkToken(request)) return ResponseEntity.status(401).build();
+        Long userId = getUserIdFromToken(request);
         return ResponseEntity.ok(orderService.getOrdersByStatus(userId, status, pageNum, pageSize));
     }
 
@@ -92,11 +92,11 @@ public class OrderController {
     @GetMapping("/{orderId}")
     public ResponseEntity<OrderDetailResponse> getOrderDetail(HttpServletRequest request,
                                                               @PathVariable Integer orderId) {
-        if (!checkToken(request)) return ResponseEntity.status(401).build();
+        Long userId = getUserIdFromToken(request);
 
         Order order = orderService.getOrderById(orderId);
-        if (order == null) {
-            return ResponseEntity.notFound().build();
+        if (order == null || !order.getUserId().equals(userId)) {
+            return ResponseEntity.status(403).build(); // 防止越权访问
         }
 
         List<OrderItem> orderItems = orderService.getOrderItemsByOrderId(orderId);
@@ -107,37 +107,36 @@ public class OrderController {
     }
 
     /**
-     * 取消订单
+     * 取消订单（用户）
      */
     @PutMapping("/{orderId}/cancel")
     public ResponseEntity<Boolean> cancelOrder(HttpServletRequest request,
-                                               @PathVariable Integer orderId,
-                                               @RequestParam Long userId) {
-        if (!checkToken(request)) return ResponseEntity.status(401).build();
+                                               @PathVariable Integer orderId) {
+        Long userId = getUserIdFromToken(request);
         boolean success = orderService.cancelOrder(orderId, userId);
         return ResponseEntity.ok(success);
     }
 
     /**
-     * 确认收货
+     * 确认收货（用户）
      */
     @PutMapping("/{orderId}/confirm")
     public ResponseEntity<Boolean> confirmOrder(HttpServletRequest request,
-                                                @PathVariable Integer orderId,
-                                                @RequestParam Long userId) {
-        if (!checkToken(request)) return ResponseEntity.status(401).build();
+                                                @PathVariable Integer orderId) {
+        Long userId = getUserIdFromToken(request);
         boolean success = orderService.confirmOrder(orderId, userId);
         return ResponseEntity.ok(success);
     }
 
     /**
-     * 更新订单状态（管理员接口）
+     * 更新订单状态（管理员）
      */
     @PutMapping("/{orderId}/status")
     public ResponseEntity<Boolean> updateOrderStatus(HttpServletRequest request,
                                                      @PathVariable Integer orderId,
                                                      @RequestParam String status) {
-        if (!checkToken(request)) return ResponseEntity.status(401).build();
+        // 这里仍旧仅验证 token，有需要可后续加管理员角色判断
+        getUserIdFromToken(request);
         boolean success = orderService.updateOrderStatus(orderId, status);
         return ResponseEntity.ok(success);
     }
