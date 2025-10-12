@@ -14,8 +14,6 @@
     </header>
 
     <section class="content">
-      <p class="welcome-text">欢迎您 {{ userName }}！</p>
-
       <!-- 农户视图 -->
       <div v-if="role === 'farmer'" class="farmer-view-container">
         <nav class="farmer-nav">
@@ -28,7 +26,6 @@
         <div class="view-content-wrapper">
           <!-- 所有商品 -->
           <div v-if="currentView === 'products'">
-            <h2>全部商品</h2>
             <div class="product-list">
               <div
                   v-for="product in products"
@@ -72,7 +69,6 @@
 
           <!-- 我的商品 -->
           <div v-if="currentView === 'myProducts'">
-            <h2>我的农产品货架</h2>
             <div class="product-list">
               <div v-for="product in myProducts" :key="product.productId" class="product-card">
                 <h3>{{ product.productName }}</h3>
@@ -89,7 +85,6 @@
 
           <!-- 添加商品 -->
           <div v-if="currentView === 'addProduct'">
-            <h2>发布新商品</h2>
             <form @submit.prevent="handleAddProduct" class="add-product-form">
               <div class="form-group">
                 <label for="name">商品名称:</label>
@@ -119,8 +114,8 @@
       </div>
 
       <!-- 普通用户视图 -->
-      <div v-else class="customer-view-container">
-        <nav class="customer-nav">
+      <div v-else class="buyer-view-container">
+        <nav class="buyer-nav">
           <button @click="switchView('products')" :class="{ active: currentView === 'products' }">所有商品</button>
           <button @click="switchView('cart')" :class="{ active: currentView === 'cart' }">我的购物车</button>
           <button @click="switchView('demands')" :class="{ active: currentView === 'demands' }">求购需求</button>
@@ -130,7 +125,6 @@
         <div class="view-content-wrapper">
           <!-- 所有商品 -->
           <div v-if="currentView === 'products'">
-            <h2>全部商品</h2>
             <div class="product-list">
               <div
                 v-for="product in products"
@@ -155,7 +149,18 @@
 
           <!-- 购物车 -->
           <div v-if="currentView === 'cart'" class="cart-view">
-            <h2>我的购物车</h2>
+            <!-- 地址选择区域 -->
+            <div v-if="addresses.length" class="address-container">
+              <label for="addressSelect">选择收货地址：</label>
+              <select id="addressSelect" v-model="selectedAddressId" class="address-select">
+                <option v-for="address in addresses" :key="address.addressId" :value="address.addressId">
+                  {{ address.recipientName }} - {{ address.province }}{{ address.city }}{{ address.district }}{{ address.streetAddress }}（{{ address.phoneNumber }}）
+                </option>
+              </select>
+            </div>
+            <p v-else class="empty-state">暂无收货地址，请前往“个人中心”添加</p>
+
+
 
             <div v-if="cartItems.length" class="cart-list">
               <div class="cart-card" v-for="item in cartItems" :key="item.productId">
@@ -187,7 +192,7 @@
             <div v-if="cartItems.length" class="cart-summary">
               <p>合计: ¥{{ totalPrice }}</p>
               <router-link to="/order">
-                <button class="submit-btn">提交订单</button>
+                <button class="submit-btn" @click="createOrder">提交订单</button>
               </router-link>
             </div>
 
@@ -196,7 +201,7 @@
 
           <!-- 求购需求 -->
           <div v-if="currentView === 'demands'">
-            <h2>求购需求</h2>
+
             <div class="request-list">
               <!-- 求购需求卡片 -->
               <div
@@ -218,7 +223,7 @@
 
           <!-- 发布求购需求 -->
           <div v-if="currentView === 'addDemand'">
-            <h2>发布求购需求</h2>
+
             <form @submit.prevent="handleAddDemand" class="add-product-form">
               <div class="form-group">
                 <label for="demandName">需求商品名称:</label>
@@ -254,11 +259,16 @@
 <script setup>
 import { ref, computed, onMounted, watch} from 'vue'
 import axios from '../utils/axios'
+import router from "@/router/index.js";
 
-const role = ref('customer')
-//const role = ref('farmer')
-const user_id = ref(1011)
-const userName = ref('测试用户')
+
+const userInfo = ref({})
+const userId = ref('')
+const userName = ref('游客')
+const role = ref('未登录')
+
+// 从 localStorage 拿 token
+const token = localStorage.getItem('token')
 
 const currentView = ref('products')
 
@@ -288,7 +298,7 @@ function switchView(view) { currentView.value = view }
 
 async function loadProducts() {
   try{
-    const res = await axios.get('/api/products')
+    const res = await axios.get('/products')
     products.value = res.data.records||[]
   }catch(err){
     console.error('加载全部商品失败',err)
@@ -297,7 +307,7 @@ async function loadProducts() {
 
 async function loadDemands() {
   try{
-    const reqRes = await axios.get('/api/purchase-demands')
+    const reqRes = await axios.get('/purchase-demands')
     // 打印响应体
     console.log(reqRes.data)
     demands.value = reqRes.data.records
@@ -310,7 +320,7 @@ async function handleAddProduct() {
   try {
     const productToSend = {
     ...newProduct.value,
-    farmerId: user_id.value
+    farmerId: userId.value
   }
     const res = await axios.post('/products/publish', productToSend)
     if (res.data) {
@@ -323,28 +333,26 @@ async function handleAddProduct() {
 }
 
 // ====== 购物车逻辑 ======
-// 从后端加载购物车
-// ====== 购物车逻辑 ======
-
 // 从后端加载购物车 + 获取商品详情
+const addresses = ref([]) // 地址列表
+const selectedAddressId = ref(null)
+
+// ✅ 从后端加载购物车 + 商品详情
 async function loadCart() {
   try {
-    const res = await axios.get('/api/cart', {
-      params: {
-        userId: user_id.value,
-        pageNum: 1,
-        pageSize: 50
-      }
+    const token = localStorage.getItem('token')
+    const res = await axios.get('/cart', {
+      params: { userId: userId.value, pageNum: 1, pageSize: 50 },
+      headers: { Authorization: token }
     })
 
     const pageData = res.data || {}
     const items = pageData.records || []
 
-    // 对每个购物车项获取商品详情
     const detailedItems = await Promise.all(
         items.map(async (item) => {
           try {
-            const productRes = await axios.get(`/api/products/${item.productId}`)
+            const productRes = await axios.get(`/products/${item.productId}`)
             const product = productRes.data
             return {
               ...item,
@@ -354,25 +362,44 @@ async function loadCart() {
             }
           } catch (err) {
             console.warn('商品详情获取失败:', item.productId, err)
-            return item // 即使失败，也保留原数据
+            return item
           }
         })
     )
 
     cartItems.value = detailedItems
-    console.log('购物车加载成功:', cartItems.value)
+    totalPrice.value = detailedItems.reduce(
+        (sum, i) => sum + i.price * i.quantity,
+        0
+    )
   } catch (err) {
     console.error('加载购物车失败:', err)
     alert('加载购物车失败，请稍后重试')
   }
 }
 
+//从后端加载用户地址
+async function loadAddresses() {
+  try {
+    const token = localStorage.getItem('token')
+    const res = await axios.get('/address/user', {
+      headers: { Authorization: token }
+    })
+    addresses.value = res.data || []
+    if (addresses.value.length > 0) {
+      selectedAddressId.value = addresses.value[0].addressId // 默认选中第一个
+    }
+  } catch (err) {
+    console.error('加载地址失败:', err)
+  }
+}
+
 // 添加到购物车
 async function addToCart(product) {
   try {
-    const res = await axios.post('/api/cart/add', null, {
+    const res = await axios.post('/cart/add', null, {
       params: {
-        userId: user_id.value,
+        userId: userId.value,
         productId: product.productId,
         quantity: 1
       }
@@ -393,9 +420,9 @@ async function addToCart(product) {
 async function changeQuantity(productId, newQty) {
   if (newQty <= 0) return
   try {
-    const res = await axios.post('/api/cart/update', null, {
+    const res = await axios.post('/cart/update', null, {
       params: {
-        userId: user_id.value,
+        userId: userId.value,
         productId,
         quantity: newQty
       }
@@ -412,8 +439,8 @@ async function changeQuantity(productId, newQty) {
 // 移除商品
 async function removeFromCart(productId) {
   try {
-    const res = await axios.delete('/api/cart/item', {
-      params: { userId: user_id.value, productId }
+    const res = await axios.delete('/cart/item', {
+      params: { userId: userId.value, productId }
     })
     if (res.data) {
       alert('移除成功')
@@ -424,26 +451,41 @@ async function removeFromCart(productId) {
   }
 }
 
-// 提交订单（调用结算接口）
-async function submitOrder() {
+
+async function createOrder() {
+  if (!selectedAddressId.value) {
+    alert('请先选择收货地址')
+    return
+  }
+
   try {
-    const productIds = cartItems.value.map(item => item.productId)
-    const res = await axios.post('/api/cart/checkout', null, {
-      params: {
-        userId: user_id.value,
-        addressId: 1, // 示例，后续可接入用户地址模块
-        productIds
-      }
+    const reqBody = {
+      addressId: selectedAddressId.value,
+      orderItems: cartItems.value.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity
+      }))
+    }
+
+    const res = await axios.post('/orders', reqBody, {
+      params: { userId: userId.value },
+      headers: { Authorization: token }
     })
+    const orderId =  res.data || [9999]
+
     if (res.data) {
-      alert(`订单提交成功！订单ID: ${res.data}`)
+      alert(`订单提交成功！`)
       cartItems.value = []
+      await router.push(`/orders/${orderId}`)
+    } else {
+      alert('提交失败，请稍后再试')
     }
   } catch (err) {
-    console.error('提交订单失败', err)
-    alert('提交失败')
+    console.error('提交订单失败:', err)
+    alert('提交失败，请检查登录状态或网络')
   }
 }
+
 
 // 计算总价
 const totalPrice = computed(() =>
@@ -454,7 +496,7 @@ async function handleAddDemand() {
   try {
     const demandToSend = {
       ...newDemand.value,
-      buyerId: user_id.value
+      buyerId: userId.value
     }
 
     const res = await axios.post('/purchase-demands', demandToSend)
@@ -479,14 +521,40 @@ async function handleAddDemand() {
 
 
 onMounted(async () => {
+
+  if (!token) return
+
   try {
-    loadProducts()
-    loadDemands()
-  } catch (err) { console.error('获取数据失败', err) }
+    // 调后端 /api/user/info 接口
+    const res = await axios.get('/user/info', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+
+    if (res.data.success) {
+      userInfo.value = res.data.user
+      userId.value = res.data.user.userId
+      userName.value = res.data.user.userName
+      role.value = res.data.user.role
+      // 如果需要可保存到 localStorage
+      localStorage.setItem('userInfo', JSON.stringify(res.data.user))
+    } else {
+      console.warn('Token 无效或过期')
+    }
+  } catch (err) {
+    console.error('获取用户信息失败', err)
+  }
+
+  await loadDemands()
+  await loadAddresses()
+  await loadProducts()
+  await loadCart()
 })
 
 watch(currentView, (val) => {
   if (val === 'cart') {
+    loadAddresses()
     loadCart()
   }
   if(val === 'products') {
@@ -497,7 +565,6 @@ watch(currentView, (val) => {
   }
 })
 </script>
-
 
 <style scoped>
 .main-bg {
@@ -594,13 +661,13 @@ nav a:hover {
   border-bottom-color: #2D7D4F;
 }
 
-.customer-nav {
+.buyer-nav {
   display: flex;
   border-bottom: 2px solid #e0e0e0;
   margin-bottom: 25px;
 }
 
-.customer-nav button {
+.buyer-nav button {
   padding: 10px 20px;
   border: none;
   background-color: transparent;
@@ -612,8 +679,8 @@ nav a:hover {
   border-bottom: 3px solid transparent;
   margin-bottom: -2px;
 }
-.customer-nav button:hover { color: #2D7D4F; }
-.customer-nav button.active {
+.buyer-nav button:hover { color: #2D7D4F; }
+.buyer-nav button.active {
   color: #2D7D4F;
   border-bottom-color: #2D7D4F;
 }
@@ -832,5 +899,26 @@ nav a:hover {
   margin-top: 40px;
 }
 
+
+.address-section h3 {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.address-container {
+  width: 100%;
+  margin: 10px 0;
+}
+
+.address-select {
+  width: 85%; /* ✅ 让选择框和容器等宽 */
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  box-sizing: border-box; /* 避免padding撑大 */
+}
 
 </style>

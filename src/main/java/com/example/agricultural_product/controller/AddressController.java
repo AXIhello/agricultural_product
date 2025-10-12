@@ -1,6 +1,7 @@
 package com.example.agricultural_product.controller;
 
-import com.example.agricultural_product.entity.Address;
+import com.example.agricultural_product.pojo.Address;
+import com.example.agricultural_product.pojo.Product;
 import com.example.agricultural_product.service.AddressService;
 import com.example.agricultural_product.utils.JwtUtil;
 import io.jsonwebtoken.Claims;
@@ -17,6 +18,26 @@ public class AddressController {
 
     @Autowired
     private AddressService addressService;
+
+    // ===== JWT 鉴权方法 =====
+    private boolean checkToken(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return false;
+        }
+        String token = authHeader.substring(7);
+        return JwtUtil.validateToken(token);
+    }
+
+    // 获取单个地址详情
+    @GetMapping("/{id}")
+    public ResponseEntity<Address> getAddress(HttpServletRequest request,
+                                              @PathVariable Integer id) {
+        if (!checkToken(request)) return ResponseEntity.status(401).build();
+        Address saved = addressService.getById(id);
+        return ResponseEntity.ok(saved);
+    }
+
 
     // 1. 新增地址
     @PostMapping("/add")

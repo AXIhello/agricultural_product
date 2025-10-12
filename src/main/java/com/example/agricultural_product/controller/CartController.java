@@ -57,8 +57,6 @@ public class CartController {
 		return ResponseEntity.ok(cartService.clearCart(userId));
 	}
 
-	// 购物车不再提供结算功能，请通过订单模块创建订单
-
 	@GetMapping
 	public ResponseEntity<Page<CartItem>> list(HttpServletRequest request,
 											   @RequestParam(defaultValue = "1") Integer pageNum,

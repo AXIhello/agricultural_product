@@ -1,10 +1,12 @@
 package com.example.agricultural_product.service;
 
-import com.example.agricultural_product.entity.Address;
+import com.baomidou.mybatisplus.extension.service.IService;
+import com.example.agricultural_product.pojo.Address;
 
 import java.util.List;
 
-public interface AddressService {
+public interface AddressService  extends IService<Address> {
+
 
     Address addAddress(Address address);
 

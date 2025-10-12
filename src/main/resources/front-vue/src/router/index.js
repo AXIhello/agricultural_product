@@ -12,11 +12,11 @@ import OrderConfirm from "@/views/OrderConfirm.vue";
 const routes = [
   {
     path: '/',
-    redirect: '/auth'
+    redirect: '/login'
   },
 
   {
-    path: '/auth',
+    path: '/login',
     name: 'LoginAndRegister',
     component: LoginAndRegister
   },
@@ -64,7 +64,7 @@ const routes = [
   },
 
   {
-    path: '/order',
+    path: '/orders/:orderId',
     name: 'OrderConfirm',
     component: OrderConfirm
   }

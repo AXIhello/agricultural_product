@@ -22,10 +22,10 @@ public class JwtUtil {
     /**
      * 生成 JWT token
      */
-    public static String generateToken(Long userId, String username) {
+    public static String generateToken(Long userId, String userName) {
         return Jwts.builder()
                 .claim("userId", userId)
-                .claim("username", username)
+                .claim("userName", userName)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
                 .signWith(KEY, SignatureAlgorithm.HS256)
@@ -66,11 +66,11 @@ public class JwtUtil {
     }
 
     /**
-     * 从 token 获取 username
+     * 从 token 获取 userName
      */
     public static String getUsername(String token) {
         Claims claims = parseToken(token);
-        return claims.get("username", String.class);
+        return claims.get("userName", String.class);
     }
 
     /**
