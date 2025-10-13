@@ -281,4 +281,20 @@ CREATE TABLE IF NOT EXISTS `tb_expert_answers` (
   CONSTRAINT `fk_answer_user` FOREIGN KEY (`responder_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '专家问答-回答表' ROW_FORMAT = DYNAMIC;
 
+CREATE TABLE IF NOT EXISTS `user_application` ( 
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '申请ID',
+  `user_name` VARCHAR(50) NOT NULL COMMENT '申请人账号',
+  `password` VARCHAR(255) NOT NULL COMMENT '密码（加密后）',
+  `real_name` VARCHAR(100) DEFAULT NULL COMMENT '真实姓名',
+  `email` VARCHAR(100) DEFAULT NULL COMMENT '邮箱',
+  `apply_role` VARCHAR(50) NOT NULL COMMENT '申请角色（expert/bank）',
+  `status` VARCHAR(20) DEFAULT 'pending' COMMENT '状态（pending, approved, rejected）',
+  `reason` VARCHAR(255) DEFAULT NULL COMMENT '审核拒绝原因',
+  `attachment_path` TEXT DEFAULT NULL COMMENT '附件路径(JSON格式，存多张图片)',
+  `create_time` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '申请时间',
+  `update_time` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_name_unique` (`user_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='专家/银行身份申请表';
+
 SET FOREIGN_KEY_CHECKS = 1; -- 重新启用外键检查

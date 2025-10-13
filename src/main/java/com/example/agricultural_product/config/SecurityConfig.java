@@ -16,14 +16,16 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> {}) // 跨域配置
+                .cors(cors -> {}) // 允许跨域
                 .csrf(csrf -> csrf.disable()) // 禁用 CSRF
                 .authorizeHttpRequests(auth -> auth
                         // 登录注册接口允许所有访问
                         .requestMatchers("/api/user/login", "/api/user/register").permitAll()
                         // 邮箱验证相关接口允许所有访问
                         .requestMatchers("/api/email/**").permitAll()
-                        // 其他所有 /api/** 接口需要鉴权
+                        // ✅ 放行申请专家/银行的接口
+                        .requestMatchers("/api/apply/**").permitAll()
+                        // 其他 /api/** 接口需要鉴权
                         .requestMatchers("/api/**").authenticated()
                         // 非 /api/ 的接口允许访问
                         .anyRequest().permitAll()
