@@ -34,8 +34,17 @@ public class ExpertQuestionServiceImpl extends ServiceImpl<ExpertQuestionMapper,
 	public Page<ExpertQuestion> listOpen(Integer pageNum, Integer pageSize) {
 		Page<ExpertQuestion> page = new Page<>(pageNum, pageSize);
 		LambdaQueryWrapper<ExpertQuestion> wrapper = new LambdaQueryWrapper<>();
-		wrapper.eq(ExpertQuestion::getStatus, "open").orderByDesc(ExpertQuestion::getCreateTime);
-		return page(page, wrapper);
+		wrapper.orderByDesc(ExpertQuestion::getStatus).orderByDesc(ExpertQuestion::getCreateTime);
+		long total = this.count(wrapper);  // 统计总数
+		page.setTotal(total);
+		
+		// 手动分页
+		List<ExpertQuestion> records = this.list(
+			wrapper.last("LIMIT " + (pageNum - 1) * pageSize + "," + pageSize)
+		);
+		page.setRecords(records);
+		
+		return page;
 	}
 
 	@Override

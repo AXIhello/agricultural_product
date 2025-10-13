@@ -35,9 +35,15 @@
 
     <!-- 问题列表 -->
     <div class="question-list">
-      <h3>问题列表</h3>
+      <h3>问题列表(共 {{ questions.length }} 个问题)</h3>
+      <!-- 调试信息 -->
+      <div v-if="questions.length > 0" style="color: #666; font-size: 0.9rem; margin-bottom: 10px;">
+        显示所有问题：{{ questions.length }} 个
+      </div>
+
       <div v-if="loading">加载中...</div>
       <div v-else-if="questions.length === 0">暂无问题</div>
+
       <div v-else>
         <div v-for="question in questions" :key="question.questionId" class="question-item">
           <h4>{{ question.title }}</h4>
@@ -138,13 +144,17 @@ const fetchQuestions = async () => {
       return;
     }
 
-    let url = `/expert-questions?pageNum=${currentPage.value}&pageSize=${pageSizeNumber}`;
+    let url = `/expert-questions?pageNum=${currentPage.value}&pageSize=${pageSizeNumber}&status=all`;
 
     if (searchKeyword.value) {
       url = `/expert-questions/search?keyword=${searchKeyword.value}&pageNum=${currentPage.value}&pageSize=${pageSizeNumber}`;
     }
-
+    
+    console.log('请求URL:', url); 
     const response = await axios.get(url);
+    console.log('完整响应数据:', response); 
+    console.log('响应数据data:', response.data); 
+
 
     //  确保 response.data.total 是数字类型
     if (typeof response.data.total === 'number') {
@@ -154,7 +164,11 @@ const fetchQuestions = async () => {
       totalItems.value = 0; // 或者设置成其他默认值
     }
 
+    console.log('totalItems:', totalItems.value); 
+    console.log('records数量:', response.data.records ? response.data.records.length : 0); 
+
     questions.value = response.data.records;
+    
      if (isNaN(totalItems.value)) {
       console.error("Invalid totalItems:", totalItems.value);
       totalItems.value = 0; //  或者，使用一个默认值
