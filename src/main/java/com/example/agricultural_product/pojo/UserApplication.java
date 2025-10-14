@@ -18,8 +18,6 @@ public class UserApplication {
     @TableField("real_name")
     private String realName;       // 真实姓名
     private String email;          // 邮箱
-    private String phone;          // 电话
-
     @TableField("attachment_path")
     private String attachmentPath; // 附件路径
     private String status;         // 审核状态
