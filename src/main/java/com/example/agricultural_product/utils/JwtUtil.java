@@ -22,15 +22,17 @@ public class JwtUtil {
     /**
      * 生成 JWT token
      */
-    public static String generateToken(Long userId, String userName) {
+    public static String generateToken(Long userId, String userName, String role) {
         return Jwts.builder()
                 .claim("userId", userId)
                 .claim("userName", userName)
+                .claim("role", role) // 增加角色
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
                 .signWith(KEY, SignatureAlgorithm.HS256)
                 .compact();
     }
+
     // 从请求中获取 Claims
     public static Claims getClaimsFromRequest(HttpServletRequest request) {
         String header = request.getHeader("Authorization");

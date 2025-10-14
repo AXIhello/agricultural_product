@@ -118,7 +118,7 @@ public class UserController {
         }
 
         //  登录成功，生成 JWT Token
-        String token = JwtUtil.generateToken(user.getUserId(), user.getUserName());
+        String token = JwtUtil.generateToken(user.getUserId(), user.getUserName(),user.getRole());
 
         response.put("success", true);
         response.put("message", "登录成功！");
