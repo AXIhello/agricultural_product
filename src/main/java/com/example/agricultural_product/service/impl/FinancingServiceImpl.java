@@ -264,7 +264,7 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
             // 4.4 参与联合贷款成功，为所有参与农户增加信用分
             LambdaQueryWrapper<FinancingFarmer> wrapper = new LambdaQueryWrapper<>();
             wrapper.eq(FinancingFarmer::getFinancingId, financing.getFinancingId())
-                   .eq(FinancingFarmer::getRoleInFinancing, "co_applicant"); // 用角色替代 isInitiator
+                   .eq(FinancingFarmer::getRoleInFinancing, "co_applicant"); 
             List<FinancingFarmer> coApplicants = financingFarmerMapper.selectList(wrapper);
             
             for (FinancingFarmer coApplicant : coApplicants) {

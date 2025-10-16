@@ -42,8 +42,24 @@ public class FinancingController {
         Long farmerId = getUserIdFromToken(request);
         BigDecimal amount = new BigDecimal(params.get("amount").toString());
         String purpose = (String) params.get("purpose");
+
+        // 修正类型转换问题
         @SuppressWarnings("unchecked")
-        List<Long> coApplicantIds = (List<Long>) params.get("coApplicantIds");
+        List<Object> coApplicantIdsRaw = (List<Object>) params.get("coApplicantIds");
+        List<Long> coApplicantIds = null;
+        if (coApplicantIdsRaw != null && !coApplicantIdsRaw.isEmpty()) {
+            coApplicantIds = coApplicantIdsRaw.stream()
+                    .map(id -> {
+                        if (id instanceof Integer) {
+                            return ((Integer) id).longValue();
+                        } else if (id instanceof Long) {
+                            return (Long) id;
+                        } else {
+                            return Long.parseLong(id.toString());
+                        }
+                    })
+                    .toList();
+        }
 
         Integer financingId = financingService.createFinancing(farmerId, amount, purpose, coApplicantIds);
         return ResponseEntity.ok(Map.of("success", true, "financingId", financingId));
