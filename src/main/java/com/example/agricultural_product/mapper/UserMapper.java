@@ -29,13 +29,8 @@ public interface UserMapper extends BaseMapper<User> {
 
     @Update("UPDATE users SET region = #{region} WHERE user_id = #{userId}")
     int updateRegion(@Param("userId") Long userId, @Param("region") String region);
+    @Update("UPDATE users SET credit_score = #{score} WHERE user_id = #{userId}")
+    void updateCreditScore(@Param("userId") Long userId, @Param("score") int score);
 
-    @Update("UPDATE users SET credit_score = #{creditScore} WHERE user_id = #{userId}")
-    int updateCreditScore(@Param("userId") Long userId, @Param("creditScore") Integer creditScore);
 
-    @Update("UPDATE users SET region = #{region}, credit_score = #{creditScore} WHERE user_id = #{userId}")
-    int updateRegionAndCredit(@Param("userId") Long userId,
-                              @Param("region") String region,
-                              @Param("creditScore") Integer creditScore);
-    
 }

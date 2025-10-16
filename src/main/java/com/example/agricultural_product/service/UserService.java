@@ -9,6 +9,6 @@ public interface UserService {
     boolean updateRegion(Long userId, String region);
     boolean updateCreditScore(Long userId, Integer creditScore);
 
-
+    void updateCreditScore(Long userId, String action);
 }
 

@@ -24,11 +24,11 @@ public class FinancingController {
     // 从 JWT token 获取 userId
     private Long getUserIdFromToken(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            return JwtUtil.getUserId(token);
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return null;
         }
-        throw new RuntimeException("未提供有效的 JWT token");
+        String token = authHeader.substring(7);
+        return JwtUtil.getUserId(token);
     }
 
     /**
@@ -87,15 +87,24 @@ public class FinancingController {
     }
 
     /**
-     * 农户取消融资申请
+     * 取消融资申请
      */
     @PostMapping("/cancel")
-    public ResponseEntity<Boolean> cancelFinancing(
+    public ResponseEntity<Map<String, Object>> cancelFinancing(
             HttpServletRequest request,
-            @RequestParam Integer financingId) {
-
+            @RequestBody Map<String, Object> params) {
         Long userId = getUserIdFromToken(request);
-        return ResponseEntity.ok(financingService.cancelFinancing(userId, financingId));
+        if (userId == null) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "未授权"));
+        }
+
+        Integer financingId = (Integer) params.get("financingId");
+        boolean result = financingService.cancelFinancing(userId, financingId);
+
+        return ResponseEntity.ok(Map.of(
+                "success", result,
+                "message", result ? "取消成功" : "取消失败"
+        ));
     }
 
     /**
@@ -162,5 +171,33 @@ public class FinancingController {
 
         Long bankUserId = getUserIdFromToken(request);
         return ResponseEntity.ok(financingService.listBankOffers(bankUserId, pageNum, pageSize));
+    }
+
+    /**
+     * 银行拒绝融资申请
+     */
+    @PostMapping("/reject")
+    public ResponseEntity<Boolean> rejectFinancing(
+            HttpServletRequest request,
+            @RequestBody Map<String, Object> params) {
+        Long bankUserId = getUserIdFromToken(request);
+        if (bankUserId == null) {
+            return ResponseEntity.status(401).body(false);
+        }
+
+        Integer financingId = (Integer) params.get("financingId");
+        String rejectReason = (String) params.get("rejectReason");
+
+        boolean result = financingService.rejectFinancing(bankUserId, financingId, rejectReason);
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * 标记拖欠还款（管理员或系统调用）
+     */
+    @PostMapping("/markOverdue")
+    public ResponseEntity<Boolean> markOverdue(@RequestParam Integer financingId) {
+        boolean result = financingService.markOverdue(financingId);
+        return ResponseEntity.ok(result);
     }
 }

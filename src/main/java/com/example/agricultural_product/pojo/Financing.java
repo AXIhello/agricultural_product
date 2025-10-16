@@ -8,6 +8,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @TableName("tb_financing")
@@ -32,4 +33,8 @@ public class Financing {
 
     @TableField("update_time")
     private LocalDateTime updateTime;
+
+    // 非数据库字段：参与农户列表（用于返回详情）
+    @TableField(exist = false)
+    private List<FinancingFarmer> farmers;
 }
