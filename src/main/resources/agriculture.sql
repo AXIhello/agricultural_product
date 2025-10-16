@@ -147,18 +147,30 @@ CREATE TABLE IF NOT EXISTS `tb_expert_consultation`  (
 -- ----------------------------
 -- Table structure for tb_financing
 -- ----------------------------
-CREATE TABLE IF NOT EXISTS `tb_financing`  (
-  `financing_id` int NOT NULL AUTO_INCREMENT COMMENT '融资ID',
-  `initiating_farmer_id` bigint NOT NULL COMMENT '发起融资申请的主农户/联系人ID，关联users表',
-  `amount` decimal(12, 2) NOT NULL COMMENT '申请融资金额',
-  `purpose` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '融资用途描述',
-  `application_status` enum('draft','submitted','under_review_by_banks','offers_received','offer_accepted','loan_disbursed','completed','cancelled','rejected') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'draft' COMMENT '融资申请整体状态：草稿、已提交、银行审核中、已收到报价、已接受报价、贷款已发放、已完成、已取消、已拒绝',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+CREATE TABLE IF NOT EXISTS `tb_financing` (
+  `financing_id` INT NOT NULL AUTO_INCREMENT COMMENT '融资ID',
+  `initiating_farmer_id` BIGINT NOT NULL COMMENT '发起融资申请的主农户/联系人ID，关联users表',
+  `amount` DECIMAL(12,2) NOT NULL COMMENT '申请融资金额',
+  `purpose` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '融资用途描述',
+  `application_status` ENUM('draft','submitted','cancelled','approved','rejected','overdue')
+      CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci
+      NOT NULL DEFAULT 'draft'
+      COMMENT '融资申请整体状态：草稿、已提交、已取消、已批准、已拒绝、逾期',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`financing_id`) USING BTREE,
-  INDEX `idx_initiating_farmer_id`(`initiating_farmer_id` ASC) USING BTREE,
-  CONSTRAINT `fk_financing_initiator` FOREIGN KEY (`initiating_farmer_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '融资信息表 (支持联合申请和多银行匹配)' ROW_FORMAT = DYNAMIC;
+  INDEX `idx_initiating_farmer_id` (`initiating_farmer_id`) USING BTREE,
+  CONSTRAINT `fk_financing_initiator`
+    FOREIGN KEY (`initiating_farmer_id`)
+    REFERENCES `users` (`user_id`)
+    ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE = InnoDB
+  AUTO_INCREMENT = 5
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_0900_ai_ci
+  ROW_FORMAT = DYNAMIC
+  COMMENT = '融资信息表 (支持联合申请和多银行匹配)';
+
 
 -- ----------------------------
 -- Table structure for tb_financing_farmers
