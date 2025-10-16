@@ -6,16 +6,23 @@ SET FOREIGN_KEY_CHECKS = 0; -- 禁用外键检查，方便创建表结构
 -- ----------------------------
 -- Table structure for users
 -- ----------------------------
-CREATE TABLE IF NOT EXISTS `users`  (
+CREATE TABLE IF NOT EXISTS `users` (
   `user_id` bigint NOT NULL AUTO_INCREMENT COMMENT '自增ID',
-  `user_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '账号，用于登录',
-  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '加密后的密码',
-  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '昵称',
-  `email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `role` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '角色',
+  `user_name` varchar(50) NOT NULL COMMENT '账号，用于登录',
+  `password` varchar(255) NOT NULL COMMENT '加密后的密码',
+  `name` varchar(100) DEFAULT NULL COMMENT '昵称',
+  `email` varchar(100) DEFAULT NULL,
+  `role` varchar(50) NOT NULL COMMENT '角色',
+  -- ↓↓↓ 新增字段 ↓↓↓
+  `region` varchar(50) DEFAULT NULL COMMENT '用户所在地区',
+  `credit_score` int DEFAULT NULL COMMENT '用户信用分，可为空',
+  `historical_success_rate` decimal(5,2) DEFAULT NULL COMMENT '历史融资成功率(百分比)',
+  `average_financing_amount` decimal(12,2) DEFAULT NULL COMMENT '平均融资金额',
+  `financing_activity_level` enum('low','medium','high') DEFAULT NULL COMMENT '用户融资活跃度等级（低/中/高）',
   PRIMARY KEY (`user_id`) USING BTREE,
-  UNIQUE INDEX `user_name`(`user_name` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1011 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户表 (基础信息，采用用户指定结构)' ROW_FORMAT = Dynamic;
+  UNIQUE KEY `user_name` (`user_name`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表 (支持智能推荐的扩展版)';
+
 
 -- ----------------------------
 -- Table structure for tb_addresses

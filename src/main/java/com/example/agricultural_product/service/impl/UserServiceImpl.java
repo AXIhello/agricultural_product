@@ -35,5 +35,25 @@ public class UserServiceImpl implements UserService {
         }
         return null; // 如果用户不存在，返回 null
     }
+
+    @Override
+// 更新地区
+    public boolean updateRegion(Long userId, String region) {
+        User user = new User();
+        user.setUserId(userId);
+        user.setRegion(region);
+        return userMapper.updateById(user) > 0;
+    }
+
+    // 更新信用分
+    public boolean updateCreditScore(Long userId, Integer creditScore) {
+        User user = new User();
+        user.setUserId(userId);
+        user.setCreditScore(creditScore);
+        return userMapper.updateById(user) > 0;
+    }
+
+
+
 }
 
