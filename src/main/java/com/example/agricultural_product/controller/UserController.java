@@ -118,7 +118,7 @@ public class UserController {
         }
 
         //  登录成功，生成 JWT Token
-        String token = JwtUtil.generateToken(user.getUserId(), user.getUserName());
+        String token = JwtUtil.generateToken(user.getUserId(), user.getUserName(),user.getRole());
 
         response.put("success", true);
         response.put("message", "登录成功！");
@@ -189,4 +189,31 @@ public class UserController {
                     .body(Map.of("message", "获取用户ID失败"));
         }
     }
+    /**
+     * 更新用户的地区、信用分等基础资料
+     */
+    @PostMapping("/update/region")
+    public ResponseEntity<Boolean> updateRegion(
+            HttpServletRequest request,
+            @RequestBody Map<String, Object> params) {
+
+        Long userId = getUserIdFromToken(request);
+        String region = (String) params.get("region");
+
+        boolean result = userService.updateRegion(userId, region);
+        return ResponseEntity.ok(result);
+    }
+    @PostMapping("/update/credit")
+    public ResponseEntity<Boolean> updateCreditScore(
+            HttpServletRequest request,
+            @RequestBody Map<String, Object> params) {
+
+        Long userId = getUserIdFromToken(request);
+        Integer creditScore = (Integer) params.get("creditScore");
+
+        boolean result = userService.updateCreditScore(userId, creditScore);
+        return ResponseEntity.ok(result);
+    }
+
+
 }

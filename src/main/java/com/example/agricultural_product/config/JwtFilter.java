@@ -39,8 +39,15 @@ public class JwtFilter extends OncePerRequestFilter {
 
             try {
                 Claims claims = JwtUtil.parseToken(token);
-                String username = claims.get("username", String.class);
-                Long userId = claims.get("userId", Long.class);
+                String username = claims.get("userName", String.class);
+                String role = claims.get("role", String.class); // 获取角色
+
+                // 只允许 admin 访问 /admin/**
+                if (path.startsWith("/admin") && !"admin".equalsIgnoreCase(role)) {
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.getWriter().write("Only admin can access this endpoint");
+                    return;
+                }
 
                 // 设置 Spring Security 上下文
                 UsernamePasswordAuthenticationToken auth =
@@ -53,10 +60,15 @@ public class JwtFilter extends OncePerRequestFilter {
                 return;
             }
         } else {
-            // 如果请求需要认证但没有 token，可以选择返回 401
-            // 这里默认放行非登录注册接口，如果 SecurityConfig 已经配置了 authenticated() 会拦截
+            // 如果请求需要认证但没有 token
+            if (path.startsWith("/admin")) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("Missing Authorization header");
+                return;
+            }
         }
 
+        // 放行请求
         filterChain.doFilter(request, response);
     }
 }

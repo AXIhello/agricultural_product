@@ -51,13 +51,17 @@ public interface FinancingService extends IService<Financing> {
      */
     List<FinancingOffer> listOffers(Long userId, Integer financingId);
 
-    /**
-     * 农户接受某个银行报价
-     */
     boolean acceptOffer(Long farmerId, Integer offerId);
 
-    /**
-     * 银行查看自己提交的报价列表
-     */
     Page<FinancingOffer> listBankOffers(Long bankUserId, Integer pageNum, Integer pageSize);
+
+    /**
+     * 银行拒绝融资申请
+     */
+    boolean rejectFinancing(Long bankUserId, Integer financingId, String rejectReason);
+
+    /**
+     * 标记拖欠还款
+     */
+    boolean markOverdue(Integer financingId);
 }

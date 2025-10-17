@@ -10,6 +10,7 @@ import com.example.agricultural_product.pojo.Financing;
 import com.example.agricultural_product.pojo.FinancingFarmer;
 import com.example.agricultural_product.pojo.FinancingOffer;
 import com.example.agricultural_product.service.FinancingService;
+import com.example.agricultural_product.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,61 +31,78 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
     @Autowired
     private FinancingOfferMapper financingOfferMapper;
 
+    @Autowired
+    private UserService userService;
+
+    /**
+     * 获取融资申请的所有参与农户ID（包括主申请人和共同申请人）
+     */
+    private List<Long> getAllFarmerIds(Integer financingId) {
+        LambdaQueryWrapper<FinancingFarmer> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FinancingFarmer::getFinancingId, financingId);
+        return financingFarmerMapper.selectList(wrapper)
+                .stream()
+                .map(FinancingFarmer::getFarmerId)
+                .toList();
+    }
+
+    /**
+     * 获取共同申请人ID列表（不包括主申请人）
+     */
+    private List<Long> getCoApplicantIds(Integer financingId) {
+        LambdaQueryWrapper<FinancingFarmer> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FinancingFarmer::getFinancingId, financingId)
+                .eq(FinancingFarmer::getRoleInFinancing, "共同申请人");
+        return financingFarmerMapper.selectList(wrapper)
+                .stream()
+                .map(FinancingFarmer::getFarmerId)
+                .toList();
+    }
+
+
     @Override
     @Transactional
     public Integer createFinancing(Long initiatingFarmerId, BigDecimal amount, String purpose, List<Long> coApplicantIds) {
-        if (initiatingFarmerId == null || amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new RuntimeException("融资申请信息不完整");
-        }
-
-        LocalDateTime now = LocalDateTime.now();
-
-        // 创建融资申请
         Financing financing = new Financing();
         financing.setInitiatingFarmerId(initiatingFarmerId);
         financing.setAmount(amount);
         financing.setPurpose(purpose);
         financing.setApplicationStatus("draft");
-        financing.setCreateTime(now);
-        financing.setUpdateTime(now);
+        financing.setCreateTime(LocalDateTime.now());
+        financing.setUpdateTime(LocalDateTime.now());
+        
         financingMapper.insert(financing);
+        Integer financingId = financing.getFinancingId();
 
-        // 添加发起人作为主申请人
-        FinancingFarmer initiator = new FinancingFarmer();
-        initiator.setFinancingId(financing.getFinancingId());
-        initiator.setFarmerId(initiatingFarmerId);
-        initiator.setRoleInFinancing("primary_applicant");
-        initiator.setCreateTime(now);
-        financingFarmerMapper.insert(initiator);
+        // 添加主申请人
+        FinancingFarmer mainFarmer = new FinancingFarmer();
+        mainFarmer.setFinancingId(financingId);
+        mainFarmer.setFarmerId(initiatingFarmerId);
+        mainFarmer.setRoleInFinancing("主申请人");
+        financingFarmerMapper.insert(mainFarmer);
 
-        // 添加共同申请人
+        // 添加联合申请人
         if (coApplicantIds != null && !coApplicantIds.isEmpty()) {
-            for (Long farmerId : coApplicantIds) {
-                FinancingFarmer coApplicant = new FinancingFarmer();
-                coApplicant.setFinancingId(financing.getFinancingId());
-                coApplicant.setFarmerId(farmerId);
-                coApplicant.setRoleInFinancing("co_applicant");
-                coApplicant.setCreateTime(now);
-                financingFarmerMapper.insert(coApplicant);
+            for (Long coApplicantId : coApplicantIds) {
+                FinancingFarmer coFarmer = new FinancingFarmer();
+                coFarmer.setFinancingId(financingId);
+                coFarmer.setFarmerId(coApplicantId);
+                coFarmer.setRoleInFinancing("共同申请人");
+                financingFarmerMapper.insert(coFarmer);
             }
         }
 
-        return financing.getFinancingId();
+        return financingId;
     }
 
     @Override
     public boolean submitFinancing(Long userId, Integer financingId) {
-        if (userId == null || financingId == null) {
-            return false;
-        }
-
         Financing financing = financingMapper.selectById(financingId);
         if (financing == null || !financing.getInitiatingFarmerId().equals(userId)) {
-            throw new RuntimeException("无权限提交该融资申请");
+            return false;
         }
-
         if (!"draft".equals(financing.getApplicationStatus())) {
-            throw new RuntimeException("只能提交草稿状态的申请");
+            return false;
         }
 
         financing.setApplicationStatus("submitted");
@@ -94,212 +112,192 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
 
     @Override
     public Page<Financing> listUserFinancings(Long userId, Integer pageNum, Integer pageSize) {
-        if (userId == null) {
-            return new Page<>(pageNum, pageSize);
-        }
-
-        // 查询用户参与的所有融资申请
-        LambdaQueryWrapper<FinancingFarmer> farmerQuery = new LambdaQueryWrapper<>();
-        farmerQuery.eq(FinancingFarmer::getFarmerId, userId);
-        List<FinancingFarmer> farmerList = financingFarmerMapper.selectList(farmerQuery);
-
-        if (farmerList.isEmpty()) {
-            return new Page<>(pageNum, pageSize);
-        }
-
-        List<Integer> financingIds = farmerList.stream()
-                .map(FinancingFarmer::getFinancingId)
-                .toList();
-
         Page<Financing> page = new Page<>(pageNum, pageSize);
-        LambdaQueryWrapper<Financing> query = new LambdaQueryWrapper<>();
-        query.in(Financing::getFinancingId, financingIds)
+        LambdaQueryWrapper<Financing> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Financing::getInitiatingFarmerId, userId)
                 .orderByDesc(Financing::getCreateTime);
-
-        return financingMapper.selectPage(page, query);
+        return financingMapper.selectPage(page, wrapper);
     }
 
     @Override
     public Financing getFinancingDetail(Long userId, Integer financingId) {
-        if (userId == null || financingId == null) {
-            return null;
-        }
-
         Financing financing = financingMapper.selectById(financingId);
-        if (financing == null) {
-            return null;
-        }
+        if (financing == null) return null;
 
-        // 验证用户是否参与该融资申请
-        LambdaQueryWrapper<FinancingFarmer> query = new LambdaQueryWrapper<>();
-        query.eq(FinancingFarmer::getFinancingId, financingId)
-                .eq(FinancingFarmer::getFarmerId, userId);
-
-        if (financingFarmerMapper.selectCount(query) == 0) {
-            throw new RuntimeException("无权限查看该融资申请");
-        }
+        // 查询参与农户
+        LambdaQueryWrapper<FinancingFarmer> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FinancingFarmer::getFinancingId, financingId);
+        List<FinancingFarmer> farmers = financingFarmerMapper.selectList(wrapper);
+        financing.setFarmers(farmers);
 
         return financing;
     }
 
     @Override
+    @Transactional
     public boolean cancelFinancing(Long userId, Integer financingId) {
-        if (userId == null || financingId == null) {
-            return false;
-        }
-
         Financing financing = financingMapper.selectById(financingId);
         if (financing == null || !financing.getInitiatingFarmerId().equals(userId)) {
-            throw new RuntimeException("无权限取消该融资申请");
+            return false;
         }
-
-        if ("completed".equals(financing.getApplicationStatus()) ||
-                "cancelled".equals(financing.getApplicationStatus())) {
-            throw new RuntimeException("该融资申请已完成或已取消，无法再次取消");
+        if (!"draft".equals(financing.getApplicationStatus()) && 
+            !"pending".equals(financing.getApplicationStatus())) {
+            return false;
         }
 
         financing.setApplicationStatus("cancelled");
         financing.setUpdateTime(LocalDateTime.now());
-        return financingMapper.updateById(financing) > 0;
+        boolean result = financingMapper.updateById(financing) > 0;
+        
+        // 4.2 取消融资申请，所有参与人都扣除信用分
+        if (result) {
+            List<Long> allFarmerIds = getAllFarmerIds(financingId);
+            for (Long farmerId : allFarmerIds) {
+                userService.updateCreditScore(farmerId, "loan_cancel");
+            }
+        }
+        
+        return result;
     }
 
     @Override
     public Page<Financing> listPendingFinancings(Integer pageNum, Integer pageSize) {
         Page<Financing> page = new Page<>(pageNum, pageSize);
-        LambdaQueryWrapper<Financing> query = new LambdaQueryWrapper<>();
-        query.eq(Financing::getApplicationStatus, "submitted")
+        LambdaQueryWrapper<Financing> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Financing::getApplicationStatus, "pending")
                 .orderByDesc(Financing::getCreateTime);
-        return financingMapper.selectPage(page, query);
+        return financingMapper.selectPage(page, wrapper);
     }
 
     @Override
     @Transactional
     public boolean submitOffer(Long bankUserId, Integer financingId, BigDecimal offeredAmount,
                                BigDecimal interestRate, String bankNotes) {
-        if (bankUserId == null || financingId == null || offeredAmount == null || interestRate == null) {
-            throw new RuntimeException("报价信息不完整");
-        }
-
-        Financing financing = financingMapper.selectById(financingId);
-        if (financing == null) {
-            throw new RuntimeException("融资申请不存在");
-        }
-
-        if (!"submitted".equals(financing.getApplicationStatus())) {
-            throw new RuntimeException("该融资申请当前不接受报价");
-        }
-
-        // 检查是否已经报价
-        LambdaQueryWrapper<FinancingOffer> existQuery = new LambdaQueryWrapper<>();
-        existQuery.eq(FinancingOffer::getFinancingId, financingId)
-                .eq(FinancingOffer::getBankUserId, bankUserId);
-        if (financingOfferMapper.selectCount(existQuery) > 0) {
-            throw new RuntimeException("您已对该融资申请提交报价");
-        }
-
-        LocalDateTime now = LocalDateTime.now();
-
         FinancingOffer offer = new FinancingOffer();
         offer.setFinancingId(financingId);
         offer.setBankUserId(bankUserId);
         offer.setOfferedAmount(offeredAmount);
         offer.setOfferedInterestRate(interestRate);
-        offer.setOfferStatus("offered");
         offer.setBankNotes(bankNotes);
-        offer.setOfferTime(now);
-        offer.setUpdateTime(now);
-
-        boolean inserted = financingOfferMapper.insert(offer) > 0;
-
-        // 更新融资申请状态
-        if (inserted) {
-            financing.setApplicationStatus("offers_received");
-            financing.setUpdateTime(now);
-            financingMapper.updateById(financing);
-        }
-
-        return inserted;
+        offer.setOfferStatus("pending");
+        offer.setOfferTime(LocalDateTime.now());
+        
+        return financingOfferMapper.insert(offer) > 0;
     }
 
     @Override
     public List<FinancingOffer> listOffers(Long userId, Integer financingId) {
-        if (userId == null || financingId == null) {
-            return List.of();
-        }
-
-        // 验证用户权限
         Financing financing = financingMapper.selectById(financingId);
         if (financing == null || !financing.getInitiatingFarmerId().equals(userId)) {
-            throw new RuntimeException("无权限查看该融资申请的报价");
+            return null;
         }
 
-        LambdaQueryWrapper<FinancingOffer> query = new LambdaQueryWrapper<>();
-        query.eq(FinancingOffer::getFinancingId, financingId)
-                .orderByAsc(FinancingOffer::getOfferedInterestRate);
-
-        return financingOfferMapper.selectList(query);
+        LambdaQueryWrapper<FinancingOffer> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FinancingOffer::getFinancingId, financingId)
+                .orderByDesc(FinancingOffer::getOfferTime);
+        return financingOfferMapper.selectList(wrapper);
     }
 
     @Override
     @Transactional
     public boolean acceptOffer(Long farmerId, Integer offerId) {
-        if (farmerId == null || offerId == null) {
-            return false;
-        }
-
         FinancingOffer offer = financingOfferMapper.selectById(offerId);
-        if (offer == null) {
-            throw new RuntimeException("报价不存在");
-        }
+        if (offer == null) return false;
 
         Financing financing = financingMapper.selectById(offer.getFinancingId());
         if (financing == null || !financing.getInitiatingFarmerId().equals(farmerId)) {
-            throw new RuntimeException("无权限接受该报价");
+            return false;
         }
 
-        if (!"offered".equals(offer.getOfferStatus())) {
-            throw new RuntimeException("该报价当前无法接受");
-        }
-
-        LocalDateTime now = LocalDateTime.now();
-
-        // 更新被接受的报价状态
-        offer.setOfferStatus("accepted_by_farmer");
-        offer.setUpdateTime(now);
+        // 更新报价状态为已接受
+        offer.setOfferStatus("accepted");
         financingOfferMapper.updateById(offer);
 
-        // 更新融资申请状态
-        financing.setApplicationStatus("offer_accepted");
-        financing.setUpdateTime(now);
-        financingMapper.updateById(financing);
+        // 更新融资申请状态为已批准
+        financing.setApplicationStatus("approved");
+        financing.setUpdateTime(LocalDateTime.now());
+        boolean result = financingMapper.updateById(financing) > 0;
 
-        // 拒绝其他报价
-        LambdaQueryWrapper<FinancingOffer> otherQuery = new LambdaQueryWrapper<>();
-        otherQuery.eq(FinancingOffer::getFinancingId, offer.getFinancingId())
-                .ne(FinancingOffer::getOfferId, offerId)
-                .eq(FinancingOffer::getOfferStatus, "offered");
-
-        List<FinancingOffer> otherOffers = financingOfferMapper.selectList(otherQuery);
-        for (FinancingOffer other : otherOffers) {
-            other.setOfferStatus("rejected_by_farmer");
-            other.setUpdateTime(now);
-            financingOfferMapper.updateById(other);
+        // 4.1 成功完成融资，所有参与人增加信用分
+        if (result) {
+            // 主申请人获得更高的信用分
+            userService.updateCreditScore(farmerId, "loan_success");
+            
+            // 4.4 共同申请人也增加信用分
+            List<Long> coApplicantIds = getCoApplicantIds(financing.getFinancingId());
+            for (Long coApplicantId : coApplicantIds) {
+                userService.updateCreditScore(coApplicantId, "joint_loan_success");
+            }
         }
 
-        return true;
+        // 拒绝其他待处理的报价
+        LambdaQueryWrapper<FinancingOffer> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FinancingOffer::getFinancingId, offer.getFinancingId())
+                .eq(FinancingOffer::getOfferStatus, "pending")
+                .ne(FinancingOffer::getOfferId, offerId);
+        List<FinancingOffer> otherOffers = financingOfferMapper.selectList(wrapper);
+        for (FinancingOffer otherOffer : otherOffers) {
+            otherOffer.setOfferStatus("rejected");
+            financingOfferMapper.updateById(otherOffer);
+        }
+
+        return result;
     }
 
     @Override
     public Page<FinancingOffer> listBankOffers(Long bankUserId, Integer pageNum, Integer pageSize) {
-        if (bankUserId == null) {
-            return new Page<>(pageNum, pageSize);
+        Page<FinancingOffer> page = new Page<>(pageNum, pageSize);
+        LambdaQueryWrapper<FinancingOffer> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FinancingOffer::getBankUserId, bankUserId)
+                .orderByDesc(FinancingOffer::getOfferTime);
+        return financingOfferMapper.selectPage(page, wrapper);
+    }
+
+    /**
+     * 4.3 银行拒绝融资申请，所有参与人都扣分
+     */
+    @Override
+    @Transactional
+    public boolean rejectFinancing(Long bankUserId, Integer financingId, String rejectReason) {
+        Financing financing = financingMapper.selectById(financingId);
+        if (financing == null) return false;
+
+        financing.setApplicationStatus("rejected");
+        financing.setUpdateTime(LocalDateTime.now());
+        boolean result = financingMapper.updateById(financing) > 0;
+
+        // 被银行拒绝融资，所有参与人都扣除信用分
+        if (result) {
+            List<Long> allFarmerIds = getAllFarmerIds(financingId);
+            for (Long farmerId : allFarmerIds) {
+                userService.updateCreditScore(farmerId, "loan_rejected");
+            }
         }
 
-        Page<FinancingOffer> page = new Page<>(pageNum, pageSize);
-        LambdaQueryWrapper<FinancingOffer> query = new LambdaQueryWrapper<>();
-        query.eq(FinancingOffer::getBankUserId, bankUserId)
-                .orderByDesc(FinancingOffer::getOfferTime);
+        return result;
+    }
 
-        return financingOfferMapper.selectPage(page, query);
+    /**
+     * 4.5 拖欠还款，所有参与人都大幅扣分
+     */
+    @Override
+    @Transactional
+    public boolean markOverdue(Integer financingId) {
+        Financing financing = financingMapper.selectById(financingId);
+        if (financing == null) return false;
+
+        financing.setApplicationStatus("overdue");
+        financing.setUpdateTime(LocalDateTime.now());
+        boolean result = financingMapper.updateById(financing) > 0;
+
+        // 拖欠还款，所有参与人都大幅扣除信用分
+        if (result) {
+            List<Long> allFarmerIds = getAllFarmerIds(financingId);
+            for (Long farmerId : allFarmerIds) {
+                userService.updateCreditScore(farmerId, "loan_default");
+            }
+        }
+
+        return result;
     }
 }

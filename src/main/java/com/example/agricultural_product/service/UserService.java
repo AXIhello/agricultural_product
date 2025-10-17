@@ -6,5 +6,9 @@ public interface UserService {
      Long getUserIdByUserName(String userName);
 
     User findById(Long userId);
+    boolean updateRegion(Long userId, String region);
+    boolean updateCreditScore(Long userId, Integer creditScore);
+
+    void updateCreditScore(Long userId, String action);
 }
 
