@@ -7,6 +7,8 @@ import FinanceService from '../views/FinanceService.vue'
 import ExpertAssistance from '../views/ExpertAssistance.vue'
 import UserProfile from '../views/UserProfile.vue';
 import OrderConfirm from "@/views/OrderConfirm.vue";
+import UserApplication from "@/views/UserApplication.vue";
+import AdminReview from "@/views/AdminReview.vue";
 
 
 const routes = [
@@ -19,6 +21,12 @@ const routes = [
     path: '/login',
     name: 'LoginAndRegister',
     component: LoginAndRegister
+  },
+
+  {
+    path: '/apply',
+    name: 'UserApplication',
+    component: UserApplication
   },
 
   {
@@ -67,7 +75,15 @@ const routes = [
     path: '/orders/:orderId',
     name: 'OrderConfirm',
     component: OrderConfirm
+  },
+
+  {
+    path:'/admin-review',
+    name:'AdminReview',
+    component: AdminReview
   }
+
+  
 ]
 
 const router = createRouter({

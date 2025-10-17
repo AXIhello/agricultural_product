@@ -1,6 +1,6 @@
 <template>
   <div class="main-bg">
-    <header class="header">
+    <!-- <header class="header">
       <h1>农产品交易平台</h1>
       <nav>
         <ul>
@@ -11,7 +11,8 @@
           <li><router-link to="/profile">个人信息</router-link></li>
         </ul>
       </nav>
-    </header>
+    </header> -->
+    <HeaderComponent />
 
     <section class="content">
       <div class="home-content">
@@ -58,6 +59,7 @@ import FinanceProducts from '../components/FinanceProducts.vue';
 import ExpertOverview from '../components/ExpertOverview.vue';
 import ExpertQA from '../components/ExpertQA.vue'; 
 import ECommerce from '../components/ECommerce.vue'; 
+import HeaderComponent from '../components/HeaderComponent.vue';
 
 </script>
 

@@ -96,6 +96,12 @@
       </span>
     </p>
 
+    <div class="apply-link" v-if="!isLogin">
+      <p>
+        您是银行或专家用户？<a href="#" @click.prevent="goToUserApplication">请提交申请</a>
+      </p>
+    </div>
+   
     <button @click="goBack" class="fixed-btn">返 回</button>
   </div>
 </template>
@@ -205,6 +211,20 @@
 .button-group .btn:last-child { margin-right: 0; }
 .btn:hover { border-color: #646cff; background-color: #369870; }
 .switch-text { text-align: center; margin-top: 5px; font-size: 0.95em; }
+
+.apply-links {
+  text-align: center;
+  margin-top: 4px;
+  font-size: 0.9em;
+}
+.apply-links a {
+  color: #42b983; 
+  text-decoration: none;
+  margin: 0 5px; 
+}
+.apply-links a:hover {
+  text-decoration: underline; 
+}
 </style>
 
 <script>
@@ -349,6 +369,12 @@ export default {
     },
     goBack() {
       window.location.href = "/main";
+    },
+    goToUserApplication() {
+      this.$router.push({
+        path: '/apply',
+  
+      });
     }
   }
 };
