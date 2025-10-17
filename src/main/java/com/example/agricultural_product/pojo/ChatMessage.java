@@ -1,15 +1,36 @@
 package com.example.agricultural_product.pojo;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+
 import java.time.LocalDateTime;
 
+@TableName("tb_chat_message")
 public class ChatMessage {
+    @TableId(value = "message_id", type = IdType.AUTO)
     private Long messageId;
+
+    @TableField("session_id")
     private Long sessionId;
+
+    @TableField("sender_id")
     private Long senderId;
+
+    @TableField("receiver_id")
     private Long receiverId;
+
+    @TableField("content")
     private String content;
+
+    @TableField("msg_type")
     private String msgType; // text/image
+
+    @TableField("is_read")
     private Boolean read;
+
+    @TableField("send_time")
     private LocalDateTime sendTime;
 
     public Long getMessageId() { return messageId; }
