@@ -8,12 +8,14 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 
 @Component
 public class JwtFilter extends OncePerRequestFilter {
@@ -24,51 +26,48 @@ public class JwtFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        String path = request.getRequestURI();
+        final String authHeader = request.getHeader("Authorization");
 
-        // 放行登录和注册接口，不做 JWT 校验
-        if (path.startsWith("/api/user/login") || path.startsWith("/api/user/register")) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            System.out.println("No JWT Token found in Authorization header. Passing to next filter.");
             filterChain.doFilter(request, response);
+            System.out.println("====== JWT FILTER END ======");
             return;
         }
 
-        String authHeader = request.getHeader("Authorization");
+        final String token = authHeader.substring(7);
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7); // 去掉 "Bearer "
+        try {
+            Claims claims = JwtUtil.parseToken(token);
+            String username = claims.get("userName", String.class);
+            String role = claims.get("role", String.class);
 
-            try {
-                Claims claims = JwtUtil.parseToken(token);
-                String username = claims.get("userName", String.class);
-                String role = claims.get("role", String.class); // 获取角色
 
-                // 只允许 admin 访问 /admin/**
-                if (path.startsWith("/admin") && !"admin".equalsIgnoreCase(role)) {
-                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                    response.getWriter().write("Only admin can access this endpoint");
-                    return;
-                }
+            if (username != null && role != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                System.out.println("User is not authenticated yet. Proceeding to set authentication.");
 
-                // 设置 Spring Security 上下文
-                UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(username, null, Collections.emptyList());
-                SecurityContextHolder.getContext().setAuthentication(auth);
+                String authorityString = "ROLE_" + role.toUpperCase();
+                
+                List<SimpleGrantedAuthority> authorities = Collections.singletonList(
+                        new SimpleGrantedAuthority(authorityString)
+                );
 
-            } catch (JwtException e) {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("Invalid or expired JWT token");
-                return;
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                        username,
+                        null,
+                        authorities
+                );
+
+                SecurityContextHolder.getContext().setAuthentication(authToken);
+                
+            } else {
+                System.out.println("User is already authenticated or token info is incomplete.");
             }
-        } else {
-            // 如果请求需要认证但没有 token
-            if (path.startsWith("/admin")) {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("Missing Authorization header");
-                return;
-            }
+        } catch (JwtException e) {
+            System.out.println("!!! JWT Token processing failed: " + e.getMessage());
         }
 
-        // 放行请求
         filterChain.doFilter(request, response);
+        System.out.println("====== JWT FILTER END ======");
     }
 }

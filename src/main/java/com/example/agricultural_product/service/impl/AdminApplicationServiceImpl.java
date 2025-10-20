@@ -59,7 +59,7 @@ public class AdminApplicationServiceImpl implements AdminApplicationService {
         if (existingUser == null) {
             User user = new User();
             user.setUserName(app.getUserName());
-            user.setPassword(passwordEncoder.encode(app.getPassword()));
+            user.setPassword(app.getPassword());
             user.setName(app.getRealName());
             user.setEmail(app.getEmail());
             user.setRole(app.getApplyRole());

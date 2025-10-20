@@ -42,6 +42,15 @@
       <input type="email" placeholder="请输入邮箱" v-model="form.email" class="input-style" />
     </div>
 
+    <!-- 申请原因 -->
+    <div class="form-item">
+      <label class="form-label">
+        <span class="label-text">申请原因</span>
+        <span class="label-colon">：</span>
+      </label>
+      <input type="reason" placeholder="请输入原因" v-model="form.reason" class="input-style" />
+    </div>
+
     <!-- 申请类型 下拉框 -->
     <!-- applyRole  -->
     <div class="form-item">
@@ -182,6 +191,7 @@ export default {
         password: '',
         name: '',
         email: '',
+        reason: '',
         applyRole: '', 
         file: null //  上传的文件
       },
@@ -221,8 +231,10 @@ export default {
       formData.append('password', this.form.password);
       formData.append('name', this.form.name);
       formData.append('email', this.form.email);
+      formData.append('reason', this.form.reason);
       formData.append('applyRole', this.form.applyRole);
       formData.append('file', this.form.file);
+      
 
       try {
         const response = await axios.post('/apply/submit', formData, {
@@ -251,6 +263,7 @@ export default {
         name: '',
         email: '',
         applyRole: '',
+        reason: '',
         file: null
       };
     },
