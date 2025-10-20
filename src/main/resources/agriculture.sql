@@ -316,5 +316,37 @@ CREATE TABLE IF NOT EXISTS `user_application` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_name_unique` (`user_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='专家/银行身份申请表';
+-- 一对一聊天：会话表
+CREATE TABLE IF NOT EXISTS `tb_chat_session` (
+  `session_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '会话ID',
+  `user_a_id` BIGINT NOT NULL COMMENT '用户A(较小ID)',
+  `user_b_id` BIGINT NOT NULL COMMENT '用户B(较大ID)',
+  `last_message_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '最近消息时间',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`session_id`) USING BTREE,
+  UNIQUE KEY `uniq_user_pair` (`user_a_id`, `user_b_id`) USING BTREE,
+  KEY `idx_user_a` (`user_a_id`) USING BTREE,
+  KEY `idx_user_b` (`user_b_id`) USING BTREE,
+  CONSTRAINT `fk_chat_session_user_a` FOREIGN KEY (`user_a_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_chat_session_user_b` FOREIGN KEY (`user_b_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='一对一聊天会话表';
 
+-- 一对一聊天：消息表
+CREATE TABLE IF NOT EXISTS `tb_chat_message` (
+  `message_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '消息ID',
+  `session_id` BIGINT NOT NULL COMMENT '会话ID',
+  `sender_id` BIGINT NOT NULL COMMENT '发送者ID',
+  `receiver_id` BIGINT NOT NULL COMMENT '接收者ID',
+  `content` VARCHAR(2000) NOT NULL COMMENT '消息内容',
+  `msg_type` ENUM('text','image') NOT NULL DEFAULT 'text' COMMENT '消息类型',
+  `is_read` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否已读',
+  `send_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '发送时间',
+  PRIMARY KEY (`message_id`) USING BTREE,
+  KEY `idx_session_time` (`session_id`, `send_time`) USING BTREE,
+  KEY `idx_receiver_unread` (`receiver_id`, `is_read`) USING BTREE,
+  CONSTRAINT `fk_chat_msg_session` FOREIGN KEY (`session_id`) REFERENCES `tb_chat_session` (`session_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_chat_msg_sender` FOREIGN KEY (`sender_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_chat_msg_receiver` FOREIGN KEY (`receiver_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='一对一聊天消息表';
 SET FOREIGN_KEY_CHECKS = 1; -- 重新启用外键检查
