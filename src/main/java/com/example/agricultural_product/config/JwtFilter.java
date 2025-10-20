@@ -41,9 +41,9 @@ public class JwtFilter extends OncePerRequestFilter {
         final String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            System.out.println("No JWT Token found in Authorization header. Passing to next filter.");
+
             filterChain.doFilter(request, response);
-            System.out.println("====== JWT FILTER END ======");
+            
             return;
         }
 
@@ -56,8 +56,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
 
             if (username != null && role != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                System.out.println("User is not authenticated yet. Proceeding to set authentication.");
-
+               
                 String authorityString = "ROLE_" + role.toUpperCase();
                 
                 List<SimpleGrantedAuthority> authorities = Collections.singletonList(
@@ -72,14 +71,12 @@ public class JwtFilter extends OncePerRequestFilter {
 
                 SecurityContextHolder.getContext().setAuthentication(authToken);
                 
-            } else {
-                System.out.println("User is already authenticated or token info is incomplete.");
-            }
+            } 
         } catch (JwtException e) {
-            System.out.println("!!! JWT Token processing failed: " + e.getMessage());
+           
         }
 
         filterChain.doFilter(request, response);
-        System.out.println("====== JWT FILTER END ======");
+        
     }
 }
