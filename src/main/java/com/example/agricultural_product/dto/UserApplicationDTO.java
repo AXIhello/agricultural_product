@@ -11,4 +11,5 @@ public class UserApplicationDTO {
     private String phone;          // 电话
     private String applyRole;      // 申请角色(expert/bank)
     private String description;    // 申请说明
+    private String reason;         // 申请原因
 }

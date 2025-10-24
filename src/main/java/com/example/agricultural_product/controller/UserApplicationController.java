@@ -20,6 +20,7 @@ public class UserApplicationController {
             @RequestParam("password") String password,
             @RequestParam("name") String name,
             @RequestParam("email") String email,
+            @RequestParam("reason") String reason,
             @RequestParam("applyRole") String applyRole,
             @RequestPart(value = "file", required = false) MultipartFile file) {
 
@@ -29,6 +30,7 @@ public class UserApplicationController {
             dto.setPassword(password);
             dto.setName(name);
             dto.setEmail(email);
+            dto.setReason(reason);
             dto.setApplyRole(applyRole);
 
             boolean success = service.submitApplication(dto, file);

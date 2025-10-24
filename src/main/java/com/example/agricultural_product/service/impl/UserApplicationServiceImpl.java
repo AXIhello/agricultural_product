@@ -50,6 +50,7 @@ public class UserApplicationServiceImpl implements UserApplicationService {
             application.setPassword(passwordEncoder.encode(applicationDTO.getPassword())); // 密码加密
             application.setRealName(applicationDTO.getName());
             application.setEmail(applicationDTO.getEmail());
+            application.setReason(applicationDTO.getReason());
             application.setApplyRole(applicationDTO.getApplyRole());
             application.setAttachmentPath(filePath);
             application.setStatus("pending");

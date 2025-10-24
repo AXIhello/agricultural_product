@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/admin/applications")
+@RequestMapping("/api/admin/applications")
 @RequiredArgsConstructor
 public class AdminApplicationController {
 
