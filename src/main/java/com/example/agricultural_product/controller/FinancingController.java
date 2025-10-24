@@ -176,6 +176,16 @@ public class FinancingController {
         return ResponseEntity.ok(financingService.acceptOffer(farmerId, offerId));
     }
 
+    // 新增：农户拒绝某个银行报价
+    @PostMapping("/offer/reject")
+    public ResponseEntity<Boolean> rejectOffer(
+            HttpServletRequest request,
+            @RequestParam Integer offerId) {
+
+        Long farmerId = getUserIdFromToken(request);
+        return ResponseEntity.ok(financingService.rejectOffer(farmerId, offerId));
+    }
+
     /**
      * 银行查看自己提交的报价列表
      */

@@ -135,6 +135,31 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
 
     @Override
     @Transactional
+    public boolean rejectOffer(Long farmerId, Integer offerId) {
+        // 1. 校验报价是否存在
+        FinancingOffer offer = financingOfferMapper.selectById(offerId);
+        if (offer == null) {
+            return false;
+        }
+
+        // 2. 校验融资申请及归属（仅主申请人可操作）
+        Financing financing = financingMapper.selectById(offer.getFinancingId());
+        if (financing == null || !financing.getInitiatingFarmerId().equals(farmerId)) {
+            return false;
+        }
+
+        // 3. 仅允许拒绝待处理报价
+        if (!"pending".equals(offer.getOfferStatus())) {
+            return false;
+        }
+
+        // 4. 更新报价状态为已拒绝
+        offer.setOfferStatus("rejected");
+        return financingOfferMapper.updateById(offer) > 0;
+    }
+
+    @Override
+    @Transactional
     public boolean cancelFinancing(Long userId, Integer financingId) {
         Financing financing = financingMapper.selectById(financingId);
         if (financing == null || !financing.getInitiatingFarmerId().equals(userId)) {

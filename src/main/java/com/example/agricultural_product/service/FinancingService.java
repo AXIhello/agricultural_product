@@ -46,6 +46,8 @@ public interface FinancingService extends IService<Financing> {
     boolean submitOffer(Long bankUserId, Integer financingId, BigDecimal offeredAmount,
                         BigDecimal interestRate, String bankNotes);
 
+    boolean rejectOffer(Long farmerId, Integer offerId);
+
     /**
      * 查看某融资申请的所有报价
      */

@@ -73,13 +73,34 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
 
-        // 返回用户信息（不返回密码）
+        user.setPassword(null);
+
+        // 返回用户信息
         response.put("success", true);
         response.put("message", "获取用户信息成功！");
         response.put("user", user);
         return ResponseEntity.ok(response);
     }
+    // 通过用户ID获取用户信息（公开接口，已去除密码）
+    @GetMapping("/info/{userId}")
+    public ResponseEntity<Map<String, Object>> getUserInfoById(@PathVariable Long userId) {
+        Map<String, Object> response = new HashMap<>();
 
+        User user = userService.findById(userId);
+        if (user == null) {
+            response.put("success", false);
+            response.put("message", "用户不存在！");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+
+        // 隐藏敏感信息
+        user.setPassword(null);
+
+        response.put("success", true);
+        response.put("message", "获取用户信息成功！");
+        response.put("user", user);
+        return ResponseEntity.ok(response);
+    }
     //  登录接口（修改后，返回 token）
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> loginForm) {
