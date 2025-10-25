@@ -32,16 +32,18 @@ public class FinancingController {
     }
 
     /**
-     * 农户创建融资申请（草稿状态）
+     * 农户直接提交融资申请（创建后立即提交）
      */
     @PostMapping("/create")
-    public ResponseEntity<Map<String, Object>> createFinancing(
+    public ResponseEntity<Map<String, Object>> createAndSubmitFinancing(
             HttpServletRequest request,
             @RequestBody Map<String, Object> params) {
 
         Long farmerId = getUserIdFromToken(request);
         BigDecimal amount = new BigDecimal(params.get("amount").toString());
         String purpose = (String) params.get("purpose");
+        Integer term = Integer.parseInt(params.get("term").toString());
+
 
         // 修正类型转换问题
         @SuppressWarnings("unchecked")
@@ -61,20 +63,17 @@ public class FinancingController {
                     .toList();
         }
 
-        Integer financingId = financingService.createFinancing(farmerId, amount, purpose, coApplicantIds);
-        return ResponseEntity.ok(Map.of("success", true, "financingId", financingId));
-    }
+        // 创建融资申请
+        Integer financingId = financingService.createFinancing(farmerId, amount, purpose, term, coApplicantIds);
 
-    /**
-     * 农户提交融资申请（从草稿状态提交）
-     */
-    @PostMapping("/submit")
-    public ResponseEntity<Boolean> submitFinancing(
-            HttpServletRequest request,
-            @RequestParam Integer financingId) {
+        // 创建后立即提交
+        financingService.submitFinancing(farmerId, financingId);
 
-        Long userId = getUserIdFromToken(request);
-        return ResponseEntity.ok(financingService.submitFinancing(userId, financingId));
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "financingId", financingId,
+                "message", "融资申请已成功提交"
+        ));
     }
 
     /**

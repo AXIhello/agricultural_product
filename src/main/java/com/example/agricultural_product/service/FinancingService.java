@@ -13,7 +13,7 @@ public interface FinancingService extends IService<Financing> {
     /**
      * 创建融资申请
      */
-    Integer createFinancing(Long initiatingFarmerId, BigDecimal amount, String purpose, List<Long> coApplicantIds);
+    Integer createFinancing(Long initiatingFarmerId, BigDecimal amount, String purpose, Integer term, List<Long> coApplicantIds);
 
     /**
      * 提交融资申请（从草稿状态提交）

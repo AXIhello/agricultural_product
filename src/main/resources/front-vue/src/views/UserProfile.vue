@@ -14,6 +14,18 @@
     </header>
 
     <section class="content">
+      <div style="display: flex; gap: 50rem">
+        <div class="info">
+          <p><label>用户名： </label>{{userName}}</p>
+          <p><label>邮箱： </label>{{email}}</p>
+          <p><label>身份： </label>{{role}}</p>
+        </div>
+
+        <div>
+          <button @click="exit()">退出登录</button>
+        </div>
+      </div>
+
       <div v-if="role === 'buyer'" class="buyer-view-container">
         <nav class="buyer-nav">
           <button @click="switchView('address')" :class="{ active: currentView === 'address' }">我的地址</button>
@@ -162,13 +174,15 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import axios from '../utils/axios'
+import router from "@/router/index.js";
 
 const token = localStorage.getItem('token')
 
 const userInfo = ref({})
 const userId = ref('')
-const userName = ref('游客')
-const role = ref('未登录')
+const userName = ref('未登录')
+const role = ref('游客')
+const email = ref('')
 
 const currentView = ref('address')
 const addresses = ref([])
@@ -260,7 +274,7 @@ onMounted(async () => {
       userId.value = res.data.user.userId
       userName.value = res.data.user.userName
       role.value = res.data.user.role
-      // 如果需要可保存到 localStorage
+      email.value = res.data.user.email
       localStorage.setItem('userInfo', JSON.stringify(res.data.user))
     } else {
       console.warn('Token 无效或过期')
@@ -273,6 +287,16 @@ onMounted(async () => {
 watch(currentView, val => {
   if (val === 'address') loadAddresses()
 })
+
+function exit(){
+  // 清除本地存储的用户信息
+  localStorage.removeItem('token')
+  localStorage.removeItem('userInfo')
+  localStorage.removeItem('userId')
+
+  // 跳转到登录页
+  router.push('/login')
+}
 </script>
 
 <style scoped>
@@ -401,5 +425,10 @@ button.active {
   text-align: center;
   color: #888;
   padding: 2rem;
+}
+
+.info {
+  padding-left: 2rem;
+  text-align: left;
 }
 </style>

@@ -62,7 +62,7 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
 
     @Override
     @Transactional
-    public Integer createFinancing(Long initiatingFarmerId, BigDecimal amount, String purpose, List<Long> coApplicantIds) {
+    public Integer createFinancing(Long initiatingFarmerId, BigDecimal amount, String purpose, Integer term, List<Long> coApplicantIds) {
         Financing financing = new Financing();
         financing.setInitiatingFarmerId(initiatingFarmerId);
         financing.setAmount(amount);
@@ -70,7 +70,8 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
         financing.setApplicationStatus("draft");
         financing.setCreateTime(LocalDateTime.now());
         financing.setUpdateTime(LocalDateTime.now());
-        
+        financing.setTerm(term); // ✅ 新增：保存融资期限
+
         financingMapper.insert(financing);
         Integer financingId = financing.getFinancingId();
 

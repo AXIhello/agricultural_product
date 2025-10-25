@@ -25,6 +25,9 @@ public class Financing {
     @TableField("purpose")
     private String purpose;
 
+    @TableField("term")
+    private Integer term;
+
     @TableField("application_status")
     private String applicationStatus;
 
