@@ -189,7 +189,7 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
     public Page<Financing> listSubmittedFinancings(Integer pageNum, Integer pageSize) {
         Page<Financing> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Financing> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Financing::getApplicationStatus, "submitted")
+        wrapper.in(Financing::getApplicationStatus, "submitted","pending")
                 .orderByDesc(Financing::getCreateTime);
         return financingMapper.selectPage(page, wrapper);
     }
