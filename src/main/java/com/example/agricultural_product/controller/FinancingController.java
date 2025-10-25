@@ -126,12 +126,12 @@ public class FinancingController {
     /**
      * 银行查看待审核的融资申请（分页）
      */
-    @GetMapping("/pending")
-    public ResponseEntity<Page<Financing>> listPendingFinancings(
+    @GetMapping("/submitted")
+    public ResponseEntity<Page<Financing>> listSubmittedFinancings(
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize) {
 
-        return ResponseEntity.ok(financingService.listPendingFinancings(pageNum, pageSize));
+        return ResponseEntity.ok(financingService.listSubmittedFinancings(pageNum, pageSize));
     }
 
     /**

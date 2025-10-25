@@ -38,7 +38,7 @@ public interface FinancingService extends IService<Financing> {
     /**
      * 银行查看待审核的融资申请列表
      */
-    Page<Financing> listPendingFinancings(Integer pageNum, Integer pageSize);
+    Page<Financing> listSubmittedFinancings(Integer pageNum, Integer pageSize);
 
     /**
      * 银行提交报价

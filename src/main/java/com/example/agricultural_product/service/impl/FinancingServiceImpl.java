@@ -186,10 +186,10 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
     }
 
     @Override
-    public Page<Financing> listPendingFinancings(Integer pageNum, Integer pageSize) {
+    public Page<Financing> listSubmittedFinancings(Integer pageNum, Integer pageSize) {
         Page<Financing> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Financing> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Financing::getApplicationStatus, "pending")
+        wrapper.eq(Financing::getApplicationStatus, "submitted")
                 .orderByDesc(Financing::getCreateTime);
         return financingMapper.selectPage(page, wrapper);
     }
@@ -198,6 +198,12 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
     @Transactional
     public boolean submitOffer(Long bankUserId, Integer financingId, BigDecimal offeredAmount,
                                BigDecimal interestRate, String bankNotes) {
+        // 仅允许对 submitted 的融资申请报价
+        Financing financing = financingMapper.selectById(financingId);
+        if (financing == null || !"submitted".equals(financing.getApplicationStatus())) {
+            return false;
+        }
+
         FinancingOffer offer = new FinancingOffer();
         offer.setFinancingId(financingId);
         offer.setBankUserId(bankUserId);
@@ -206,8 +212,17 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
         offer.setBankNotes(bankNotes);
         offer.setOfferStatus("pending");
         offer.setOfferTime(LocalDateTime.now());
-        
-        return financingOfferMapper.insert(offer) > 0;
+
+        boolean ok = financingOfferMapper.insert(offer) > 0;
+
+        // 首个报价成功后，将融资状态置为 pending
+        if (ok) {
+            financing.setApplicationStatus("pending");
+            financing.setUpdateTime(LocalDateTime.now());
+            financingMapper.updateById(financing);
+        }
+
+        return ok;
     }
 
     @Override
