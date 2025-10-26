@@ -31,6 +31,23 @@ public class FinancingController {
         return JwtUtil.getUserId(token);
     }
 
+    //银行按融资ID查看自己提交的报价
+    @GetMapping("/bank/offers/byFinancing")
+    public ResponseEntity<List<FinancingOffer>> listMyOffersForFinancing(
+            HttpServletRequest request,
+            @RequestParam Integer financingId) {
+        Long bankUserId = getUserIdFromToken(request);
+        return ResponseEntity.ok(financingService.listMyOffersForFinancing(bankUserId, financingId));
+    }
+
+    //银行查看所有状态的融资申请（分页）
+    @GetMapping("/bank/financings")
+    public ResponseEntity<Page<Financing>> listAllFinancingsForBank(
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+        return ResponseEntity.ok(financingService.listAllFinancings(pageNum, pageSize));
+    }
+
     /**
      * 农户直接提交融资申请（创建后立即提交）
      */

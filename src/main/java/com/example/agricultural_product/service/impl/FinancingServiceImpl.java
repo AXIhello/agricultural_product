@@ -112,6 +112,23 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
     }
 
     @Override
+    public Page<Financing> listAllFinancings(Integer pageNum, Integer pageSize) {
+        Page<Financing> page = new Page<>(pageNum, pageSize);
+        LambdaQueryWrapper<Financing> wrapper = new LambdaQueryWrapper<>();
+        wrapper.orderByDesc(Financing::getCreateTime);
+        return financingMapper.selectPage(page, wrapper);
+    }
+
+    @Override
+    public List<FinancingOffer> listMyOffersForFinancing(Long bankUserId, Integer financingId) {
+        LambdaQueryWrapper<FinancingOffer> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FinancingOffer::getFinancingId, financingId)
+                .eq(FinancingOffer::getBankUserId, bankUserId)
+                .orderByDesc(FinancingOffer::getOfferTime);
+        return financingOfferMapper.selectList(wrapper);
+    }
+
+    @Override
     public Page<Financing> listUserFinancings(Long userId, Integer pageNum, Integer pageSize) {
         Page<Financing> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Financing> wrapper = new LambdaQueryWrapper<>();
