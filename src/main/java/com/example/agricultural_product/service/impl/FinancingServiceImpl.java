@@ -167,7 +167,7 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
             return false;
         }
         if (!"draft".equals(financing.getApplicationStatus()) && 
-            !"pending".equals(financing.getApplicationStatus())) {
+            !"submitted".equals(financing.getApplicationStatus())) {
             return false;
         }
 
@@ -190,7 +190,7 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
     public Page<Financing> listSubmittedFinancings(Integer pageNum, Integer pageSize) {
         Page<Financing> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Financing> wrapper = new LambdaQueryWrapper<>();
-        wrapper.in(Financing::getApplicationStatus, "submitted","pending")
+        wrapper.eq(Financing::getApplicationStatus, "submitted")
                 .orderByDesc(Financing::getCreateTime);
         return financingMapper.selectPage(page, wrapper);
     }
@@ -216,9 +216,7 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
 
         boolean ok = financingOfferMapper.insert(offer) > 0;
 
-        // 首个报价成功后，将融资状态置为 pending
         if (ok) {
-            financing.setApplicationStatus("pending");
             financing.setUpdateTime(LocalDateTime.now());
             financingMapper.updateById(financing);
         }
