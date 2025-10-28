@@ -1,30 +1,4 @@
--- ...existing code...
-
--- 专家工作时间段（新增）
-CREATE TABLE IF NOT EXISTS `tb_expert_working_slots` (
-  `slot_id` INT NOT NULL AUTO_INCREMENT COMMENT '时间段ID',
-  `expert_id` BIGINT NOT NULL COMMENT '专家用户ID，关联 users.user_id',
-  `work_date` DATE NOT NULL COMMENT '日期',
-  `start_time` TIME NOT NULL COMMENT '开始时间',
-  `end_time` TIME NOT NULL COMMENT '结束时间',
-  `capacity` INT NOT NULL DEFAULT 1 COMMENT '可预约名额',
-  `booked_count` INT NOT NULL DEFAULT 0 COMMENT '已预约数',
-  `status` ENUM('open','closed') NOT NULL DEFAULT 'open' COMMENT '是否开放预约',
-  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`slot_id`),
-  INDEX `idx_expert_date`(`expert_id`, `work_date`),
-  CONSTRAINT `fk_slot_expert_user` FOREIGN KEY (`expert_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='专家工作时间段';
-
-
-ALTER TABLE `tb_expert_consultation`
-  ADD COLUMN `slot_id` INT NULL COMMENT '工作时间段ID，关联 tb_expert_working_slots.slot_id' AFTER `expert_id`,
-  ADD INDEX `idx_slot_farmer` (`slot_id`, `farmer_id`),
-  ADD CONSTRAINT `fk_consultation_slot` FOREIGN KEY (`slot_id`) REFERENCES `tb_expert_working_slots` (`slot_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
-
-
+package com.example.agricultural_product.controller;
 import com.example.agricultural_product.pojo.Address;
 import com.example.agricultural_product.pojo.Product;
 import com.example.agricultural_product.service.AddressService;
