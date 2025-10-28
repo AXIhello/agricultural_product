@@ -129,20 +129,28 @@ CREATE TABLE IF NOT EXISTS `tb_cart_items`  (
 -- ----------------------------
 -- Table structure for tb_expert_consultation
 -- ----------------------------
-CREATE TABLE IF NOT EXISTS `tb_expert_consultation`  (
-  `consultation_id` int NOT NULL AUTO_INCREMENT COMMENT '咨询ID',
-  `farmer_id` bigint NOT NULL COMMENT '农户用户ID，关联users表',
-  `expert_id` bigint NOT NULL COMMENT '专家用户ID，关联users表',
-  `consultation_time` datetime NOT NULL COMMENT '预约的咨询时间',
-  `status` enum('scheduled','completed','cancelled') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'scheduled' COMMENT '状态：scheduled（已预约）、completed（已完成）、cancelled（已取消）',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+CREATE TABLE IF NOT EXISTS `tb_expert_consultation`  ( 
+  `consultation_id` INT NOT NULL AUTO_INCREMENT COMMENT '咨询ID',
+  `farmer_id` BIGINT NOT NULL COMMENT '农户用户ID，关联users表',
+  `expert_id` BIGINT NOT NULL COMMENT '专家用户ID，关联users表',
+  `slot_id` INT NULL COMMENT '工作时间段ID，关联 tb_expert_working_slots.slot_id',
+  `consultation_time` DATETIME NOT NULL COMMENT '预约的咨询时间',
+  `status` ENUM('scheduled','completed','cancelled') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'scheduled' COMMENT '状态：scheduled（已预约）、completed（已完成）、cancelled（已取消）',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`consultation_id`) USING BTREE,
   INDEX `idx_farmer_id`(`farmer_id` ASC) USING BTREE,
   INDEX `idx_expert_id`(`expert_id` ASC) USING BTREE,
+  INDEX `idx_slot_farmer`(`slot_id`, `farmer_id`) USING BTREE,
   CONSTRAINT `fk_consultation_expert` FOREIGN KEY (`expert_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT `fk_consultation_farmer` FOREIGN KEY (`farmer_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '专家咨询预约表 (基础信息)' ROW_FORMAT = DYNAMIC;
+  CONSTRAINT `fk_consultation_farmer` FOREIGN KEY (`farmer_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_consultation_slot` FOREIGN KEY (`slot_id`) REFERENCES `tb_expert_working_slots` (`slot_id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE = InnoDB 
+AUTO_INCREMENT = 4 
+DEFAULT CHARSET = utf8mb4 
+COLLATE = utf8mb4_0900_ai_ci 
+COMMENT = '专家咨询预约表 (基础信息)' 
+ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for tb_financing
@@ -349,4 +357,23 @@ CREATE TABLE IF NOT EXISTS `tb_chat_message` (
   CONSTRAINT `fk_chat_msg_sender` FOREIGN KEY (`sender_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_chat_msg_receiver` FOREIGN KEY (`receiver_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='一对一聊天消息表';
+
+
+-- 专家工作时间段
+CREATE TABLE IF NOT EXISTS `tb_expert_working_slots` (
+  `slot_id` INT NOT NULL AUTO_INCREMENT COMMENT '时间段ID',
+  `expert_id` BIGINT NOT NULL COMMENT '专家用户ID，关联 users.user_id',
+  `work_date` DATE NOT NULL COMMENT '日期',
+  `start_time` TIME NOT NULL COMMENT '开始时间',
+  `end_time` TIME NOT NULL COMMENT '结束时间',
+  `capacity` INT NOT NULL DEFAULT 1 COMMENT '可预约名额',
+  `booked_count` INT NOT NULL DEFAULT 0 COMMENT '已预约数',
+  `status` ENUM('open','closed') NOT NULL DEFAULT 'open' COMMENT '是否开放预约',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`slot_id`),
+  INDEX `idx_expert_date`(`expert_id`, `work_date`),
+  CONSTRAINT `fk_slot_expert_user` FOREIGN KEY (`expert_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='专家工作时间段';
+
 SET FOREIGN_KEY_CHECKS = 1; -- 重新启用外键检查

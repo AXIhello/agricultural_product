@@ -11,27 +11,27 @@ import java.time.LocalDateTime;
 @Data
 @TableName("tb_expert_profiles")
 public class ExpertProfile {
-	@TableId("expert_id")
-	private Long expertId;
+    @TableId("expert_id")
+    private Long expertId;
 
-	@TableField("specialization")
-	private String specialization;
+    @TableField("specialization")
+    private String specialization;
 
-	@TableField("bio")
-	private String bio;
+    @TableField("bio")
+    private String bio;
 
-	@TableField("photo_url")
-	private String photoUrl;
+    @TableField("photo_url")
+    private String photoUrl;
 
-	@TableField("average_rating")
-	private BigDecimal averageRating;
+    @TableField("average_rating")
+    private BigDecimal averageRating;
 
-	@TableField("consultation_fee")
-	private BigDecimal consultationFee;
+    @TableField("consultation_fee")
+    private BigDecimal consultationFee;
 
-	@TableField("create_time")
-	private LocalDateTime createTime;
+    @TableField("create_time")
+    private LocalDateTime createTime;
 
-	@TableField("update_time")
-	private LocalDateTime updateTime;
-} 
+    @TableField("update_time")
+    private LocalDateTime updateTime;
+}
