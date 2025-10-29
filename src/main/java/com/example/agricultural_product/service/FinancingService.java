@@ -48,11 +48,15 @@ public interface FinancingService extends IService<Financing> {
 
     boolean rejectOffer(Long farmerId, Integer offerId);
 
+    Integer applyBankProduct(Long userId, Integer productId, BigDecimal amount, String purpose, List<Long> coApplicantIds);
 
-    // 新增：银行按融资ID查看自己提交的报价
+    Page<Financing> listProductApplications(Long bankUserId, Integer productId, Integer pageNum, Integer pageSize);
+
+
+    // 银行按融资ID查看自己提交的报价
     List<FinancingOffer> listMyOffersForFinancing(Long bankUserId, Integer financingId);
 
-    // 新增：银行查看所有状态的融资申请（不按状态过滤）
+    // 银行查看所有状态的融资申请（不按状态过滤）
     Page<Financing> listAllFinancings(Integer pageNum, Integer pageSize);
 
     /**

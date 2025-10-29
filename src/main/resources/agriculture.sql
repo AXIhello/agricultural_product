@@ -152,32 +152,43 @@ COLLATE = utf8mb4_0900_ai_ci
 COMMENT = '专家咨询预约表 (基础信息)' 
 ROW_FORMAT = DYNAMIC;
 
--- ----------------------------
--- Table structure for tb_financing
--- ----------------------------
+-- 新增：银行固定产品表
+CREATE TABLE IF NOT EXISTS `tb_bank_products` (
+  `product_id` INT NOT NULL AUTO_INCREMENT COMMENT '固定产品ID',
+  `bank_user_id` BIGINT NOT NULL COMMENT '银行用户ID，关联users.user_id',
+  `product_name` VARCHAR(100) NOT NULL COMMENT '产品名称',
+  `description` TEXT NULL COMMENT '产品说明',
+  `term_months` INT NOT NULL COMMENT '固定期限(月)',
+  `interest_rate` DECIMAL(5,4) NOT NULL COMMENT '年利率(如0.0500为5%)',
+  `min_amount` DECIMAL(12,2) NOT NULL COMMENT '最小申请金额',
+  `max_amount` DECIMAL(12,2) NOT NULL COMMENT '最大申请金额',
+  `status` ENUM('active','inactive') NOT NULL DEFAULT 'active' COMMENT '产品状态',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`product_id`) USING BTREE,
+  INDEX `idx_bank_user_id`(`bank_user_id`) USING BTREE,
+  INDEX `idx_status`(`status`) USING BTREE,
+  CONSTRAINT `fk_bank_product_bank_user` FOREIGN KEY (`bank_user_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='银行固定贷款产品表';
+
+-- 更新：为融资表补充term与绑定的product_id
 CREATE TABLE IF NOT EXISTS `tb_financing` (
   `financing_id` INT NOT NULL AUTO_INCREMENT COMMENT '融资ID',
-  `initiating_farmer_id` BIGINT NOT NULL COMMENT '发起融资申请的主农户/联系人ID，关联users表',
+  `initiating_farmer_id` BIGINT NOT NULL COMMENT '发起人ID，关联users表',
   `amount` DECIMAL(12,2) NOT NULL COMMENT '申请融资金额',
-  `purpose` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '融资用途描述',
+  `purpose` TEXT NULL COMMENT '用途',
+  `term` INT NULL COMMENT '期限(月)',
+  `product_id` INT NULL COMMENT '绑定的固定产品ID',
   `application_status` ENUM('draft','submitted','cancelled','approved','rejected','overdue')
-      CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci
-      NOT NULL DEFAULT 'draft'
-      COMMENT '融资申请整体状态：草稿、已提交、已取消、已批准、已拒绝、逾期',
+      NOT NULL DEFAULT 'draft' COMMENT '申请状态',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`financing_id`) USING BTREE,
   INDEX `idx_initiating_farmer_id` (`initiating_farmer_id`) USING BTREE,
-  CONSTRAINT `fk_financing_initiator`
-    FOREIGN KEY (`initiating_farmer_id`)
-    REFERENCES `users` (`user_id`)
-    ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE = InnoDB
-  AUTO_INCREMENT = 5
-  DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_0900_ai_ci
-  ROW_FORMAT = DYNAMIC
-  COMMENT = '融资信息表 (支持联合申请和多银行匹配)';
+  INDEX `idx_product_id` (`product_id`) USING BTREE,
+  CONSTRAINT `fk_financing_initiator` FOREIGN KEY (`initiating_farmer_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_financing_product` FOREIGN KEY (`product_id`) REFERENCES `tb_bank_products` (`product_id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC COMMENT='融资信息表(支持绑定银行固定产品)';
 
 
 -- ----------------------------

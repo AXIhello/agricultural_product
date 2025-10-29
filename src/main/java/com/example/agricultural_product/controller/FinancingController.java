@@ -3,6 +3,7 @@ package com.example.agricultural_product.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.agricultural_product.pojo.Financing;
 import com.example.agricultural_product.pojo.FinancingOffer;
+import com.example.agricultural_product.dto.ApplyBankProductRequest;
 import com.example.agricultural_product.service.FinancingService;
 import com.example.agricultural_product.utils.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -92,6 +93,37 @@ public class FinancingController {
                 "message", "融资申请已成功提交"
         ));
     }
+
+    // 农户按固定产品发起申请（userId 从 JWT）
+    @PostMapping("/apply-product")
+    public ResponseEntity<Integer> applyBankProduct(
+            HttpServletRequest request,
+            @RequestBody ApplyBankProductRequest req) {
+
+        Long userId = getUserIdFromToken(request);
+        Integer id = financingService.applyBankProduct(
+                userId,
+                req.getProductId(),
+                req.getAmount(),
+                req.getPurpose(),
+                req.getCoApplicantIds()
+        );
+        return ResponseEntity.ok(id == null ? 0 : id);
+    }
+
+    // 银行查看自己产品下的融资申请列表（bankUserId 从 JWT）
+    @GetMapping("/product-applications")
+    public ResponseEntity<Page<Financing>> listProductApplications(
+            HttpServletRequest request,
+            @RequestParam(required = false) Integer productId,
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+
+        Long bankUserId = getUserIdFromToken(request);
+        Page<Financing> page = financingService.listProductApplications(bankUserId, productId, pageNum, pageSize);
+        return ResponseEntity.ok(page);
+    }
+
 
     /**
      * 农户查看自己融资申请列表（分页）

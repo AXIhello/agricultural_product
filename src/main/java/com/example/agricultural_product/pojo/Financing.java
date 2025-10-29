@@ -28,6 +28,9 @@ public class Financing {
     @TableField("term")
     private Integer term;
 
+    @TableField("product_id")
+    private Integer productId;
+
     @TableField("application_status")
     private String applicationStatus;
 

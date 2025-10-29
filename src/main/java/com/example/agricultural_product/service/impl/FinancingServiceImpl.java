@@ -3,9 +3,11 @@ package com.example.agricultural_product.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.example.agricultural_product.mapper.BankProductMapper;
 import com.example.agricultural_product.mapper.FinancingFarmerMapper;
 import com.example.agricultural_product.mapper.FinancingMapper;
 import com.example.agricultural_product.mapper.FinancingOfferMapper;
+import com.example.agricultural_product.pojo.BankProduct;
 import com.example.agricultural_product.pojo.Financing;
 import com.example.agricultural_product.pojo.FinancingFarmer;
 import com.example.agricultural_product.pojo.FinancingOffer;
@@ -18,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing> implements FinancingService {
@@ -34,6 +38,8 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private BankProductMapper bankProductMapper;
     /**
      * 获取融资申请的所有参与农户ID（包括主申请人和共同申请人）
      */
@@ -44,6 +50,60 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
                 .stream()
                 .map(FinancingFarmer::getFarmerId)
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public Integer applyBankProduct(Long userId, Integer productId, BigDecimal amount, String purpose, List<Long> coApplicantIds) {
+        BankProduct product = bankProductMapper.selectById(productId);
+        if (product == null || !"active".equals(product.getStatus())) return null;
+        if (amount.compareTo(product.getMinAmount()) < 0 || amount.compareTo(product.getMaxAmount()) > 0) return null;
+
+        Financing financing = new Financing();
+        financing.setInitiatingFarmerId(userId);
+        financing.setAmount(amount);
+        financing.setPurpose(purpose != null ? purpose : product.getProductName());
+        financing.setTerm(product.getTermMonths());
+        financing.setProductId(productId);
+        financing.setApplicationStatus("submitted"); // 直接进入已提交，等待银行处理
+        financing.setCreateTime(LocalDateTime.now());
+        financing.setUpdateTime(LocalDateTime.now());
+        financingMapper.insert(financing);
+        Integer financingId = financing.getFinancingId();
+
+        // 主申请人
+        FinancingFarmer mainFarmer = new FinancingFarmer();
+        mainFarmer.setFinancingId(financingId);
+        mainFarmer.setFarmerId(userId);
+        mainFarmer.setRoleInFinancing("主申请人");
+        financingFarmerMapper.insert(mainFarmer);
+
+        return financingId;
+    }
+
+    @Override
+    public Page<Financing> listProductApplications(Long bankUserId, Integer productId, Integer pageNum, Integer pageSize) {
+        // 找到该银行的产品集合（可按单个productId筛选）
+        List<BankProduct> products;
+        if (productId != null) {
+            BankProduct p = bankProductMapper.selectById(productId);
+            if (p == null || !p.getBankUserId().equals(bankUserId)) {
+                return new Page<>(pageNum, pageSize);
+            }
+            products = List.of(p);
+        } else {
+            products = bankProductMapper.selectList(
+                    new LambdaQueryWrapper<BankProduct>().eq(BankProduct::getBankUserId, bankUserId)
+            );
+        }
+        if (products.isEmpty()) return new Page<>(pageNum, pageSize);
+
+        Set<Integer> pids = products.stream().map(BankProduct::getProductId).collect(Collectors.toSet());
+        Page<Financing> page = new Page<>(pageNum, pageSize);
+        LambdaQueryWrapper<Financing> qw = new LambdaQueryWrapper<>();
+        qw.in(Financing::getProductId, pids)
+                .orderByDesc(Financing::getCreateTime);
+        return financingMapper.selectPage(page, qw);
     }
 
     /**
