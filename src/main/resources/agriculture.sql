@@ -93,21 +93,25 @@ CREATE TABLE IF NOT EXISTS `tb_cart`  (
 -- ----------------------------
 -- Table structure for tb_product
 -- ----------------------------
-CREATE TABLE IF NOT EXISTS `tb_product`  (
-  `product_id` int NOT NULL AUTO_INCREMENT COMMENT '产品ID',
-  `product_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '产品名称',
-  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '产品描述',
-  `price` decimal(10, 2) NOT NULL COMMENT '价格',
-  `stock` int NOT NULL DEFAULT 0 COMMENT '库存',
-  `farmer_id` bigint NOT NULL COMMENT '农户用户ID，关联users表',
-  `status` enum('active','inactive') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'active' COMMENT '产品状态：active（上架）、inactive（下架）',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`product_id`) USING BTREE,
-  INDEX `idx_farmer_id`(`farmer_id` ASC) USING BTREE,
-  CONSTRAINT `fk_product_farmer` FOREIGN KEY (`farmer_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE = InnoDB AUTO_INCREMENT = 10005 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '农产品信息表 (基础信息)' ROW_FORMAT = Dynamic;
-
+CREATE TABLE `tb_product` (
+    `product_id` int NOT NULL AUTO_INCREMENT COMMENT '产品ID',
+    `product_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '产品名称',
+    `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '产品描述',
+    `price` decimal(10,2) NOT NULL COMMENT '价格',
+    `stock` int NOT NULL DEFAULT '0' COMMENT '库存',
+    `farmer_id` bigint NOT NULL COMMENT '农户用户ID，关联users表',
+    `status` enum('active','inactive') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'active' COMMENT '产品状态：active（上架）、inactive（下架）',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `prodCat` text NOT NULL COMMENT '产品大类',
+    `prodPcat` text NOT NULL COMMENT '产品小类',
+    `unitInfo` text NOT NULL COMMENT '产品单位',
+    `specInfo` text COMMENT '产品信息',
+    `place` text COMMENT '产地',
+    PRIMARY KEY (`product_id`) USING BTREE,
+    KEY `idx_farmer_id` (`farmer_id`) USING BTREE,
+    CONSTRAINT `fk_product_farmer` FOREIGN KEY (`farmer_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=10007 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC COMMENT='农产品信息表 (基础信息)';
 -- ----------------------------
 -- Table structure for tb_cart_items
 -- ----------------------------
