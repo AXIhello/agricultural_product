@@ -1,4 +1,4 @@
-package com.example.agricultural_product.pojo.dto;
+package com.example.agricultural_product.dto;
 
 import lombok.Data;
 

@@ -1,4 +1,4 @@
-package com.example.agricultural_product.pojo.dto;
+package com.example.agricultural_product.dto;
 
 import com.example.agricultural_product.pojo.Order;
 import com.example.agricultural_product.pojo.OrderItem;
