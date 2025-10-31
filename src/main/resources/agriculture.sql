@@ -221,7 +221,7 @@ CREATE TABLE IF NOT EXISTS`tb_financing_offers` (
   `bank_user_id` bigint NOT NULL COMMENT '提供报价/审批的银行用户ID，关联users表',
   `offered_amount` decimal(12,2) DEFAULT NULL COMMENT '银行愿意提供的金额',
   `offered_interest_rate` decimal(5,4) DEFAULT NULL COMMENT '银行提供的年利率（例如0.05表示5%）',
-  `offer_status` enum('submitted','accepted','rejected') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'submitted' COMMENT '报价状态：submitted, accepted, rejected',
+  `offer_status` enum('pending','accepted','rejected') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'submitted' COMMENT '报价状态：submitted, accepted, rejected',
   `bank_notes` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '银行的附加说明或条件',
   `offer_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '报价/响应时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
