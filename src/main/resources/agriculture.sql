@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS `tb_cart`  (
 -- ----------------------------
 -- Table structure for tb_product
 -- ----------------------------
-CREATE TABLE `tb_product` (
+CREATE TABLE IF NOT EXISTS `tb_product` (
     `product_id` int NOT NULL AUTO_INCREMENT COMMENT '产品ID',
     `product_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '产品名称',
     `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '产品描述',
