@@ -13,4 +13,6 @@ public interface BankProductService {
     boolean updateStatus(Long bankUserId, Integer productId, String status); // active/inactive
 
     Page<BankProduct> listMyProducts(Long bankUserId, Integer pageNum, Integer pageSize);
+
+    Page<BankProduct> listAllProducts(Integer pageNum, Integer pageSize);
 }

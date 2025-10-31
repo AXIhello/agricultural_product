@@ -53,4 +53,12 @@ public class BankProductServiceImpl extends ServiceImpl<BankProductMapper, BankP
         qw.eq(BankProduct::getBankUserId, bankUserId).orderByDesc(BankProduct::getCreateTime);
         return bankProductMapper.selectPage(page, qw);
     }
+
+    @Override
+    public Page<BankProduct> listAllProducts(Integer pageNum, Integer pageSize) {
+        Page<BankProduct> page = new Page<>(pageNum, pageSize);
+        LambdaQueryWrapper<BankProduct> qw = new LambdaQueryWrapper<>();
+        qw.orderByDesc(BankProduct::getCreateTime);
+        return bankProductMapper.selectPage(page, qw);
+    }
 }
