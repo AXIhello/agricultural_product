@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.example.agricultural_product.pojo.FinancingFarmer;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -273,5 +274,48 @@ public class FinancingController {
     public ResponseEntity<Boolean> markOverdue(@RequestParam Integer financingId) {
         boolean result = financingService.markOverdue(financingId);
         return ResponseEntity.ok(result);
+    }
+
+    /**
+     * 主申请人邀请共同申请人（可追加）
+     */
+    @PostMapping("/invite")
+    public ResponseEntity<Map<String, Object>> inviteCoApplicants(
+            HttpServletRequest request,
+            @RequestBody Map<String, Object> params) {
+        Long inviterId = getUserIdFromToken(request);
+        Integer financingId = ((Number) params.get("financingId")).intValue();
+
+        @SuppressWarnings("unchecked")
+        List<Object> raw = (List<Object>) params.get("coApplicantIds");
+        List<Long> coApplicantIds = raw == null ? List.of() : raw.stream()
+                .map(v -> (v instanceof Number) ? ((Number) v).longValue() : Long.parseLong(v.toString()))
+                .toList();
+
+        boolean ok = financingService.inviteCoApplicants(inviterId, financingId, coApplicantIds);
+        return ResponseEntity.ok(Map.of("success", ok));
+    }
+
+    /**
+     * 共同申请人响应邀请（action: accept/reject）
+     */
+    @PostMapping("/invite/respond")
+    public ResponseEntity<Map<String, Object>> respondInvitation(
+            HttpServletRequest request,
+            @RequestBody Map<String, Object> params) {
+        Long farmerId = getUserIdFromToken(request);
+        Integer financingId = ((Number) params.get("financingId")).intValue();
+        String action = String.valueOf(params.get("action")); // accept/reject
+        boolean ok = financingService.respondInvitation(farmerId, financingId, action);
+        return ResponseEntity.ok(Map.of("success", ok));
+    }
+
+    /**
+     * 查询该融资的共同申请人及邀请状态
+     */
+    @GetMapping("/co-applicants")
+    public ResponseEntity<List<FinancingFarmer>> listCoApplicants(
+            @RequestParam Integer financingId) {
+        return ResponseEntity.ok(financingService.listCoApplicants(financingId));
     }
 }

@@ -1,6 +1,7 @@
 package com.example.agricultural_product.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.agricultural_product.mapper.BankProductMapper;
@@ -50,6 +51,37 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
                 .stream()
                 .map(FinancingFarmer::getFarmerId)
                 .toList();
+    }
+
+    /**
+     * 仅取“已接受”的共同申请人
+     */
+    private List<Long> getAcceptedCoApplicantIds(Integer financingId) {
+        LambdaQueryWrapper<FinancingFarmer> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FinancingFarmer::getFinancingId, financingId)
+               .eq(FinancingFarmer::getRoleInFinancing, "共同申请人")
+               .eq(FinancingFarmer::getInvitationStatus, "accepted");
+        return financingFarmerMapper.selectList(wrapper)
+                .stream()
+                .map(FinancingFarmer::getFarmerId)
+                .toList();
+    }
+
+    /**
+     * 取所有“已接受”的参与人（主申请人 + 已接受的共同申请人）
+     */
+    private List<Long> getAllAcceptedFarmerIds(Integer financingId) {
+        // 主申请人
+        LambdaQueryWrapper<FinancingFarmer> q1 = new LambdaQueryWrapper<>();
+        q1.eq(FinancingFarmer::getFinancingId, financingId)
+          .eq(FinancingFarmer::getRoleInFinancing, "主申请人");
+        List<Long> main = financingFarmerMapper.selectList(q1).stream().map(FinancingFarmer::getFarmerId).toList();
+        // 已接受的共同申请人
+        List<Long> co = getAcceptedCoApplicantIds(financingId);
+        return new java.util.ArrayList<>() {{
+            addAll(main);
+            addAll(co);
+        }};
     }
 
     @Override
@@ -135,20 +167,31 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
         financingMapper.insert(financing);
         Integer financingId = financing.getFinancingId();
 
-        // 添加主申请人
+        // 添加主申请人（直接为 accepted）
         FinancingFarmer mainFarmer = new FinancingFarmer();
         mainFarmer.setFinancingId(financingId);
         mainFarmer.setFarmerId(initiatingFarmerId);
         mainFarmer.setRoleInFinancing("主申请人");
+        mainFarmer.setInvitationStatus("accepted");
+        mainFarmer.setInvitedBy(initiatingFarmerId);
+        mainFarmer.setDecisionTime(LocalDateTime.now());
         financingFarmerMapper.insert(mainFarmer);
 
-        // 添加联合申请人
+        // 预填共同申请人为 pending
         if (coApplicantIds != null && !coApplicantIds.isEmpty()) {
             for (Long coApplicantId : coApplicantIds) {
+                // 防重复
+                LambdaQueryWrapper<FinancingFarmer> existsQ = new LambdaQueryWrapper<>();
+                existsQ.eq(FinancingFarmer::getFinancingId, financingId)
+                       .eq(FinancingFarmer::getFarmerId, coApplicantId);
+                if (financingFarmerMapper.selectCount(existsQ) > 0) continue;
+
                 FinancingFarmer coFarmer = new FinancingFarmer();
                 coFarmer.setFinancingId(financingId);
                 coFarmer.setFarmerId(coApplicantId);
                 coFarmer.setRoleInFinancing("共同申请人");
+                coFarmer.setInvitationStatus("pending");
+                coFarmer.setInvitedBy(initiatingFarmerId);
                 financingFarmerMapper.insert(coFarmer);
             }
         }
@@ -251,15 +294,14 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
         financing.setApplicationStatus("cancelled");
         financing.setUpdateTime(LocalDateTime.now());
         boolean result = financingMapper.updateById(financing) > 0;
-        
-        // 4.2 取消融资申请，所有参与人都扣除信用分
+
+        // 仅对“已接受”的参与人进行信用分调整
         if (result) {
-            List<Long> allFarmerIds = getAllFarmerIds(financingId);
-            for (Long farmerId : allFarmerIds) {
-                userService.updateCreditScore(farmerId, "loan_cancel");
+            List<Long> accepted = getAllAcceptedFarmerIds(financingId);
+            for (Long fid : accepted) {
+                userService.updateCreditScore(fid, "loan_cancel");
             }
         }
-        
         return result;
     }
 
@@ -336,12 +378,11 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
 
         // 4.1 成功完成融资，所有参与人增加信用分
         if (result) {
-            // 主申请人获得更高的信用分
+            // 主申请人 +10
             userService.updateCreditScore(farmerId, "loan_success");
-            
-            // 4.4 共同申请人也增加信用分
-            List<Long> coApplicantIds = getCoApplicantIds(financing.getFinancingId());
-            for (Long coApplicantId : coApplicantIds) {
+            // 已接受的共同申请人 +5
+            List<Long> coAccepted = getAcceptedCoApplicantIds(financing.getFinancingId());
+            for (Long coApplicantId : coAccepted) {
                 userService.updateCreditScore(coApplicantId, "joint_loan_success");
             }
         }
@@ -384,12 +425,11 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
 
         // 被银行拒绝融资，所有参与人都扣除信用分
         if (result) {
-            List<Long> allFarmerIds = getAllFarmerIds(financingId);
-            for (Long farmerId : allFarmerIds) {
-                userService.updateCreditScore(farmerId, "loan_rejected");
+            List<Long> accepted = getAllAcceptedFarmerIds(financingId);
+            for (Long fid : accepted) {
+                userService.updateCreditScore(fid, "loan_rejected");
             }
         }
-
         return result;
     }
 
@@ -408,12 +448,84 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
 
         // 拖欠还款，所有参与人都大幅扣除信用分
         if (result) {
-            List<Long> allFarmerIds = getAllFarmerIds(financingId);
-            for (Long farmerId : allFarmerIds) {
-                userService.updateCreditScore(farmerId, "loan_default");
+            List<Long> accepted = getAllAcceptedFarmerIds(financingId);
+            for (Long fid : accepted) {
+                userService.updateCreditScore(fid, "loan_default");
             }
         }
-
         return result;
+    }
+
+    /**
+     * 主申请人追加邀请共同申请人
+     */
+    @Override
+    @Transactional
+    public boolean inviteCoApplicants(Long inviterId, Integer financingId, List<Long> coApplicantIds) {
+        Financing financing = financingMapper.selectById(financingId);
+        if (financing == null || !financing.getInitiatingFarmerId().equals(inviterId)) return false;
+
+        if (coApplicantIds == null || coApplicantIds.isEmpty()) return true;
+
+        for (Long coId : coApplicantIds) {
+            // 已存在记录则尝试更新为 pending（允许重新邀请被拒绝/取消的）
+            LambdaQueryWrapper<FinancingFarmer> qw = new LambdaQueryWrapper<>();
+            qw.eq(FinancingFarmer::getFinancingId, financingId)
+              .eq(FinancingFarmer::getFarmerId, coId)
+              .eq(FinancingFarmer::getRoleInFinancing, "共同申请人");
+            FinancingFarmer existing = financingFarmerMapper.selectOne(qw);
+            if (existing == null) {
+                FinancingFarmer rec = new FinancingFarmer();
+                rec.setFinancingId(financingId);
+                rec.setFarmerId(coId);
+                rec.setRoleInFinancing("共同申请人");
+                rec.setInvitationStatus("pending");
+                rec.setInvitedBy(inviterId);
+                financingFarmerMapper.insert(rec);
+            } else {
+                UpdateWrapper<FinancingFarmer> uw = new UpdateWrapper<>();
+                uw.eq("id", existing.getId())
+                  .set("invitation_status", "pending")
+                  .set("invited_by", inviterId)
+                  .set("decision_time", null);
+                financingFarmerMapper.update(null, uw);
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 共同申请人响应邀请
+     */
+    @Override
+    @Transactional
+    public boolean respondInvitation(Long farmerId, Integer financingId, String action) {
+        // 仅 pending 状态可响应
+        LambdaQueryWrapper<FinancingFarmer> qw = new LambdaQueryWrapper<>();
+        qw.eq(FinancingFarmer::getFinancingId, financingId)
+          .eq(FinancingFarmer::getFarmerId, farmerId)
+          .eq(FinancingFarmer::getRoleInFinancing, "共同申请人")
+          .eq(FinancingFarmer::getInvitationStatus, "pending");
+        FinancingFarmer rec = financingFarmerMapper.selectOne(qw);
+        if (rec == null) return false;
+
+        String next = "reject".equalsIgnoreCase(action) ? "rejected" : "accepted";
+        UpdateWrapper<FinancingFarmer> uw = new UpdateWrapper<>();
+        uw.eq("id", rec.getId())
+          .set("invitation_status", next)
+          .set("decision_time", LocalDateTime.now());
+        return financingFarmerMapper.update(null, uw) == 1;
+    }
+
+    /**
+     * 查询共同申请人及邀请状态
+     */
+    @Override
+    public List<FinancingFarmer> listCoApplicants(Integer financingId) {
+        LambdaQueryWrapper<FinancingFarmer> qw = new LambdaQueryWrapper<>();
+        qw.eq(FinancingFarmer::getFinancingId, financingId)
+          .eq(FinancingFarmer::getRoleInFinancing, "共同申请人")
+          .orderByAsc(FinancingFarmer::getId);
+        return financingFarmerMapper.selectList(qw);
     }
 }

@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.agricultural_product.pojo.Financing;
 import com.example.agricultural_product.pojo.FinancingOffer;
+import com.example.agricultural_product.pojo.FinancingFarmer;
+
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -77,4 +79,19 @@ public interface FinancingService extends IService<Financing> {
      * 标记拖欠还款
      */
     boolean markOverdue(Integer financingId);
+
+    /**
+     * 主申请人邀请共同申请人（支持追加邀请）
+     */
+    boolean inviteCoApplicants(Long inviterId, Integer financingId, List<Long> coApplicantIds);
+
+    /**
+     * 共同申请人响应邀请（accept/reject）
+     */
+    boolean respondInvitation(Long farmerId, Integer financingId, String action);
+
+    /**
+     * 查询融资下共同申请人及邀请状态
+     */
+    List<FinancingFarmer> listCoApplicants(Integer financingId);
 }

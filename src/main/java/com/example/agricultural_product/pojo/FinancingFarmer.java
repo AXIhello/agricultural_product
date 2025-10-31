@@ -23,8 +23,17 @@ public class FinancingFarmer {
     @TableField("role_in_financing")
     private String roleInFinancing;
 
+    @TableField("invitation_status")
+    private String invitationStatus; // pending/accepted/rejected/cancelled
+
+    @TableField("invited_by")
+    private Long invitedBy;
+
     @TableField("create_time")
     private LocalDateTime createTime;
+
+    @TableField("decision_time")
+    private LocalDateTime decisionTime;
 
     // Getter 和 Setter 方法
     public Integer getId() {
@@ -59,11 +68,35 @@ public class FinancingFarmer {
         this.roleInFinancing = roleInFinancing;
     }
 
+    public String getInvitationStatus() {
+        return invitationStatus;
+    }
+
+    public void setInvitationStatus(String invitationStatus) {
+        this.invitationStatus = invitationStatus;
+    }
+
+    public Long getInvitedBy() {
+        return invitedBy;
+    }
+
+    public void setInvitedBy(Long invitedBy) {
+        this.invitedBy = invitedBy;
+    }
+
     public LocalDateTime getCreateTime() {
         return createTime;
     }
 
     public void setCreateTime(LocalDateTime createTime) {
         this.createTime = createTime;
+    }
+
+    public LocalDateTime getDecisionTime() {
+        return decisionTime;
+    }
+
+    public void setDecisionTime(LocalDateTime decisionTime) {
+        this.decisionTime = decisionTime;
     }
 }
