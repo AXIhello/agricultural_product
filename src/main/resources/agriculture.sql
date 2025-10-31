@@ -203,15 +203,18 @@ CREATE TABLE IF NOT EXISTS `tb_financing_farmers`  (
   `financing_id` int NOT NULL COMMENT '融资申请ID，关联tb_financing表',
   `farmer_id` bigint NOT NULL COMMENT '参与该融资申请的农户ID，关联users表',
   `role_in_financing` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT 'co_applicant' COMMENT '农户在该融资中的角色（如：主申请人、共同申请人、担保人）',
+  `invitation_status` varchar(20) NOT NULL DEFAULT 'pending' COMMENT '邀请状态：pending/accepted/rejected/cancelled',
+  `invited_by` bigint NULL COMMENT '邀请人用户ID',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `decision_time` datetime NULL COMMENT '受邀人决定时间',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `idx_financing_farmer`(`financing_id` ASC, `farmer_id` ASC) USING BTREE,
   INDEX `idx_financing_id`(`financing_id` ASC) USING BTREE,
   INDEX `idx_farmer_id`(`farmer_id` ASC) USING BTREE,
+  INDEX `idx_financing_status` (`financing_id`,`invitation_status`) USING BTREE,
   CONSTRAINT `fk_ff_farmer` FOREIGN KEY (`farmer_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_ff_financing` FOREIGN KEY (`financing_id`) REFERENCES `tb_financing` (`financing_id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '融资申请参与农户表' ROW_FORMAT = DYNAMIC;
-
 -- ----------------------------
 -- Table structure for tb_financing_offers
 -- ----------------------------
