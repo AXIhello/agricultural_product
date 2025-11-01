@@ -13,6 +13,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 @Component
 public class DatabaseInitializer implements CommandLineRunner {
@@ -86,6 +87,34 @@ public class DatabaseInitializer implements CommandLineRunner {
 
             userMapper.insert(user);
             System.out.println("初始化用户成功: admin / 123456");
+        }
+
+        // 3. 初始化 Kimi AI 系统用户（user_name=kimi_ai，显示名“Kimi AI”）
+        Long kimiCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM users WHERE user_name = ?",
+                Long.class,
+                "kimi_ai"
+        );
+        if (kimiCount != null && kimiCount == 0) {
+            User ai = new User();
+            ai.setUserName("kimi_ai");              // 登录名（不用于人类登录）
+            ai.setPassword(encoder.encode(UUID.randomUUID().toString())); // 随机密码占位
+            ai.setName("Kimi AI");                  // 显示名
+            ai.setRole("system");                   // 系统角色
+            ai.setEmail("kimi.ai@local");           // 占位邮箱，可为空
+            userMapper.insert(ai);
+
+            // 可选：打印生成的 ID，便于配置 moonshot.responder-id
+            try {
+                Long id = jdbcTemplate.queryForObject(
+                        "SELECT user_id FROM users WHERE user_name = ?",
+                        Long.class,
+                        "kimi_ai"
+                );
+                System.out.println("初始化系统用户成功: Kimi AI (user_name=kimi_ai, user_id=" + id + ")");
+            } catch (Exception ignore) {
+                System.out.println("初始化系统用户成功: Kimi AI (user_name=kimi_ai)");
+            }
         }
     }
 }
