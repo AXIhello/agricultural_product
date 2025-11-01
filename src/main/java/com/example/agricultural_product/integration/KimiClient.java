@@ -25,7 +25,7 @@ public class KimiClient {
       @Value("${moonshot.api-key}") String apiKey,
       @Value("${moonshot.model:moonshot-v1-8k}") String model,
       @Value("${moonshot.temperature:0.2}") double temperature,
-      @Value("${moonshot.max-tokens:1024}") int maxTokens) {
+      @Value("${moonshot.max-tokens:512}") int maxTokens) {
     this.restClient = RestClient.builder()
         .baseUrl(baseUrl)
         .defaultHeader("Authorization", "Bearer " + apiKey)
