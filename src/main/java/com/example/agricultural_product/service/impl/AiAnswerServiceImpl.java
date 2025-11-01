@@ -19,7 +19,7 @@ public class AiAnswerServiceImpl implements AiAnswerService {
   private final ExpertAnswerService expertAnswerService;
 
   @Value("${moonshot.responder-id}")
-  private Long aiResponderId; // 必须是 users 表中已存在的用户ID
+  private Long aiResponderId; // 确保该用户已存在
 
   public AiAnswerServiceImpl(KimiClient kimiClient, ExpertAnswerService expertAnswerService) {
     this.kimiClient = kimiClient;
@@ -29,27 +29,32 @@ public class AiAnswerServiceImpl implements AiAnswerService {
   @Async("aiExecutor")
   @Override
   public void generateForQuestion(ExpertQuestion q) {
-    if (q == null || q.getQuestionId() == null) return;
-
-    String title = q.getTitle() == null ? "" : q.getTitle();
-    String detail = q.getContent() == null ? "" : q.getContent();
-    String userPrompt = "请用中文、面向农户、给出可操作的建议，尽量简洁。\n"
-        + "问题标题：" + title + "\n"
-        + "问题详情：" + detail;
-
-    String systemPrompt = "你是农业技术专家，回答务实可落地，避免无依据的结论。";
     try {
+      if (q == null || q.getQuestionId() == null) return;
+      if (aiResponderId == null) {
+        log.warn("AI responderId 未配置，跳过生成。questionId={}", q.getQuestionId());
+        return;
+      }
+
+      String title = q.getTitle() == null ? "" : q.getTitle();
+      String detail = q.getContent() == null ? "" : q.getContent();
+      String userPrompt = "请用中文、面向农户、给出可操作的建议，尽量简洁。\n"
+          + "问题标题：" + title + "\n"
+          + "问题详情：" + detail;
+      String systemPrompt = "你是农业技术专家，回答务实可落地，避免无依据的结论。";
+
       String reply = kimiClient.chat(systemPrompt, userPrompt);
       if (reply == null || reply.isBlank()) return;
 
       ExpertAnswer ai = new ExpertAnswer();
       ai.setQuestionId(q.getQuestionId());
-      ai.setResponderId(aiResponderId); // 满足非空外键约束
+      ai.setResponderId(aiResponderId);
       ai.setContent(reply);
       ai.setIsAccepted(0);
       expertAnswerService.save(ai);
     } catch (Exception e) {
-      log.warn("生成 AI 回答失败，questionId={}", q.getQuestionId(), e);
+      // 任何异常都吞掉，绝不影响发布成功
+      log.warn("生成 AI 回答失败，已忽略。questionId={}", q != null ? q.getQuestionId() : null, e);
     }
   }
 }

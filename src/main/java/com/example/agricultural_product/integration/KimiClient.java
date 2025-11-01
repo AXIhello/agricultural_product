@@ -1,6 +1,8 @@
 package com.example.agricultural_product.integration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -10,6 +12,8 @@ import java.util.List;
 
 @Component
 public class KimiClient {
+
+  private static final Logger log = LoggerFactory.getLogger(KimiClient.class);
 
   private final RestClient restClient;
   private final String model;
@@ -34,28 +38,30 @@ public class KimiClient {
   public String chat(String systemPrompt, String userPrompt) {
     ChatRequest req = new ChatRequest(
         model,
-        List.of(
-            new Message("system", systemPrompt),
-            new Message("user", userPrompt)
-        ),
+        List.of(new Message("system", systemPrompt), new Message("user", userPrompt)),
         temperature,
         maxTokens,
         false
     );
+    try {
+      ChatResponse resp = restClient.post()
+          .uri("/chat/completions")
+          .contentType(MediaType.APPLICATION_JSON)
+          .accept(MediaType.APPLICATION_JSON)
+          .body(req)
+          .retrieve()
+          .body(ChatResponse.class);
 
-    ChatResponse resp = restClient.post()
-        .uri("/chat/completions")
-        .contentType(MediaType.APPLICATION_JSON)
-        .accept(MediaType.APPLICATION_JSON)
-        .body(req)
-        .retrieve()
-        .body(ChatResponse.class);
-
-    if (resp == null || resp.choices == null || resp.choices.isEmpty()
-        || resp.choices.get(0) == null || resp.choices.get(0).message == null) {
+      if (resp == null || resp.choices == null || resp.choices.isEmpty()
+          || resp.choices.get(0) == null || resp.choices.get(0).message == null) {
+        return null;
+      }
+      return resp.choices.get(0).message.content;
+    } catch (Exception e) {
+      // 忽略任何异常，返回 null，不影响上层业务
+      log.warn("调用 Kimi 失败，已忽略。", e);
       return null;
     }
-    return resp.choices.get(0).message.content;
   }
 
   public record ChatRequest(
