@@ -58,7 +58,8 @@ public class BankProductServiceImpl extends ServiceImpl<BankProductMapper, BankP
     public Page<BankProduct> listAllProducts(Integer pageNum, Integer pageSize) {
         Page<BankProduct> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<BankProduct> qw = new LambdaQueryWrapper<>();
-        qw.orderByDesc(BankProduct::getCreateTime);
+        qw.eq(BankProduct::getStatus, "active")
+          .orderByDesc(BankProduct::getCreateTime);
         return bankProductMapper.selectPage(page, qw);
     }
 }

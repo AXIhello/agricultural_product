@@ -3,6 +3,7 @@ package com.example.agricultural_product.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.agricultural_product.pojo.ExpertAnswer;
 import com.example.agricultural_product.pojo.ExpertQuestion;
+import com.example.agricultural_product.service.AiAnswerService;
 import com.example.agricultural_product.service.ExpertAnswerService;
 import com.example.agricultural_product.service.ExpertQuestionService;
 import com.example.agricultural_product.utils.JwtUtil;
@@ -17,6 +18,9 @@ public class ExpertQuestionController {
 
 	@Autowired
 	private ExpertQuestionService expertQuestionService;
+
+	@Autowired
+    private AiAnswerService aiAnswerService;
 
 	@Autowired
 	private ExpertAnswerService expertAnswerService;
@@ -34,7 +38,17 @@ public class ExpertQuestionController {
 	@PostMapping
 	public ResponseEntity<Boolean> publish(HttpServletRequest request, @RequestBody ExpertQuestion question) {
 		if (!checkToken(request)) return ResponseEntity.status(401).body(false);
+
+		// 从 JWT 中解析当前用户并覆盖 farmerId，避免前端伪造
+		String token = request.getHeader("Authorization").substring(7);
+		Long userId = JwtUtil.getUserId(token); // 请使用你项目中实际的方法名获取 userId
+		if (userId == null) return ResponseEntity.status(401).body(false);
+		question.setFarmerId(userId);
+
 		boolean success = expertQuestionService.publish(question);
+		if (success && question.getQuestionId() != null) {
+			aiAnswerService.generateForQuestion(question);
+		}
 		return ResponseEntity.ok(success);
 	}
 
