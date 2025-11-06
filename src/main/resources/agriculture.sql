@@ -101,6 +101,7 @@ CREATE TABLE IF NOT EXISTS `tb_product` (
     `stock` int NOT NULL DEFAULT '0' COMMENT '库存',
     `farmer_id` bigint NOT NULL COMMENT '农户用户ID，关联users表',
     `status` enum('active','inactive') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'active' COMMENT '产品状态：active（上架）、inactive（下架）',
+    `image_path` varchar(512) NULL COMMENT '本地图片相对路径或URL',
     `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `prodCat` text NOT NULL COMMENT '产品大类',

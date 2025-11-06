@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -32,6 +33,10 @@ public class Product {
 
     @TableField("status")
     private String status;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @TableField("image_path")
+    private String imagePath;
 
     @TableField("create_time")
     private LocalDateTime createTime;
