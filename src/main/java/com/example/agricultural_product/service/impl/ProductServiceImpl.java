@@ -13,13 +13,24 @@ import java.time.LocalDateTime;
 @Service
 public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> implements ProductService {
 
+	private void normalizeImagePath(Page<Product> page) {
+		if (page == null || page.getRecords() == null) return;
+		page.getRecords().forEach(p -> {
+			if (p != null && p.getImagePath() != null && p.getImagePath().trim().isEmpty()) {
+				p.setImagePath(null);
+			}
+		});
+	}
+
 	@Override
 	public Page<Product> getProductList(Integer pageNum, Integer pageSize) {
 		Page<Product> page = new Page<>(pageNum, pageSize);
 		LambdaQueryWrapper<Product> wrapper = new LambdaQueryWrapper<>();
 		wrapper.eq(Product::getStatus, "active")
 		       .orderByDesc(Product::getCreateTime);
-		return page(page, wrapper);
+		Page<Product> result = page(page, wrapper);
+		normalizeImagePath(result);
+		return result;
 	}
 
 	@Override
@@ -29,7 +40,9 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
 		wrapper.eq(Product::getStatus, "active")
 		       .like(Product::getProductName, keyword)
 		       .orderByDesc(Product::getCreateTime);
-		return page(page, wrapper);
+		Page<Product> result = page(page, wrapper);
+		normalizeImagePath(result);
+		return result;
 	}
 
 	@Override
@@ -39,7 +52,9 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
 		wrapper.eq(Product::getFarmerId, farmerId)
 		       .eq(Product::getStatus, "active")
 		       .orderByDesc(Product::getCreateTime);
-		return page(page, wrapper);
+		Page<Product> result = page(page, wrapper);
+		normalizeImagePath(result);
+		return result;
 	}
 
 	@Override
