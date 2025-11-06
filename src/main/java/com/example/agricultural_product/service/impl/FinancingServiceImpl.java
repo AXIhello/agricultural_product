@@ -14,6 +14,7 @@ import com.example.agricultural_product.pojo.FinancingFarmer;
 import com.example.agricultural_product.pojo.FinancingOffer;
 import com.example.agricultural_product.service.FinancingService;
 import com.example.agricultural_product.service.UserService;
+import com.example.agricultural_product.service.UserMetricsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +42,10 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
 
     @Autowired
     private BankProductMapper bankProductMapper;
+
+    @Autowired
+    private UserMetricsService userMetricsService;
+
     /**
      * 获取融资申请的所有参与农户ID（包括主申请人和共同申请人）
      */
@@ -527,5 +532,25 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
           .eq(FinancingFarmer::getRoleInFinancing, "共同申请人")
           .orderByAsc(FinancingFarmer::getId);
         return financingFarmerMapper.selectList(qw);
+    }
+
+    @Transactional
+    public boolean updateFinancingStatus(Integer financingId, String status) {
+        Financing financing = financingMapper.selectById(financingId);
+        if (financing == null) {
+            return false;
+        }
+
+        financing.setApplicationStatus(status);
+        financing.setUpdateTime(LocalDateTime.now());
+        
+        boolean updated = financingMapper.updateById(financing) > 0;
+        
+        if (updated) {
+            // 触发用户指标更新
+            userMetricsService.updateUserFinancingMetrics(financing.getInitiatingFarmerId());
+        }
+        
+        return updated;
     }
 }
