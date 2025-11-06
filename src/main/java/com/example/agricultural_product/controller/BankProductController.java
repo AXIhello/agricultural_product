@@ -64,9 +64,9 @@ public class BankProductController {
         return bankProductService.listMyProducts(bankUserId, pageNum, pageSize);
     }
 
-    // 银行查看自己发布的产品列表（bankUserId 从 token）
+    // 所有发布的产品列表（bankUserId 从 token）
     @GetMapping("/all")
-    public Page<BankProduct> listMyProducts(@RequestParam(defaultValue = "1") Integer pageNum,
+    public Page<BankProduct> listAllProducts(@RequestParam(defaultValue = "1") Integer pageNum,
                                             @RequestParam(defaultValue = "10") Integer pageSize) {
         return bankProductService.listAllProducts(pageNum, pageSize);
     }

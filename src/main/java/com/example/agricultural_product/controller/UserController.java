@@ -180,11 +180,19 @@ public class UserController {
         newUser.setName(userName);
         newUser.setRole(role);
         newUser.setEmail(email);
+        // 设置初始信用分为70
+        newUser.setCreditScore(70);
+        // 初始化其他字段
+        newUser.setHistoricalSuccessRate(0.0);
+        newUser.setAverageFinancingAmount(0.0);
+        newUser.setFinancingActivityLevel("low");
 
         int result = userService.registerUser(newUser);
         if (result > 0) {
             response.put("success", true);
             response.put("message", "注册成功！");
+            // 不返回密码
+            newUser.setPassword(null);
             response.put("user", newUser);
         } else {
             response.put("success", false);
