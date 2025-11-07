@@ -1,0 +1,699 @@
+{
+    "data": {
+        "带鱼": {
+            "category_mappings": {
+                "specInfo": [
+                    "500g左右/鲜",
+                    "350g左右/鲜",
+                    "250g左右/鲜",
+                    "600g-700g/冻",
+                    "300g-500g/冻",
+                    "500g-700g/冻",
+                    "100g-200g/冻"
+                ],
+                "prodPcat": [
+                    "海水鱼"
+                ]
+            }
+        },
+        "鲫鱼": {
+            "category_mappings": {
+                "specInfo": [
+                    "100g-150g",
+                    "200g-250g",
+                    "350g-400g",
+                    "250g-300g"
+                ],
+                "prodPcat": [
+                    "淡水鱼"
+                ]
+            }
+        },
+        "鲍鱼": {
+            "category_mappings": {
+                "specInfo": [
+                    "10头-12头",
+                    "8头-9头",
+                    "6头-7头"
+                ],
+                "prodPcat": [
+                    "贝壳类",
+                    "其他类"
+                ]
+            }
+        },
+        "海螺": {
+            "category_mappings": {
+                "specInfo": [
+                    "活（大）",
+                    "活（中）",
+                    "活（小）"
+                ],
+                "prodPcat": [
+                    "贝壳类",
+                    "其他类"
+                ]
+            }
+        },
+        "平鱼": {
+            "category_mappings": {
+                "specInfo": [
+                    "250g-300g/冻",
+                    "150g-200g/冻",
+                    "120g-130g/冻",
+                    "80g-100g/冻"
+                ],
+                "prodPcat": [
+                    "海水鱼"
+                ]
+            }
+        },
+        "草鱼": {
+            "category_mappings": {
+                "specInfo": [
+                    "750g-1000g",
+                    ">1000g",
+                    "5000g左右",
+                    "1500g左右"
+                ],
+                "prodPcat": [
+                    "淡水鱼"
+                ]
+            }
+        },
+        "羊蝎子": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN",
+                    "精品",
+                    "普通"
+                ],
+                "prodPcat": [
+                    "羊肉类"
+                ]
+            }
+        },
+        "五花肉": {
+            "category_mappings": {
+                "specInfo": [
+                    "瘦",
+                    "肥"
+                ],
+                "prodPcat": [
+                    "猪肉类"
+                ]
+            }
+        },
+        "后臀尖": {
+            "category_mappings": {
+                "specInfo": [
+                    "瘦",
+                    "肥"
+                ],
+                "prodPcat": [
+                    "猪肉类"
+                ]
+            }
+        },
+        "前臀尖": {
+            "category_mappings": {
+                "specInfo": [
+                    "瘦",
+                    "肥"
+                ],
+                "prodPcat": [
+                    "猪肉类"
+                ]
+            }
+        },
+        "白条猪": {
+            "category_mappings": {
+                "specInfo": [
+                    "瘦",
+                    "肥"
+                ],
+                "prodPcat": [
+                    "猪肉类"
+                ]
+            }
+        },
+        "扇贝": {
+            "category_mappings": {
+                "specInfo": [
+                    "7cm-9cm/活",
+                    "10cm-12cm/活",
+                    ">16cm/活"
+                ],
+                "prodPcat": [
+                    "贝壳类",
+                    "其他类"
+                ]
+            }
+        },
+        "黄鳝": {
+            "category_mappings": {
+                "specInfo": [
+                    "50g-100g",
+                    "100g-200g"
+                ],
+                "prodPcat": [
+                    "淡水鱼"
+                ]
+            }
+        },
+        "鲤鱼": {
+            "category_mappings": {
+                "specInfo": [
+                    "750g-1000g",
+                    ">1000g"
+                ],
+                "prodPcat": [
+                    "淡水鱼"
+                ]
+            }
+        },
+        "鲢鱼": {
+            "category_mappings": {
+                "specInfo": [
+                    ">1500g",
+                    "1000g-1500g"
+                ],
+                "prodPcat": [
+                    "淡水鱼"
+                ]
+            }
+        },
+        "胖头鱼": {
+            "category_mappings": {
+                "specInfo": [
+                    ">2000g",
+                    "<2000g"
+                ],
+                "prodPcat": [
+                    "淡水鱼"
+                ]
+            }
+        },
+        "嘎鱼": {
+            "category_mappings": {
+                "specInfo": [
+                    ">100g",
+                    "<100g"
+                ],
+                "prodPcat": [
+                    "淡水鱼"
+                ]
+            }
+        },
+        "甲鱼": {
+            "category_mappings": {
+                "specInfo": [
+                    "养殖",
+                    "仿野生"
+                ],
+                "prodPcat": [
+                    "其他类"
+                ]
+            }
+        },
+        "生蚝": {
+            "category_mappings": {
+                "specInfo": [
+                    "200g",
+                    "150g"
+                ],
+                "prodPcat": [
+                    "贝壳类",
+                    "其他类"
+                ]
+            }
+        },
+        "黄花鱼": {
+            "category_mappings": {
+                "specInfo": [
+                    "750g左右/鲜",
+                    "500g左右/鲜",
+                    "250g左右/鲜"
+                ],
+                "prodPcat": [
+                    "海水鱼"
+                ]
+            }
+        },
+        "鱿鱼": {
+            "category_mappings": {
+                "specInfo": [
+                    "去头",
+                    "带头",
+                    "去偷"
+                ],
+                "prodPcat": [
+                    "海水鱼"
+                ]
+            }
+        },
+        "金鲳鱼": {
+            "category_mappings": {
+                "specInfo": [
+                    "500g-600g/鲜",
+                    "400g-500g/鲜",
+                    "500g-600g",
+                    "400g-500g",
+                    "500g-650g"
+                ],
+                "prodPcat": [
+                    "海水鱼"
+                ]
+            }
+        },
+        "黑鱼": {
+            "category_mappings": {
+                "specInfo": [
+                    "活",
+                    ">1500g",
+                    "<1500g"
+                ],
+                "prodPcat": [
+                    "淡水鱼"
+                ]
+            }
+        },
+        "母河蟹": {
+            "category_mappings": {
+                "specInfo": [
+                    "80g左右",
+                    "65g左右",
+                    "125g左右",
+                    "110g左右",
+                    "100g左右",
+                    "75g左右",
+                    "150g左右"
+                ],
+                "prodPcat": [
+                    "虾蟹类",
+                    "其他类"
+                ]
+            }
+        },
+        "白虾": {
+            "category_mappings": {
+                "specInfo": [
+                    "鲜",
+                    "20头-25头/冻",
+                    "15头-20头/冻",
+                    "10头-15头/冻",
+                    "活",
+                    "冰鲜",
+                    "70-80冰鲜",
+                    "17头-20头",
+                    "26头-28头",
+                    "26头-30头",
+                    "22头-24头"
+                ],
+                "prodPcat": [
+                    "虾蟹类",
+                    "其他类"
+                ]
+            }
+        },
+        "白虾（笼装）": {
+            "category_mappings": {
+                "specInfo": [
+                    "26头-30头",
+                    "21头-24头",
+                    "26头-30头/活",
+                    "21头-24头/活",
+                    "22头-24头",
+                    "17头-22头",
+                    "20头-23头"
+                ],
+                "prodPcat": [
+                    "虾类",
+                    "虾蟹类",
+                    "其他类"
+                ]
+            }
+        },
+        "公河蟹": {
+            "category_mappings": {
+                "specInfo": [
+                    "100g左右",
+                    "175g左右",
+                    "150g左右",
+                    "200g左右",
+                    "75g左右",
+                    "125g左右"
+                ],
+                "prodPcat": [
+                    "虾蟹类",
+                    "其他类"
+                ]
+            }
+        },
+        "花蛤": {
+            "category_mappings": {
+                "specInfo": [
+                    "活（无沙）",
+                    "活"
+                ],
+                "prodPcat": [
+                    "贝壳类",
+                    "其他类"
+                ]
+            }
+        },
+        "羊里脊": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "羊肉类"
+                ]
+            }
+        },
+        "去骨羊后腿": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "羊肉类"
+                ]
+            }
+        },
+        "牛尾": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "牛肉类"
+                ]
+            }
+        },
+        "猪心": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "猪肉类"
+                ]
+            }
+        },
+        "纯通脊": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "猪肉类"
+                ]
+            }
+        },
+        "纯瘦肉": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "猪肉类"
+                ]
+            }
+        },
+        "猪脑": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "猪肉类"
+                ]
+            }
+        },
+        "纯腔骨": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "猪肉类"
+                ]
+            }
+        },
+        "牛林": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "牛肉类"
+                ]
+            }
+        },
+        "猪皮": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "猪肉类"
+                ]
+            }
+        },
+        "前肘": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "猪肉类"
+                ]
+            }
+        },
+        "护心肉": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN",
+                    "冻\\鲜",
+                    "鲜"
+                ],
+                "prodPcat": [
+                    "猪肉类"
+                ]
+            }
+        },
+        "精牛柳": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "牛肉类"
+                ]
+            }
+        },
+        "猪肚": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "猪肉类"
+                ]
+            }
+        },
+        "牛后腱": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "牛肉类"
+                ]
+            }
+        },
+        "猪蹄": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "猪肉类"
+                ]
+            }
+        },
+        "牛板筋": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "牛肉类"
+                ]
+            }
+        },
+        "羊上脑": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "羊肉类"
+                ]
+            }
+        },
+        "羊腩": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "羊肉类"
+                ]
+            }
+        },
+        "羊排骨": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "羊肉类"
+                ]
+            }
+        },
+        "通脊": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "猪肉类"
+                ]
+            }
+        },
+        "猪肺": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "猪肉类"
+                ]
+            }
+        },
+        "羊腰子": {
+            "category_mappings": {
+                "specInfo": [
+                    "挂油"
+                ],
+                "prodPcat": [
+                    "羊肉类"
+                ]
+            }
+        },
+        "羊尾巴油": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "羊肉类"
+                ]
+            }
+        },
+        "纯排骨": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "猪肉类"
+                ]
+            }
+        },
+        "猪肠头": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "猪肉类"
+                ]
+            }
+        },
+        "牛排骨": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "牛肉类"
+                ]
+            }
+        },
+        "牛前腱": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "牛肉类"
+                ]
+            }
+        },
+        "羊肉片": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "羊肉类"
+                ]
+            }
+        },
+        "整羊": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "羊肉类"
+                ]
+            }
+        },
+        "猪腰子": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "猪肉类"
+                ]
+            }
+        },
+        "棒骨": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "猪肉类"
+                ]
+            }
+        },
+        "猪肠": {
+            "category_mappings": {
+                "specInfo": [
+                    "UNKNOWN"
+                ],
+                "prodPcat": [
+                    "猪肉类"
+                ]
+            }
+        }
+    },
+    "global_info": "Metadata only, for Java Service lookup."
+}
