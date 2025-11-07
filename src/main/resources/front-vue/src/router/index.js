@@ -9,6 +9,7 @@ import UserProfile from '../views/UserProfile.vue';
 import OrderConfirm from "@/views/OrderConfirm.vue";
 import UserApplication from "@/views/UserApplication.vue";
 import AdminReview from "@/views/AdminReview.vue";
+import ProductDetail from "@/views/ProductDetail.vue";
 
 
 const routes = [
@@ -81,8 +82,15 @@ const routes = [
     path:'/admin-review',
     name:'AdminReview',
     component: AdminReview
-  }
+  },
 
+  {
+      path: '/product/:id', // 使用动态路由参数 :id 来接收商品ID
+      name: 'productDetail',
+      component: ProductDetail,
+      props: true // 这会将路由参数 :id 作为 props 传递给组件，更方便
+    
+  }
   
 ]
 

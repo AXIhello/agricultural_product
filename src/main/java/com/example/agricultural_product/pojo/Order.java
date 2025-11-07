@@ -35,4 +35,7 @@ public class Order {
 
 	@TableField("update_time")
 	private LocalDateTime updateTime;
+
+	@TableField(exist = false) 
+	private Address address;
 }

@@ -43,4 +43,13 @@ public class Product {
 
     @TableField("update_time")
     private LocalDateTime updateTime;
+
+     @TableField("prodCat") 
+    private String prodCat;
+
+    @TableField("prodPcat") 
+    private String prodPcat;
+
+    @TableField("unitInfo")
+     private String unitInfo;
 }

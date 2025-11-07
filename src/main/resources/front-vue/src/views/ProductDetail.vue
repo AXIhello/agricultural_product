@@ -1,21 +1,39 @@
 <template>
-  <div class="product-detail">
-    <div class="product-container">
+  <div class="product-detail-page">
+    <!-- 数据加载完成前显示 loading 状态，防止页面闪烁和报错 -->
+    <div v-if="loading" class="loading-state">
+      <p>正在努力加载商品信息...</p>
+    </div>
+
+    <!-- 数据加载成功后显示商品内容 -->
+    <div v-else-if="product.productId" class="product-container">
       <div class="product-image">
-        <img src="https://via.placeholder.com/400x400" alt="商品图片">
+        <!-- ✅ 优先使用真实的商品图片，如果没有则显示占位图 -->
+        <img :src="product.imagePath || 'https://via.placeholder.com/400x400'" alt="商品图片">
       </div>
       
       <div class="product-info">
         <h1>{{ product.productName }}</h1>
         
         <div class="price-section">
-          <span class="price">¥{{ product.price }}</span>
-          <span class="stock">库存: {{ product.stock }}</span>
+          <!-- ✅ 在价格和库存后面加上单位信息 -->
+          <span class="price">¥{{ product.price }} / {{ product.unitInfo }}</span>
+          <span class="stock">库存: {{ product.stock }} {{ product.unitInfo }}</span>
         </div>
 
         <div class="description">
           <h3>商品描述</h3>
-          <p>{{ product.description }}</p>
+          <p>{{ product.description || '该商品暂无详细描述' }}</p>
+        </div>
+
+        <!-- ✅ 新增：显示商品分类信息 -->
+        <div class="category-info">
+          <h3>商品分类</h3>
+          <p>
+            <span class="category-tag">{{ product.prodCat }}</span>
+            <span class="category-separator">></span>
+            <span class="category-tag">{{ product.prodPcat }}</span>
+          </p>
         </div>
 
         <div class="farmer-info">
@@ -24,16 +42,25 @@
         </div>
 
         <div class="action-section">
-          <el-input-number 
-            v-model="quantity" 
-            :min="1" 
-            :max="product.stock"
-            size="large"
-          />
-          <el-button type="primary" size="large" @click="addToCart">加入购物车</el-button>
+          <div class="quantity-control">
+             <label>数量:</label>
+             <el-input-number 
+              v-model="quantity" 
+              :min="1" 
+              :max="product.stock"
+              size="default"
+            />
+          </div>
+          <el-button type="primary" size="large" @click="handleAddToCart" :loading="isAddingToCart">加入购物车</el-button>
           <el-button type="danger" size="large" @click="buyNow">立即购买</el-button>
         </div>
       </div>
+    </div>
+    
+    <!-- 加载失败或商品不存在时显示 -->
+    <div v-else class="error-state">
+        <p>抱歉，商品信息加载失败或该商品不存在。</p>
+        <el-button @click="router.back()">返回上一页</el-button>
     </div>
   </div>
 </template>
@@ -48,42 +75,70 @@ const route = useRoute()
 const router = useRouter()
 const product = ref({})
 const quantity = ref(1)
+const loading = ref(true) // ✅ 新增 loading 状态
+const isAddingToCart = ref(false) // ✅ 防止重复点击加入购物车
+const userInfo = ref(JSON.parse(localStorage.getItem('userInfo') || '{}'))
 
 // 获取商品详情
 const loadProductDetail = async () => {
+  loading.value = true
   try {
     const response = await axios.get(`/products/${route.params.id}`)
     product.value = response.data
   } catch (error) {
     console.error('获取商品详情失败:', error)
-    ElMessage.error('获取商品详情失败')
+    ElMessage.error('获取商品详情失败，请稍后重试')
+  } finally {
+    loading.value = false // ✅ 无论成功失败，都结束 loading
   }
 }
 
 // 加入购物车
-const addToCart = async () => {
+const handleAddToCart = async () => {
+  // ✅ 增加登录判断
+  if (!userInfo.value.userId) {
+    ElMessage.warning('请先登录后再操作！')
+    router.push('/login')
+    return
+  }
+  
+  isAddingToCart.value = true
   try {
-    await axios.post('/cart/add', {
-      productId: product.value.productId,
-      quantity: quantity.value
+    // ✅ 修复：加入购物车的请求格式通常需要 userId
+    await axios.post('/cart/add', null, {
+      params: {
+        userId: userInfo.value.userId,
+        productId: product.value.productId,
+        quantity: quantity.value
+      }
     })
     ElMessage.success('成功加入购物车')
   } catch (error) {
     console.error('加入购物车失败:', error)
-    ElMessage.error('加入购物车失败')
+    ElMessage.error(error.response?.data?.message || '加入购物车失败')
+  } finally {
+    isAddingToCart.value = false
   }
 }
 
 // 立即购买
 const buyNow = () => {
-  // 跳转到订单确认页面，携带商品和数量信息
+  if (!userInfo.value.userId) {
+    ElMessage.warning('请先登录后再操作！')
+    router.push('/login')
+    return
+  }
+
+  ElMessage.info('“立即购买”功能正在开发中，您可以先将商品加入购物车')
+  // 实际开发中，这里会跳转到订单确认页面
+  /*
   router.push({
-    path: '/order/confirm',
-    query: {
-      productId: product.value.productId,
-      quantity: quantity.value
+    name: 'orderConfirm',
+    state: { 
+      orderItems: [{ ...product.value, quantity: quantity.value }]
     }
   })
+  */
 }
 
 onMounted(() => {
@@ -92,21 +147,26 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.product-detail {
+.product-detail-page {
   padding: 20px;
+  background-color: #f5f5f5;
+  min-height: calc(100vh - 60px); /* 假设你有60px的导航栏 */
 }
 
 .product-container {
   display: flex;
   gap: 40px;
   background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .product-image {
   flex: 0 0 400px;
+  align-self: center;
 }
 
 .product-image img {
@@ -114,30 +174,36 @@ onMounted(() => {
   height: 400px;
   object-fit: cover;
   border-radius: 8px;
+  border: 1px solid #eee;
 }
 
 .product-info {
   flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .product-info h1 {
-  margin: 0 0 20px 0;
-  color: #333;
-  font-size: 24px;
+  margin: 0 0 15px 0;
+  color: #303133;
+  font-size: 28px;
+  font-weight: 600;
 }
 
 .price-section {
   margin-bottom: 20px;
-  padding: 15px;
-  background: #f8f8f8;
+  padding: 20px;
+  background: #fff8f8; /* 淡红色背景突出价格 */
   border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .price {
   color: #f56c6c;
-  font-size: 28px;
+  font-size: 32px;
   font-weight: bold;
-  margin-right: 20px;
 }
 
 .stock {
@@ -145,29 +211,69 @@ onMounted(() => {
   font-size: 16px;
 }
 
-.description, .farmer-info {
-  margin-bottom: 20px;
+.description, .farmer-info, .category-info {
+  margin-bottom: 25px;
 }
 
-.description h3, .farmer-info h3 {
-  color: #333;
+.description h3, .farmer-info h3, .category-info h3 {
+  color: #303133;
   margin-bottom: 10px;
   font-size: 18px;
+  padding-left: 10px;
+  border-left: 4px solid #409EFF; /* 添加蓝色竖线装饰 */
 }
 
-.description p, .farmer-info p {
-  color: #666;
-  line-height: 1.6;
+.description p, .farmer-info p, .category-info p {
+  color: #606266;
+  line-height: 1.8;
+  font-size: 16px;
 }
 
 .action-section {
-  margin-top: 30px;
+  margin-top: auto; /* 将操作区推到底部 */
+  padding-top: 20px;
+  border-top: 1px solid #f0f0f0;
   display: flex;
   gap: 20px;
   align-items: center;
 }
 
+.quantity-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.quantity-control label {
+  font-size: 16px;
+  color: #606266;
+}
+
 .el-input-number {
-  width: 150px;
+  width: 120px;
+}
+
+/* loading 和 error 状态的样式 */
+.loading-state, .error-state {
+  text-align: center;
+  padding: 80px 20px;
+  color: #909399;
+  font-size: 18px;
+}
+
+/* 分类标签样式 */
+.category-tag {
+  display: inline-block;
+  background-color: #ecf5ff;
+  color: #409eff;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 14px;
+  border: 1px solid #d9ecff;
+}
+
+.category-separator {
+  margin: 0 8px;
+  color: #909399;
 }
 </style>
