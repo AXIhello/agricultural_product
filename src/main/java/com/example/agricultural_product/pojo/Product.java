@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -17,7 +18,7 @@ public class Product {
     private Integer productId;
 
     @TableField("product_name")
-    private String productName;
+    private String productName; //农产品的名字（预测要用）
 
     @TableField("description")
     private String description;
@@ -43,4 +44,30 @@ public class Product {
 
     @TableField("update_time")
     private LocalDateTime updateTime;
+
+    @TableField("prodCat")
+    private String prodCat;
+
+    @TableField("prodPcat")
+    private String prodPcat;    //农产品小类（预测要用）
+
+    @TableField("unitInfo")
+    private String unitInfo;
+
+    @TableField("specInfo")
+    private String specInfo;    //农产品信息（预测要用）
+
+    @TableField("place")
+    private String place;
+
+    @TableField(exist = false) // 关键：标记该字段不在 tb_product 表中，不参与SQL
+    private LocalDate forecastDate; // 预测日期（如：2025-12-31，仅用于返回前端）
+
+    @TableField(exist = false) // 关键：标记该字段不在 tb_product 表中，不参与SQL
+    private BigDecimal predictedPrice; // 预测价格（模型输出，仅用于返回前端）
+
+    @TableField(exist = false)
+    private String labelPre; // 关键：判断分支的字段
+
+
 }
