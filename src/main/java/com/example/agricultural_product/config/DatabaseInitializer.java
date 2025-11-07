@@ -109,7 +109,7 @@ public class DatabaseInitializer implements CommandLineRunner {
                 Long id = jdbcTemplate.queryForObject(
                         "SELECT user_id FROM users WHERE user_name = ?",
                         Long.class,
-                        "kimi_ai"
+                        "deepseek_ai"
                 );
                 System.out.println("初始化系统用户成功: deepseek AI (user_name=deepseek_ai, user_id=" + id + ")");
             } catch (Exception ignore) {
