@@ -78,14 +78,21 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         return null;
     }
 
+    // @Override
+    // public Page<Order> getOrdersByUserId(Long userId, Integer pageNum, Integer pageSize) {
+    //     Page<Order> page = new Page<>(pageNum, pageSize);
+    //     LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
+    //     wrapper.eq(Order::getUserId, userId)
+    //            .orderByDesc(Order::getCreateTime);
+    //     return this.page(page, wrapper);
+    // }
+
     @Override
     public Page<Order> getOrdersByUserId(Long userId, Integer pageNum, Integer pageSize) {
-        Page<Order> page = new Page<>(pageNum, pageSize);
-        LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Order::getUserId, userId)
-               .orderByDesc(Order::getCreateTime);
-        return this.page(page, wrapper);
-    }
+    Page<Order> page = new Page<>(pageNum, pageSize);
+    
+    return this.baseMapper.selectOrderPageWithAddress(page, userId);
+}
 
     @Override
     public Order getOrderById(Integer orderId) {
