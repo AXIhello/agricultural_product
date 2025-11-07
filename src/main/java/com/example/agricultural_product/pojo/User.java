@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-
+import java.math.BigDecimal;
 @Data
 @TableName("users") // 对应数据库表名
 public class User {
@@ -35,10 +35,10 @@ public class User {
     private Integer creditScore;
 
     @TableField("historical_success_rate") // 历史融资成功率（百分比）
-    private Double historicalSuccessRate;
+    private BigDecimal historicalSuccessRate;
 
     @TableField("average_financing_amount") // 平均融资金额
-    private Double averageFinancingAmount;
+    private BigDecimal averageFinancingAmount;
 
     @TableField("financing_activity_level") // 融资活跃度（low/medium/high）
     private String financingActivityLevel;

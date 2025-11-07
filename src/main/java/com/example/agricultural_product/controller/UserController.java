@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -183,8 +184,8 @@ public class UserController {
         // 设置初始信用分为70
         newUser.setCreditScore(70);
         // 初始化其他字段
-        newUser.setHistoricalSuccessRate(0.0);
-        newUser.setAverageFinancingAmount(0.0);
+        newUser.setHistoricalSuccessRate(BigDecimal.valueOf(0.0));
+        newUser.setAverageFinancingAmount(BigDecimal.valueOf(0.0));
         newUser.setFinancingActivityLevel("low");
 
         int result = userService.registerUser(newUser);
