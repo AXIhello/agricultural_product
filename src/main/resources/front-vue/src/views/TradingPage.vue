@@ -1,17 +1,6 @@
 <template>
   <div class="main-bg">
-    <header class="header">
-      <h1>农产品交易平台</h1>
-      <nav>
-        <ul>
-          <li><router-link to="/main">首页</router-link></li>
-          <li><router-link to="/finance">融资服务</router-link></li>
-          <li><router-link to="/expert">专家助力</router-link></li>
-          <li><router-link to="/trading" style="color: #B7E4C7;">农产品交易</router-link></li>
-          <li><router-link to="/profile">个人信息</router-link></li>
-        </ul>
-      </nav>
-    </header>
+    <HeaderComponent />
 
     <section class="content">
       <!-- 农户视图 -->
@@ -28,25 +17,18 @@
           <!-- 所有商品 -->
           <div v-if="currentView === 'products'">
             <div class="product-list">
-              <div
-                  v-for="product in products"
-                  :key="product.productId"
-                  class="product-card"
-              >
-
+              <div v-for="product in products" :key="product.productId" class="product-card">
                 <h3>{{ product.productName }}</h3>
-                <p>价格: ¥{{ product.price }} /Kg</p>
-                <p>库存: {{ product.stock }} Kg</p>
+                <p>价格: ¥{{ product.price }} / {{ product.unitInfo }}</p>
+                <p>库存: {{ product.stock }} {{ product.unitInfo }}</p>
 
                 <div class="card-actions">
-                  
                   <button class="view-btn" @click="goToProductDetail(product)">查看详情</button>
                   <button v-if="role !== 'farmer'" class="add-to-cart-btn" @click="addToCart(product)">
                     添加到购物车
                   </button>
                 </div>
               </div>
-
               <p v-if="!products.length" class="empty-state">还没有任何商品。</p>
             </div>
           </div>
@@ -55,21 +37,12 @@
           <div v-if="currentView === 'demands'">
             <h2>求购需求</h2>
             <div class="request-list">
-              <!-- 求购需求卡片 -->
-              <div
-                  v-for="request in demands"
-                  :key="request.demandId"
-                  class="request-card"
-              >
-                <p class="request-title"><strong>用户 {{ request.buyerId }}： 我想要  </strong> {{ request.productNameDesired }}</p>
-                <p class="request-quantity">需求量： {{ request.quantityDesired }} {{ request.unitDesired }}</p>
-                <p class="request-details">需求描述： {{ request.details }}</p>
+              <div v-for="request in demands" :key="request.demandId" class="request-card">
+                <p class="request-title"><strong>用户 {{ request.buyerId }}：</strong> 想要 {{ request.productNameDesired }}</p>
+                <p class="request-quantity">需求量：{{ request.quantityDesired }} {{ request.unitDesired }}</p>
+                <p class="request-details">需求描述：{{ request.details }}</p>
               </div>
-
-
               <p v-if="!demands.length" class="empty-state">暂无求购需求</p>
-
-              <button v-if="!demands.length" @click="switchView('addDemand')" class="add-demand-btn">发布求购需求</button>
             </div>
           </div>
 
@@ -78,10 +51,11 @@
             <div class="product-list">
               <div v-for="product in myProducts" :key="product.productId" class="product-card">
                 <h3>{{ product.productName }}</h3>
-                <p>价格: ¥{{ product.price }} /Kg</p>
-                <p>库存: {{ product.stock }} Kg</p>
+                <p>价格: ¥{{ product.price }} / {{ product.unitInfo }}</p>
+                <p>库存: {{ product.stock }} {{ product.unitInfo }}</p>
                 <div class="card-actions">
                   <button class="edit-btn">编辑</button>
+                  <button class="view-btn" @click="goToProductDetail(product)">详情</button>
                   <button class="delete-btn">下架</button>
                 </div>
               </div>
@@ -96,45 +70,52 @@
                 <label for="name">商品名称:</label>
                 <input type="text" id="name" v-model="newProduct.productName" required>
               </div>
+
               <div class="form-group">
                 <label for="prodCat">商品大分类:</label>
-                <select id="prodCat" v-model="newProduct.prodCat" required>
-                  <option value="" disabled>请选择一个大分类</option>
+                <select id="prodCat" v-model="newProduct.prodCat" required >
                   <option v-for="category in mainCategories" :key="category" :value="category">
                     {{ category }}
                   </option>
                 </select>
               </div>
+
               <div class="form-group">
                 <label for="prodPcat">商品小分类:</label>
-                <input type="text" id="prodPcat" v-model="newProduct.prodPcat" placeholder="例如: 红富士苹果, 波士顿龙虾" required>
+                <input type="text" id="prodPcat" v-model="newProduct.prodPcat" placeholder="例如: 红富士苹果, 龙虾" required>
               </div>
+
               <div class="form-group">
-                <label for="price">价格 (元):</label>
+                <label for="price">价格 (元/{{ newProduct.unitInfo || '单位' }}):</label>
                 <input type="number" id="price" v-model.number="newProduct.price" required min="0.01" step="0.01">
               </div>
+
               <div class="form-group">
                 <label for="unitInfo">单位:</label>
                 <input type="text" id="unitInfo" v-model="newProduct.unitInfo" placeholder="例如: 斤, 公斤, 箱, 个" required>
               </div>
+
               <div class="form-group">
-                <label for="stock">库存量(Kg):</label>
+                <label for="stock">库存量 ({{ newProduct.unitInfo || '单位' }}):</label>
                 <input type="number" id="stock" v-model.number="newProduct.stock" required min="1">
               </div>
-              
+
+              <div class="form-group">
+                <label for="image">商品图片:</label>
+                <input type="file" id="image" @change="handleImageUpload" accept="image/*">
+                <img v-if="newProduct.imagePath" :src="newProduct.imagePath" alt="预览" class="preview">
+              </div>
+
               <div class="form-group">
                 <label for="description">描述:</label>
-                <textarea
-                    id="description"
-                    v-model="newProduct.description"
-                    placeholder="请输入商品的详细说明"
-                ></textarea>
+                <textarea id="description" v-model="newProduct.description" placeholder="请输入商品的详细说明"></textarea>
               </div>
+
               <button type="submit" class="submit-btn">确认发布</button>
             </form>
           </div>
 
-          <!-- 我的订单 (农户视图) -->
+          <!-- 我的订单 -->
           <div v-if="currentView === 'myOrders'">
             <div class="order-list">
               <div v-for="order in myOrders" :key="order.orderId" class="order-card">
@@ -146,11 +127,11 @@
                 <div class="order-body">
                   <div v-for="item in order.orderItems" :key="item.orderItemId" class="order-item">
                     <span>{{ item.productName }}</span>
-                    <span>数量: {{ item.quantity }} Kg</span>
-                    <span>单价: ¥{{ item.price }}</span>
+                    <span>数量: {{ item.quantity }} {{ item.unitInfo }}</span>
+                    <span>单价: ¥{{ item.price }} / {{ item.unitInfo }}</span>
                   </div>
                 </div>
-                 <div class="order-footer">
+                <div class="order-footer">
                   <p><strong>买家ID:</strong> {{ order.buyerId }}</p>
                   <p><strong>总金额:</strong> <span class="total-price">¥{{ order.totalPrice.toFixed(2) }}</span></p>
                 </div>
@@ -158,7 +139,6 @@
               <p v-if="!myOrders.length" class="empty-state">您还没有任何订单。</p>
             </div>
           </div>
-
         </div>
       </div>
 
@@ -176,170 +156,55 @@
           <!-- 所有商品 -->
           <div v-if="currentView === 'products'">
             <div class="product-list">
-              <div
-                v-for="product in products"
-                :key="product.productId"
-                class="product-card"
-              >
+              <div v-for="product in products" :key="product.productId" class="product-card">
                 <h3>{{ product.productName }}</h3>
-                <p>价格: ¥{{ product.price }} /Kg</p>
-                <p>库存: {{ product.stock }} Kg</p>
+                <p>价格: ¥{{ product.price }} / {{ product.unitInfo }}</p>
+                <p>库存: {{ product.stock }} {{ product.unitInfo }}</p>
 
                 <div class="card-actions">
                   <button class="view-btn" @click="viewProduct(product)">查看详情</button>
-                  <button class="add-to-cart-btn" @click="addToCart(product)">
-                    添加到购物车
-                  </button>
+                  <button class="add-to-cart-btn" @click="addToCart(product)">添加到购物车</button>
                 </div>
               </div>
-
               <p v-if="!products.length" class="empty-state">还没有任何商品。</p>
             </div>
           </div>
 
           <!-- 购物车 -->
           <div v-if="currentView === 'cart'" class="cart-view">
-            <!-- 地址选择区域 -->
-            <div v-if="addresses.length" class="address-container">
-              <label for="addressSelect">选择收货地址：</label>
-              <select id="addressSelect" v-model="selectedAddressId" class="address-select">
-                <option v-for="address in addresses" :key="address.addressId" :value="address.addressId">
-                  {{ address.recipientName }} - {{ address.province }}{{ address.city }}{{ address.district }}{{ address.streetAddress }}（{{ address.phoneNumber }}）
-                </option>
-              </select>
-            </div>
-            <p v-else class="empty-state">暂无收货地址，请前往“个人中心”添加</p>
-
-
-
             <div v-if="cartItems.length" class="cart-list">
               <div class="cart-card" v-for="item in cartItems" :key="item.productId">
-                <!-- 商品图片，可后续替换真实URL -->
-                <img src="../assets/img.png" alt="商品图片" class="cart-image" />
-
-                <!-- 商品信息 -->
+                <img :src="item.imagePath || '../assets/img.png'" alt="商品图片" class="cart-image" />
                 <div class="cart-info">
                   <h3 class="cart-name">{{ item.productName }}</h3>
-                  <p class="cart-price">¥{{ item.price }} / Kg</p>
+                  <p class="cart-price">¥{{ item.price }} / {{ item.unitInfo }}</p>
 
                   <div class="cart-quantity">
-                    <span>数量(Kg)：</span>
+                    <span>数量({{ item.unitInfo }}):</span>
                     <button @click="changeQuantity(item.productId, item.quantity - 1)" :disabled="item.quantity <= 1">-</button>
                     <span class="qty">{{ item.quantity }}</span>
                     <button @click="changeQuantity(item.productId, item.quantity + 1)">+</button>
                   </div>
                 </div>
-
-                <!-- 操作区 -->
                 <div class="cart-actions">
                   <button class="remove-btn" @click="removeFromCart(item.productId)">移除</button>
                 </div>
               </div>
             </div>
-
             <p v-else class="empty-state">购物车是空的。</p>
-
-            <div v-if="cartItems.length" class="cart-summary">
-              <p>合计: ¥{{ totalPrice }}</p>
-              <router-link to="/order">
-                <button class="submit-btn" @click="createOrder">提交订单</button>
-              </router-link>
-            </div>
-
           </div>
-
-          
-
-
-          <!-- 求购需求 -->
-          <div v-if="currentView === 'demands'">
-
-            <div class="request-list">
-              <!-- 求购需求卡片 -->
-              <div
-                  v-for="request in demands"
-                  :key="request.demandId"
-                  class="request-card"
-              >
-                <p class="request-title"><strong>用户 {{ request.buyerId }}： 我想要  </strong> {{ request.productNameDesired }}</p>
-                <p class="request-quantity">需求量： {{ request.quantityDesired }} {{ request.unitDesired }}</p>
-                <p class="request-details">需求描述： {{ request.details }}</p>
-              </div>
-
-
-              <p v-if="!demands.length" class="empty-state">暂无求购需求</p>
-
-              <button v-if="!demands.length" @click="switchView('addDemand')" class="add-demand-btn">发布求购需求</button>
-            </div>
-          </div>
-
-          <!-- 发布求购需求 -->
-          <div v-if="currentView === 'addDemand'">
-
-            <form @submit.prevent="handleAddDemand" class="add-product-form">
-              <div class="form-group">
-                <label for="demandName">需求商品名称:</label>
-                <input type="text" id="demandName" v-model="newDemand.productNameDesired" required>
-              </div>
-              <div class="form-group">
-                <label for="demandQuantity">需求数量 (Kg):</label>
-                <input type="number" id="demandQuantity" v-model.number="newDemand.quantityDesired" required min="1">
-              </div>
-              <div class="form-group">
-                <label for="maxPrice">期望最高单价 (元/Kg):</label>
-                <input type="number" id="maxPrice" v-model.number="newDemand.maxPricePerUnit" required min="0.01" step="0.01">
-              </div>
-              <div class="form-group">
-                <label for="deliveryDate">期望交货日期:</label>
-                <input type="date" id="deliveryDate" v-model="newDemand.deliveryDateDesired" required>
-              </div>
-              <div class="form-group">
-                <label for="details">补充说明:</label>
-                <textarea id="details" v-model="newDemand.details" rows="3" placeholder="可选"></textarea>
-              </div>
-              <button type="submit" class="submit-btn">确认发布</button>
-            </form>
-          </div>
-
-          <!-- 我的订单 (买家视图) -->
-          <div v-if="currentView === 'myOrders'">
-             <div class="order-list">
-              <div v-for="order in myOrders" :key="order.orderId" class="order-card">
-                <div class="order-header">
-                  <span>订单号: {{ order.orderId }}</span>
-                  <span class="order-date">下单时间: {{ new Date(order.orderDate).toLocaleString() }}</span>
-                  <span :class="['order-status', { 'status-pending': order.status === '待发货' }]">{{ order.status }}</span>
-                </div>
-                <div class="order-body">
-                  <div v-for="item in order.orderItems" :key="item.orderItemId" class="order-item">
-                    <span>{{ item.productName }}</span>
-                    <span>数量: {{ item.quantity }} Kg</span>
-                    <span>单价: ¥{{ item.price }}</span>
-                  </div>
-                </div>
-                <div class="order-footer">
-                  <p><strong>收货地址:</strong> {{ order.address.province }}{{ order.address.city }}{{ order.address.district }}{{ order.address.streetAddress }}</p>
-                  <p v-if="order.totalAmount != null">
-                     <strong>总金额:</strong> <span class="total-price">¥{{ order.totalAmount.toFixed(2) }}</span>
-                  </p>
-                </div>
-              </div>
-              <p v-if="!myOrders.length" class="empty-state">您还没有任何订单。</p>
-            </div>
-          </div>
-
         </div>
-
       </div>
-
     </section>
   </div>
 </template>
+
 
 <script setup>
 import { ref, computed, onMounted, watch} from 'vue'
 import axios from '../utils/axios'
 import router from "@/router/index.js";
+import HeaderComponent from '../components/HeaderComponent.vue';
 
 
 const userInfo = ref({})
@@ -356,7 +221,7 @@ const currentView = ref('products')
 
 // 农户数据
 const myProducts = ref([])
-const newProduct = ref({ productName: '', price: null,  unitInfo: '',stock: null, prodCat:'', prodPcat:'' })
+const newProduct = ref({ farmerId: '', productName: '', price: null,  unitInfo: '',stock: null, prodCat:'', prodPcat:'' , imagePath:''})
 
 // 普通用户数据
 const products = ref([])
@@ -375,9 +240,29 @@ const newDemand = ref({
   details: ''
 })
 
+const imageFile = ref(null)
+
+function handleImageUpload(event) {
+  // 获取上传的文件对象
+  imageFile.value = event.target.files[0]
+
+  if (!imageFile.value)
+    newProduct.value.imagePath = ''
+
+  // 创建本地预览路径
+  const previewUrl = URL.createObjectURL(imageFile.value)
+  console.log('图片文件对象：', imageFile.value)
+  console.log('图片预览路径：', previewUrl)
+
+  // 前端保存临时路径（仅用于预览）
+  newProduct.value.imagePath = previewUrl
+
+  console.log('新产品：', newProduct.value)
+}
+
+
 //订单数据
 const myOrders = ref([])
-
 
 function switchView(view) { currentView.value = view }
 
@@ -390,9 +275,18 @@ async function loadProducts() {
   }
 }
 
+async function loadMyProducts() {
+  try{
+    const res = await axios.get(`/products/farmer/${userId.value}`)
+    myProducts.value = res.data.records||[]
+  }catch(err){
+    console.error('加载我的商品失败',err)
+  }
+}
+
 async function goToProductDetail(product) {
   if (product && product.productId) {
-    router.push(`/product/${product.productId}`);
+    await router.push(`/product/${product.productId}`);
   }
 }
 
@@ -409,32 +303,68 @@ async function loadDemands() {
 
 async function handleAddProduct() {
   try {
-
-     if (!newProduct.value.prodCat) {
-      alert('请选择一个商品大分类！');
-      return;
+    // 校验必填项
+    if (!newProduct.value.prodCat) {
+      alert('请选择一个商品大分类！')
+      return
     }
 
-    const productToSend = {
-    ...newProduct.value,
-    farmerId: userId.value
-  }
-    const res = await axios.post('/products/publish', productToSend)
+    newProduct.value.farmerId = userId
+
+    //构造 multipart/form-data
+    const formData = new FormData()
+
+    // product 是一个 JSON 对象，要先序列化成字符串再用 Blob 封装
+    const productBlob = new Blob([JSON.stringify(newProduct.value)], {
+      type: 'application/json'
+    })
+    formData.append('product', productBlob) // 对应后端的 @RequestPart("product")
+
+    // 如果选择了图片，附加上
+    if (imageFile.value) {
+      formData.append('image', imageFile.value) // 对应后端的 @RequestPart("image")
+    }
+
+    //发请求
+    const res = await axios.post('/products/publish', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        Authorization: token // 如果不需要鉴权，可以删掉
+      }
+    })
+
+    // 处理返回结果
     if (res.data) {
       alert('商品发布成功！')
-      myProducts.value.push({ ...newProduct.value, id: Date.now() })
-      newProduct.value = { productName: '', price: null, unitInfo: '', stock: null, prodCat:'', prodPcat:''  }
+
+      // 重置表单
+      newProduct.value = {
+        farmerId: '',
+        productName: '',
+        price: null,
+        unitInfo: '',
+        stock: null,
+        prodCat: '',
+        prodPcat: '',
+        description: '',
+        imagePath: ''
+      }
+      imageFile.value = null
       currentView.value = 'myProducts'
     }
-  } catch (err) { alert('发布失败') }
+  } catch (err) {
+    console.error('发布失败：', err)
+    alert('发布失败，请稍后重试')
+  }
 }
+
 
 // ====== 购物车逻辑 ======
 // 从后端加载购物车 + 获取商品详情
 const addresses = ref([]) // 地址列表
 const selectedAddressId = ref(null)
 
-// ✅ 从后端加载购物车 + 商品详情
+// 从后端加载购物车 + 商品详情
 async function loadCart() {
   try {
     const token = localStorage.getItem('token')
@@ -455,7 +385,8 @@ async function loadCart() {
               ...item,
               productName: product.productName,
               price: product.price,
-              stock: product.stock
+              stock: product.stock,
+              imagePath: product.imagePath,
             }
           } catch (err) {
             console.warn('商品详情获取失败:', item.productId, err)
@@ -685,6 +616,7 @@ onMounted(async () => {
   await loadAddresses()
   await loadProducts()
   await loadCart()
+  if (role === 'farmer') await loadMyProducts()
 })
 
 watch(currentView, (val) => {
@@ -700,6 +632,10 @@ watch(currentView, (val) => {
   }
   if (val === 'myOrders') {
     loadMyOrders() 
+  }
+
+  if(val === 'myProducts') {
+    loadMyProducts()
   }
 })
 </script>
@@ -762,11 +698,6 @@ nav a:hover {
   font-size: 18px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-.welcome-text {
-  font-size: 1.2rem;
-  color: #333;
-  margin-bottom: 20px;
 }
 .content h2 {
   color: #2D7D4F;
@@ -1087,10 +1018,6 @@ nav a:hover {
   border-radius: 4px;
   color: #333;
 }
-.order-status.status-pending {
-  background-color: #FFFBE6; /* 淡黄色背景 */
-  color: #FAAD14; /* 橙色文字 */
-}
 .order-body {
   display: flex;
   flex-direction: column;
@@ -1119,5 +1046,31 @@ nav a:hover {
   font-weight: bold;
   color: #d9534f; /* 红色 */
 }
+
+.image-preview img {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.preview {
+  width: 150px;
+  height: 150px;
+  object-fit: cover; /* 保持比例裁剪，不会拉伸变形 */
+  border-radius: 8px; /* 圆角，可选 */
+  border: 1px solid #ccc; /* 灰色边框，可选 */
+  margin-top: 10px;
+}
+
+.preview {
+  width: 50px;
+  height: 50px;
+  object-fit: cover; /* 保持比例裁剪，不会拉伸变形 */
+  border-radius: 8px; /* 圆角，可选 */
+  border: 1px solid #ccc; /* 灰色边框，可选 */
+  margin-top: 10px;
+}
+
 
 </style>

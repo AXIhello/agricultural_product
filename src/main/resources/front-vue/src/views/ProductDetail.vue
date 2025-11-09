@@ -8,15 +8,14 @@
     <!-- 数据加载成功后显示商品内容 -->
     <div v-else-if="product.productId" class="product-container">
       <div class="product-image">
-        <!-- ✅ 优先使用真实的商品图片，如果没有则显示占位图 -->
-        <img :src="product.imagePath || 'https://via.placeholder.com/400x400'" alt="商品图片">
+        <img :src="imgUrl" alt="商品图片">
       </div>
-      
+
       <div class="product-info">
         <h1>{{ product.productName }}</h1>
         
         <div class="price-section">
-          <!-- ✅ 在价格和库存后面加上单位信息 -->
+          <!-- 在价格和库存后面加上单位信息 -->
           <span class="price">¥{{ product.price }} / {{ product.unitInfo }}</span>
           <span class="stock">库存: {{ product.stock }} {{ product.unitInfo }}</span>
         </div>
@@ -26,7 +25,7 @@
           <p>{{ product.description || '该商品暂无详细描述' }}</p>
         </div>
 
-        <!-- ✅ 新增：显示商品分类信息 -->
+        <!-- 新增：显示商品分类信息 -->
         <div class="category-info">
           <h3>商品分类</h3>
           <p>
@@ -70,13 +69,16 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import axios from '../utils/axios'
+import placeholder from '../assets/img.png' // 引入占位图
 
+const imgUrl = ref(placeholder)
 const route = useRoute()
 const router = useRouter()
 const product = ref({})
 const quantity = ref(1)
-const loading = ref(true) // ✅ 新增 loading 状态
-const isAddingToCart = ref(false) // ✅ 防止重复点击加入购物车
+const loading = ref(true)
+const isAddingToCart = ref(false)
+const token = localStorage.getItem('token')
 const userInfo = ref(JSON.parse(localStorage.getItem('userInfo') || '{}'))
 
 // 获取商品详情
@@ -85,13 +87,27 @@ const loadProductDetail = async () => {
   try {
     const response = await axios.get(`/products/${route.params.id}`)
     product.value = response.data
+    console.log(product.value)
+
+    const imageRes = await axios.get(`/products/${product.value.productId}/image`, {
+      headers: { Authorization: token },
+      responseType: 'blob' // 返回二进制
+    })
+
+    // 如果请求成功且有数据
+    if (imageRes.status === 200 && imageRes.data.size > 0) {
+      imgUrl.value = URL.createObjectURL(imageRes.data)
+    } else {
+      imgUrl.value = placeholder // 请求失败或者没有图片
+    }
   } catch (error) {
     console.error('获取商品详情失败:', error)
     ElMessage.error('获取商品详情失败，请稍后重试')
   } finally {
-    loading.value = false // ✅ 无论成功失败，都结束 loading
+    loading.value = false // 无论成功失败，都结束 loading
   }
 }
+
 
 // 加入购物车
 const handleAddToCart = async () => {
