@@ -6,7 +6,7 @@
         <li>
           <router-link to="/main" active-class="active-link">首页</router-link>
         </li>
-        <li>
+        <li v-if="isFinancing">
           <router-link to="/finance" active-class="active-link">融资服务</router-link>
         </li>
         <li>
@@ -25,6 +25,33 @@
     </nav>
   </header>
 </template>
+
+<script>
+export default {
+  name: 'HeaderComponent',
+  data() {
+    return {
+      role: null,
+    };
+  },
+  computed: {
+    isAdmin() {
+      return this.role === 'admin';
+    },
+    isFinancing(){
+      console.log('身份已检验',this.role);
+      return this.role === 'farmer' || this.role === 'bank' || this.role === 'admin';
+    }
+  },
+  mounted() {
+    const user = JSON.parse(localStorage.getItem('user'));
+    console.log(user);
+    if (user && user.role) {
+      this.role = user.role;
+    }
+  },
+};
+</script>
 
 <style scoped>
 .header {
@@ -76,25 +103,3 @@ nav a:hover {
   color: #2D7D4F;
 }
 </style>
-
-<script>
-export default {
-  name: 'HeaderComponent',
-  data() {
-    return {
-      role: null,
-    };
-  },
-  computed: {
-    isAdmin() {
-      return this.role === 'admin';
-    },
-  },
-  mounted() {
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (user && user.role) {
-      this.role = user.role;
-    }
-  },
-};
-</script>

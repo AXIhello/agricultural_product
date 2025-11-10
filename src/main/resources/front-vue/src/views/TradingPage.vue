@@ -174,11 +174,12 @@
           <div v-if="currentView === 'cart'" class="cart-view">
             <div v-if="cartItems.length" class="cart-list">
               <div class="cart-card" v-for="item in cartItems" :key="item.productId">
-                <img :src="item.imagePath || '../assets/img.png'" alt="商品图片" class="cart-image" />
+                <div class="product-image">
+                  <img :src="item.imageUrl || placeholder" alt="商品图片" />
+                </div>
                 <div class="cart-info">
                   <h3 class="cart-name">{{ item.productName }}</h3>
                   <p class="cart-price">¥{{ item.price }} / {{ item.unitInfo }}</p>
-
                   <div class="cart-quantity">
                     <span>数量({{ item.unitInfo }}):</span>
                     <button @click="changeQuantity(item.productId, item.quantity - 1)" :disabled="item.quantity <= 1">-</button>
@@ -190,6 +191,7 @@
                   <button class="remove-btn" @click="removeFromCart(item.productId)">移除</button>
                 </div>
               </div>
+              <button class="submit-btn" @click="createOrder()">提交</button>
             </div>
             <p v-else class="empty-state">购物车是空的。</p>
           </div>
@@ -205,6 +207,7 @@ import { ref, computed, onMounted, watch} from 'vue'
 import axios from '../utils/axios'
 import router from "@/router/index.js";
 import HeaderComponent from '../components/HeaderComponent.vue';
+import placeholder from "@/assets/img.png";
 
 
 const userInfo = ref({})
@@ -364,7 +367,7 @@ async function handleAddProduct() {
 const addresses = ref([]) // 地址列表
 const selectedAddressId = ref(null)
 
-// 从后端加载购物车 + 商品详情
+// 从后端加载购物车 + 商品详情 + 图片
 async function loadCart() {
   try {
     const token = localStorage.getItem('token')
@@ -376,21 +379,41 @@ async function loadCart() {
     const pageData = res.data || {}
     const items = pageData.records || []
 
+    // 并行加载每个商品的详情和图片
     const detailedItems = await Promise.all(
         items.map(async (item) => {
           try {
+            // 获取商品详情
             const productRes = await axios.get(`/products/${item.productId}`)
             const product = productRes.data
+
+            // 尝试获取商品图片
+            let imageUrl = ''
+            try {
+              const imageRes = await axios.get(`/products/${product.productId}/image`, {
+                headers: { Authorization: token },
+                responseType: 'blob' // 返回二进制
+              })
+              imageUrl = URL.createObjectURL(imageRes.data)
+              console.log('图片获取成功')
+            } catch {
+              // 如果图片获取失败，使用默认占位图
+              console.log('<图片获取失败>', product)
+              imageUrl = new URL('../assets/img.png', import.meta.url).href
+            }
+
             return {
               ...item,
               productName: product.productName,
               price: product.price,
               stock: product.stock,
               imagePath: product.imagePath,
+              unitInfo: product.unitInfo,
+              imageUrl
             }
           } catch (err) {
             console.warn('商品详情获取失败:', item.productId, err)
-            return item
+            return { ...item, imageUrl: new URL('../assets/img.png', import.meta.url).href }
           }
         })
     )
@@ -651,21 +674,6 @@ watch(currentView, (val) => {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.header {
-  width: 100%;
-  background: #2D7D4F; /* 深绿色背景色 */
-  color: white;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 20px;
-  height: 60px;
-  font-size: 15px;
-  font-weight: 600;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
 nav ul {
   list-style: none;
   display: flex;
@@ -874,7 +882,7 @@ nav a:hover {
   align-items: center;
   background-color: #fff;
   border-radius: 12px;
-  padding: 12px 16px;
+  padding: 8px 16px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   transition: transform 0.2s;
 }
@@ -883,17 +891,14 @@ nav a:hover {
   transform: translateY(-3px);
 }
 
-.cart-image {
-  width: 100px;
-  height: 100px;
-  object-fit: cover;
-  border-radius: 8px;
-  margin-right: 20px;
-}
-
 .cart-info {
   flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 80px;
 }
+
 
 .cart-name {
   font-size: 18px;
@@ -904,13 +909,14 @@ nav a:hover {
 .cart-price {
   color: #f40;
   font-size: 16px;
-  margin: 6px 0;
 }
 
 .cart-quantity {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-left: auto;
+  margin-right: 80px;
 }
 
 .cart-quantity button {
@@ -941,21 +947,17 @@ nav a:hover {
 .remove-btn:hover {
   background-color: #e04343;
 }
-
-.cart-summary {
-  margin-top: 24px;
-  text-align: right;
-  font-size: 18px;
-}
-
 .submit-btn {
-  margin-left: 20px;
+  display: block;            /* 转块级以占整行 */
+  margin-left: auto;         /* 自动推向右边 */
+  width: 120px;              /* 固定宽度 */
   background-color: #4caf50;
   color: white;
   border: none;
-  padding: 10px 18px;
+  padding: 10px 0;
   border-radius: 8px;
   cursor: pointer;
+  text-align: center;
 }
 
 .submit-btn:hover {
@@ -1072,5 +1074,26 @@ nav a:hover {
   margin-top: 10px;
 }
 
+.product-image {
+  flex: 0 0 100px;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* 图片居中 */
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid #eee;
+  background-color: #f9f9f9;
+  margin-left: 20px;
+  margin-right: 50px;
+}
+
+.product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* 保持比例并填满容器 */
+  border-radius: 8px;
+}
 
 </style>
