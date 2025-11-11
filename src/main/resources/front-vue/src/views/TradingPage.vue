@@ -118,27 +118,35 @@
           <!-- 我的订单 -->
           <div v-if="currentView === 'myOrders'">
             <div class="order-list">
-              <div v-for="order in myOrders" :key="order.orderId" class="order-card">
-                <div class="order-header">
-                  <span>订单号: {{ order.orderId }}</span>
-                  <span class="order-date">下单时间: {{ new Date(order.orderDate).toLocaleString() }}</span>
-                  <span :class="['order-status', { 'status-pending': order.status === '待发货' }]">{{ order.status }}</span>
-                </div>
-                <div class="order-body">
-                  <div v-for="item in order.orderItems" :key="item.orderItemId" class="order-item">
-                    <span>{{ item.productName }}</span>
-                    <span>数量: {{ item.quantity }} {{ item.unitInfo }}</span>
-                    <span>单价: ¥{{ item.price }} / {{ item.unitInfo }}</span>
+              <template v-if="myOrders && myOrders.length > 0">
+                <div v-for="order in myOrders" :key="order.orderId" class="order-card">
+                  <div class="order-header">
+                    <span>订单号: {{ order.orderId }}</span>
+                    <span class="order-date">下单时间: {{ new Date(order.orderDate).toLocaleString() }}</span>
+                    <span class="order-status">{{ order.status }}</span>
+                  </div>
+                  <div class="order-body">
+                    <div v-if="order.orderItems && order.orderItems.length > 0">
+                      <div v-for="item in order.orderItems" :key="item.itemId" class="order-item">
+                        <span>{{ item.productName || '商品名未知' }}</span>
+                        <span>数量: {{ item.quantity }}</span>
+                        <span>单价: ¥{{ item.unitPrice }}</span>
+                      </div>
+                    </div>
+                    <div v-else><p>此订单无商品详情</p></div>
+                  </div>
+                  <div class="order-footer">
+                    <!-- 后端返回的是 userId -->
+                    <p><strong>买家ID:</strong> {{ order.userId }}</p> 
+                    <!-- 后端返回的是 totalAmount -->
+                    <p><strong>总金额:</strong> <span class="total-price">¥{{ order.totalAmount.toFixed(2) }}</span></p> 
                   </div>
                 </div>
-                <div class="order-footer">
-                  <p><strong>买家ID:</strong> {{ order.buyerId }}</p>
-                  <p><strong>总金额:</strong> <span class="total-price">¥{{ order.totalPrice.toFixed(2) }}</span></p>
-                </div>
-              </div>
-              <p v-if="!myOrders.length" class="empty-state">您还没有任何订单。</p>
+              </template>
+              <p v-else class="empty-state">您还没有任何订单。</p>
             </div>
           </div>
+
         </div>
       </div>
 
@@ -196,6 +204,64 @@
             </div>
             <p v-else class="empty-state">购物车是空的。</p>
           </div>
+          
+          <!-- 我的订单 -->
+          <div v-if="currentView === 'myOrders'">
+            <div class="order-list">
+
+              <!-- 使用 <template> 和 v-if/v-else 来处理列表展示和空状态 -->
+              <template v-if="myOrders && myOrders.length > 0">
+                <div v-for="order in myOrders" :key="order.orderId" class="order-card">
+
+                  <!-- 订单头部 -->
+                  <div class="order-header">
+                    <span>订单号: {{ order.orderId }}</span>
+                    <span class="order-date">下单时间: {{ new Date(order.orderDate).toLocaleString() }}</span>
+                    <span class="order-status">{{ order.status }}</span>
+                  </div>
+
+                  <!-- 订单体 (商品列表) -->
+                  <div class="order-body">
+                    <div v-if="order.orderItems && order.orderItems.length > 0">
+                      
+                      <!-- 遍历订单中的每一个商品 -->
+                      <div v-for="item in order.orderItems" :key="item.itemId" class="order-item-container">
+                        
+                        <!-- 商品信息（左侧） -->
+                        <div class="item-info">
+                          <span class="item-name">{{ item.productName || '商品名未知' }}</span>
+                          <div class="item-details">
+                            <span>数量: {{ item.quantity }}</span>
+                            <span>单价: ¥{{ item.unitPrice }}</span>
+                          </div>
+                        </div>
+                        
+                        <!-- 商品操作（右侧） -->
+                        <div class="item-actions" v-if="role !== 'farmer'">
+                          <button class="contact-btn" @click="() => goToChat(item.farmerId)">联系卖家</button>
+                        </div>
+
+                      </div>
+
+                    </div>
+                    <div v-else>
+                      <p>此订单无商品详情</p>
+                    </div>
+                  </div>
+                  
+                  <!-- 订单尾部 -->
+                  <div class="order-footer">
+                      <p><strong>总金额:</strong> <span class="total-price">¥{{ order.totalAmount.toFixed(2) }}</span></p>
+                  </div>
+
+                </div>
+              </template>
+
+              <p v-else class="empty-state">您还没有任何订单。</p>
+              
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
@@ -293,35 +359,57 @@ async function goToProductDetail(product) {
     await router.push(`/product/${product.productId}`);
   }
 }
-
-async function contactSeller(product) {
+/**
+ * 根据接收者的ID，跳转到对应的聊天页面
+ * @param {number | string} receiverId - 聊天对象的ID
+ */
+async function goToChat(receiverId) {
   // 1. 检查用户是否已登录
   if (!userId.value) {
-    alert('请先登录才能联系卖家！');
-    // 可以选择跳转到登录页
-    // await router.push('/login'); 
+    alert('请先登录才能发起聊天！');
+    return;
+  }
+  
+  // 2. 检查 receiverId 是否有效
+  if (!receiverId) {
+    alert('无法联系，对方信息丢失。');
     return;
   }
 
-   // 2. 检查商品对象中是否有卖家ID（假设字段名为 farmerId）
-  //    请根据你的实际后端数据结构调整 `product.farmerId`
-  if (!product.farmerId) {
+  // 3. 检查用户是否在和自己聊天
+  //    使用 String() 转换以确保类型一致
+  if (String(userId.value) === String(receiverId)) {
+    alert('您不能和自己发起聊天。');
+    return;
+  }
+  
+  // 4. 跳转到聊天页面
+  console.log(`准备跳转到与用户 ${receiverId} 的聊天室`);
+  await router.push(`/chat/${receiverId}`);
+}
+
+/**
+ * 用于“所有商品”列表，点击后调用核心函数
+ * @param {object} product - 商品对象
+ */
+async function contactSeller(product) {
+  if (!product || !product.farmerId) {
     console.error("该商品缺少卖家信息:", product);
     alert('无法联系卖家，卖家信息丢失。');
     return;
   }
-  
-  // 3. 检查用户是否在和自己聊天
-  if (userId.value === product.farmerId) {
-    alert('您不能和自己发起聊天。');
-    return;
-  }
-
-  // 4. 跳转到聊天页面，并通过路由参数传递卖家的ID
-  //    我们假设聊天页面的路由是 /chat/:receiverId
-  console.log(`准备跳转到与卖家 ${product.farmerId} 的聊天室`);
-  await router.push(`/chat/${product.farmerId}`);
+  await goToChat(product.farmerId);
 }
+
+/**
+ * 用于“我的订单”列表，点击后调用核心函数
+ * @param {number | string} farmerId - 农户的ID
+ */
+async function contactFarmer(farmerId) {
+  // 这个函数现在变得非常简单，直接调用核心函数即可
+  await goToChat(farmerId);
+}
+
 
 async function loadDemands() {
   try{
@@ -602,40 +690,31 @@ async function handleAddDemand() {
 
 //加载我的订单
 async function loadMyOrders() {
-  if (!userId.value||!token) {
+  if (!userId.value || !token) {
     console.log("用户未登录，无法加载订单");
     return;
   }
   try {
+    
     const res = await axios.get('/orders', { 
-      params: {
-        pageNum: 1,
-        pageSize: 10 
-      },
       headers: {
-        // 传递 JWT token
         Authorization: `Bearer ${token}` 
       }
     });
-    if (res.data && res.data.records) {
-      myOrders.value = res.data.records;
+    
+    if (res.data && Array.isArray(res.data)) {
+      myOrders.value = res.data;
       console.log("加载到的订单:", myOrders.value);
     } else {
-      // 如果没有 records 字段，可能返回的是一个空列表或null
       myOrders.value = []; 
       console.log("未查询到订单或返回数据格式不正确");
     }
   } catch (error) {
     console.error("加载我的订单失败:", error);
-     if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-        alert("登录已过期，请重新登录。");
-        // 这里可以添加跳转到登录页的逻辑
-        // router.push('/login');
-    } else {
-        alert("加载订单失败，请稍后重试。");
-    }
-    myOrders.value = []; 
+    myOrders.value = []; // 出错时清空数组
+    alert("加载订单失败，请稍后重试。");
   }
+  
 }
 
 
@@ -1136,8 +1215,58 @@ nav a:hover {
 .product-image img {
   width: 100%;
   height: 100%;
-  object-fit: cover; /* 保持比例并填满容器 */
+  object-fit: cover; 
   border-radius: 8px;
+}
+
+
+.order-item-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+  border: 1px solid #f0f0f0;
+}
+
+.item-info {
+  display: flex;
+  flex-direction: column; /* 让商品名和详情上下排列 */
+  gap: 5px; /* 上下间距 */
+}
+
+.item-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.item-details {
+  display: flex;
+  gap: 20px; 
+  font-size: 0.9em;
+  color: #666;
+}
+
+.item-actions .contact-btn {
+  background-color: #2196F3; /* 蓝色背景 */
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.85em;
+  transition: background-color 0.3s;
+}
+
+.item-actions .contact-btn:hover {
+  background-color: #1976D2;
+}
+
+.order-footer {
+  display: flex;
+  justify-content: flex-end; /* 让内容靠右 */
+  align-items: center;
 }
 
 </style>

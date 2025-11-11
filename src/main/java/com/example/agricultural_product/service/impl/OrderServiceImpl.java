@@ -3,6 +3,7 @@ package com.example.agricultural_product.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.example.agricultural_product.dto.OrderDTO;
 import com.example.agricultural_product.mapper.OrderItemMapper;
 import com.example.agricultural_product.mapper.OrderMapper;
 import com.example.agricultural_product.mapper.ProductMapper;
@@ -78,22 +79,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         return null;
     }
 
-    // @Override
-    // public Page<Order> getOrdersByUserId(Long userId, Integer pageNum, Integer pageSize) {
-    //     Page<Order> page = new Page<>(pageNum, pageSize);
-    //     LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
-    //     wrapper.eq(Order::getUserId, userId)
-    //            .orderByDesc(Order::getCreateTime);
-    //     return this.page(page, wrapper);
-    // }
-
     @Override
-    public Page<Order> getOrdersByUserId(Long userId, Integer pageNum, Integer pageSize) {
-    Page<Order> page = new Page<>(pageNum, pageSize);
+    public List<OrderDTO> getMyOrdersWithItems(Long userId) {
+        // 直接调用 Mapper 中的方法
+        return this.baseMapper.findOrdersWithItemsByUserId(userId);
+    }
     
-    return this.baseMapper.selectOrderPageWithAddress(page, userId);
-}
-
     @Override
     public Order getOrderById(Integer orderId) {
         return this.getById(orderId);

@@ -3,6 +3,7 @@ package com.example.agricultural_product.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.agricultural_product.pojo.Order;
 import com.example.agricultural_product.pojo.OrderItem;
+import com.example.agricultural_product.dto.OrderDTO; 
 import com.example.agricultural_product.dto.CreateOrderRequest;
 import com.example.agricultural_product.dto.OrderDetailResponse;
 import com.example.agricultural_product.service.OrderService;
@@ -67,11 +68,17 @@ public class OrderController {
      * 获取当前用户订单列表
      */
     @GetMapping
-    public ResponseEntity<Page<Order>> getUserOrders(HttpServletRequest request,
-                                                     @RequestParam(defaultValue = "1") Integer pageNum,
-                                                     @RequestParam(defaultValue = "10") Integer pageSize) {
+    public ResponseEntity<List<OrderDTO>> getUserOrders(HttpServletRequest request) {
+        // **注意：我们暂时去掉了分页参数，因为 Mapper 里的查询不是分页的**
+        // @RequestParam(defaultValue = "1") Integer pageNum,
+        // @RequestParam(defaultValue = "10") Integer pageSize
+        
         Long userId = getUserIdFromToken(request);
-        return ResponseEntity.ok(orderService.getOrdersByUserId(userId, pageNum, pageSize));
+        
+        // **调用新的 Service 方法**
+        List<OrderDTO> ordersWithItems = orderService.getMyOrdersWithItems(userId);
+        
+        return ResponseEntity.ok(ordersWithItems);
     }
 
     /**
