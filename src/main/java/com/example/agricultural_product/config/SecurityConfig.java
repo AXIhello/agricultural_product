@@ -35,7 +35,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/apply/**").permitAll()
 
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-
+                        .requestMatchers("/api/chat/stream").permitAll() 
                         
                         .requestMatchers("/api/**").authenticated()
                         // 其他非 /api/ 的路径（例如 /）允许访问

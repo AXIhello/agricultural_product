@@ -1,17 +1,6 @@
 <template>
   <div class="main-bg">
-    <header class="header">
-      <h1>农产品交易平台</h1>
-      <nav>
-        <ul>
-          <li><router-link to="/main">首页</router-link></li>
-          <li><router-link to="/finance">融资服务</router-link></li>
-          <li><router-link to="/expert">专家助力</router-link></li>
-          <li><router-link to="/trading">农产品交易</router-link></li>
-          <li><router-link to="/profile" style="color: #B7E4C7;">个人信息</router-link></li>
-        </ul>
-      </nav>
-    </header>
+    <HeaderComponent />
 
     <section class="content">
       <div style="display: flex; gap: 50rem">
@@ -175,6 +164,7 @@
 import { ref, onMounted, watch } from 'vue'
 import axios from '../utils/axios'
 import router from "@/router/index.js";
+import HeaderComponent from "@/components/HeaderComponent.vue";
 
 const token = localStorage.getItem('token')
 

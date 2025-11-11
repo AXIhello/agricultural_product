@@ -10,7 +10,8 @@ import OrderConfirm from "@/views/OrderConfirm.vue";
 import UserApplication from "@/views/UserApplication.vue";
 import AdminReview from "@/views/AdminReview.vue";
 import ProductDetail from "@/views/ProductDetail.vue";
-
+import Chat from "@/views/Chat.vue";
+import MessageCenter from '../views/MessageCenter.vue'
 
 const routes = [
   {
@@ -90,6 +91,18 @@ const routes = [
       component: ProductDetail,
       props: true // 这会将路由参数 :id 作为 props 传递给组件，更方便
     
+  },
+  {
+    path: '/chat/:receiverId', // 使用动态参数 receiverId
+    name: 'Chat',
+    component: Chat,
+    meta: { requiresAuth: true } // 如果需要登录才能访问，可以添加这个
+  },
+    {
+    path: '/messages', // 定义消息中心的访问路径
+    name: 'MessageCenter',
+    component: MessageCenter,
+    meta: { requiresAuth: true } // 强烈建议添加，确保只有登录用户能访问
   }
   
 ]

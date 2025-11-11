@@ -42,3 +42,5 @@ target/
 
 src/main/resources/application-*.properties
 /src/main/resources/application.properties
+
+src/main/python/LSTM50/data50/lstm_data_collection.pkl

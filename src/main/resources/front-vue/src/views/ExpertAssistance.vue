@@ -1,17 +1,6 @@
 <template>
   <div class="main-bg">
-    <header class="header">
-      <h1>农产品交易平台</h1>
-      <nav>
-        <ul>
-          <li><router-link to="/main">首页</router-link></li>
-          <li><router-link to="/finance">融资服务</router-link></li>
-          <li><router-link to="/expert" style="color: #B7E4C7;">专家助力</router-link></li>
-          <li><router-link to="/trading">农产品交易</router-link></li>
-          <li><router-link to="/profile">个人信息</router-link></li>
-        </ul>
-      </nav>
-    </header>
+    <HeaderComponent />
 
     <!-- 提问表单 -->
     <div class="question-form">
@@ -90,6 +79,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import axios from '../utils/axios';
+import HeaderComponent from "@/components/HeaderComponent.vue";
 
 
 const questions = ref([]);

@@ -3,23 +3,63 @@
     <h1>农产品交易平台</h1>
     <nav>
       <ul>
-        <li><router-link to="/main">首页</router-link></li>
-        <li><router-link to="/finance">融资服务</router-link></li>
-        <li><router-link to="/expert">专家助力</router-link></li>
-        <li><router-link to="/trading">农产品交易</router-link></li>
-        <li v-if="isAdmin"><router-link to="/admin-review">审核信息</router-link></li>
-        <li><router-link to="/profile">个人信息</router-link></li>
-        
+        <li>
+          <router-link to="/main" active-class="active-link">首页</router-link>
+        </li>
+        <li v-if="isFinancing">
+          <router-link to="/finance" active-class="active-link">融资服务</router-link>
+        </li>
+        <li>
+          <router-link to="/expert" active-class="active-link">专家助力</router-link>
+        </li>
+        <li>
+          <router-link to="/trading" active-class="active-link">农产品交易</router-link>
+        </li>
+        <li v-if="isAdmin">
+          <router-link to="/admin-review" active-class="active-link">审核信息</router-link>
+        </li>
+        <li>
+          <router-link to="/messages">我的消息</router-link>
+        </li>
+        <li>
+          <router-link to="/profile" active-class="active-link">个人信息</router-link>
+        </li>
       </ul>
     </nav>
   </header>
 </template>
 
-<style scoped>
+<script>
+export default {
+  name: 'HeaderComponent',
+  data() {
+    return {
+      role: null,
+    };
+  },
+  computed: {
+    isAdmin() {
+      return this.role === 'admin';
+    },
+    isFinancing(){
+      console.log('身份已检验',this.role);
+      return this.role === 'farmer' || this.role === 'bank' || this.role === 'admin';
+    }
+  },
+  mounted() {
+    const user = JSON.parse(localStorage.getItem('user'));
+    console.log(user);
+    if (user && user.role) {
+      this.role = user.role;
+    }
+  },
+};
+</script>
 
+<style scoped>
 .header {
   width: 100%;
-  background: #2D7D4F; /* 深绿色背景色 */
+  background: #2D7D4F;
   color: white;
   display: flex;
   justify-content: space-between;
@@ -30,6 +70,7 @@
   font-weight: 600;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  font-family: 'PingFang SC', 'Heiti SC', 'Microsoft YaHei', sans-serif;
 }
 
 nav ul {
@@ -48,38 +89,20 @@ nav a {
   color: white;
   font-weight: 600;
   font-size: 20px;
-  transition: color 0.3s;
+  transition: color 0.3s, background-color 0.3s;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-family: 'PingFang SC', 'Heiti SC', 'Microsoft YaHei', sans-serif;
 }
 
+/* 鼠标悬停时字体颜色变浅绿 */
 nav a:hover {
-  color: #B7E4C7; /* 鼠标悬停时变为淡绿色 */
+  color: #B7E4C7;
 }
 
-.header h1 {
-  margin: 0;
-  font-size: 1.5em;
+/* 当前激活路由的样式（浅绿色背景 + 深绿色文字） */
+.active-link {
+  background-color: #B7E4C7;
+  color: #2D7D4F;
 }
-
 </style>
-
-<script>
-export default {
-  name: 'HeaderComponent',
-  data() {
-    return {
-      role: null,  
-    };
-  },
-  computed: {
-    isAdmin() {
-      return this.role === 'admin';
-    },
-  },
-  mounted() {
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (user && user.role) { // 假设用户信息包含 'role' 字段
-        this.role = user.role;
-    }
-  },
-};
-</script>

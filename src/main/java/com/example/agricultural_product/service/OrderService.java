@@ -2,6 +2,7 @@ package com.example.agricultural_product.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.example.agricultural_product.dto.OrderDTO;
 import com.example.agricultural_product.pojo.Order;
 import com.example.agricultural_product.pojo.OrderItem;
 
@@ -18,14 +19,14 @@ public interface OrderService extends IService<Order> {
      */
     Integer createOrder(Long userId, Integer addressId, List<OrderItem> orderItems);
     
-    /**
-     * 根据用户ID分页查询订单
-     * @param userId 用户ID
-     * @param pageNum 页码
-     * @param pageSize 页大小
-     * @return 订单分页数据
-     */
-    Page<Order> getOrdersByUserId(Long userId, Integer pageNum, Integer pageSize);
+    // /**
+    //  * 根据用户ID分页查询订单
+    //  * @param userId 用户ID
+    //  * @param pageNum 页码
+    //  * @param pageSize 页大小
+    //  * @return 订单分页数据
+    //  */
+    // Page<Order> getOrdersByUserId(Long userId, Integer pageNum, Integer pageSize);
     
     /**
      * 根据订单ID获取订单详情
@@ -74,6 +75,8 @@ public interface OrderService extends IService<Order> {
      * @return 订单分页数据
      */
     Page<Order> getOrdersByStatus(Long userId, String status, Integer pageNum, Integer pageSize);
+
+    List<OrderDTO> getMyOrdersWithItems(Long userId);
 }
 
 
