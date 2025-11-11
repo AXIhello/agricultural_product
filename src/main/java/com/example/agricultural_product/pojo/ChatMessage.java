@@ -27,9 +27,8 @@ public class ChatMessage {
     @TableField("msg_type")
     private String msgType; // text/image
 
-    @TableField("is_read")
-    private Boolean read;
-
+    @TableField(value = "is_read")
+    private Boolean isRead;
     @TableField("send_time")
     private LocalDateTime sendTime;
 
@@ -45,8 +44,8 @@ public class ChatMessage {
     public void setContent(String content) { this.content = content; }
     public String getMsgType() { return msgType; }
     public void setMsgType(String msgType) { this.msgType = msgType; }
-    public Boolean getRead() { return read; }
-    public void setRead(Boolean read) { this.read = read; }
+    public Boolean getRead() { return isRead; }
+    public void setRead(Boolean isRead) { this.isRead = isRead; }
     public LocalDateTime getSendTime() { return sendTime; }
     public void setSendTime(LocalDateTime sendTime) { this.sendTime = sendTime; }
 }

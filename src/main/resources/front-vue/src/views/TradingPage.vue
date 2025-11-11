@@ -162,8 +162,9 @@
                 <p>库存: {{ product.stock }} {{ product.unitInfo }}</p>
 
                 <div class="card-actions">
-                  <button class="view-btn" @click="viewProduct(product)">查看详情</button>
+                  <button class="view-btn" @click="goToProductDetail(product)">查看详情</button>
                   <button class="add-to-cart-btn" @click="addToCart(product)">添加到购物车</button>
+                  <button class="contact-btn" @click="contactSeller(product)">联系卖家</button>
                 </div>
               </div>
               <p v-if="!products.length" class="empty-state">还没有任何商品。</p>
@@ -291,6 +292,35 @@ async function goToProductDetail(product) {
   if (product && product.productId) {
     await router.push(`/product/${product.productId}`);
   }
+}
+
+async function contactSeller(product) {
+  // 1. 检查用户是否已登录
+  if (!userId.value) {
+    alert('请先登录才能联系卖家！');
+    // 可以选择跳转到登录页
+    // await router.push('/login'); 
+    return;
+  }
+
+   // 2. 检查商品对象中是否有卖家ID（假设字段名为 farmerId）
+  //    请根据你的实际后端数据结构调整 `product.farmerId`
+  if (!product.farmerId) {
+    console.error("该商品缺少卖家信息:", product);
+    alert('无法联系卖家，卖家信息丢失。');
+    return;
+  }
+  
+  // 3. 检查用户是否在和自己聊天
+  if (userId.value === product.farmerId) {
+    alert('您不能和自己发起聊天。');
+    return;
+  }
+
+  // 4. 跳转到聊天页面，并通过路由参数传递卖家的ID
+  //    我们假设聊天页面的路由是 /chat/:receiverId
+  console.log(`准备跳转到与卖家 ${product.farmerId} 的聊天室`);
+  await router.push(`/chat/${product.farmerId}`);
 }
 
 async function loadDemands() {
@@ -776,7 +806,7 @@ nav a:hover {
 }
 .product-card:hover { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
 .product-card h3 { margin-top: 0; color: #2D7D4F; }
-.card-actions { margin-top: 15px; display: flex; gap: 10px; }
+.card-actions { margin-top: 15px; display: flex;  flex-wrap: wrap; gap: 10px; }
 .add-to-cart-btn {
   background-color: #4CAF50;
   color: #fff;
@@ -798,6 +828,20 @@ nav a:hover {
 }
 .view-btn:hover {
   background-color: #45a049;
+}
+
+.contact-btn {
+  background-color: #2196F3; /* 蓝色背景 */
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.contact-btn:hover {
+  background-color: #1976D2; /* 鼠标悬停时颜色变深 */
 }
 
 .add-product-form { margin: 0 auto;  display: flex ; flex-direction: column; align-content: center; max-width: 600px; margin-top: 20px; }

@@ -19,6 +19,9 @@
           <router-link to="/admin-review" active-class="active-link">审核信息</router-link>
         </li>
         <li>
+          <router-link to="/messages">我的消息</router-link>
+        </li>
+        <li>
           <router-link to="/profile" active-class="active-link">个人信息</router-link>
         </li>
       </ul>
