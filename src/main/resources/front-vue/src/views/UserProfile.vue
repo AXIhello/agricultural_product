@@ -316,7 +316,17 @@ async function setDefault(id) {
 async function fetchExpertProfile() {
   try {
     const res = await axios.get('/expert/profile'); // API: 获取当前专家档案
-    expertProfile.value = res.data;
+    
+    // 首先判断响应体和 success 标志是否存在且为 true
+    if (res.data && res.data.success) {
+      // 正确：从响应的 data 属性中，取出里面的 data 对象（个人档案数据）
+      expertProfile.value = res.data.data;
+    } else {
+      // 处理后端返回 success: false 的情况
+      console.error('获取档案失败，服务器返回的业务状态为失败:', res.data.message || '未知错误');
+      alert('获取档案数据失败。');
+    }
+    
   } catch (error) {
     if (error.response && error.response.status === 404) {
       expertProfile.value = null; // 档案不存在是正常情况
