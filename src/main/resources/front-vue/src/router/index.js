@@ -12,6 +12,7 @@ import AdminReview from "@/views/AdminReview.vue";
 import ProductDetail from "@/views/ProductDetail.vue";
 import Chat from "@/views/Chat.vue";
 import MessageCenter from '../views/MessageCenter.vue'
+import PayResult from '@/views/PayResult.vue'
 
 const routes = [
   {
@@ -103,8 +104,14 @@ const routes = [
     name: 'MessageCenter',
     component: MessageCenter,
     meta: { requiresAuth: true } // 强烈建议添加，确保只有登录用户能访问
+  },
+  {
+    path: '/pay-result',
+    name: 'PayResult',
+    component: PayResult,
+    meta: { requiresAuth: true }
   }
-  
+
 ]
 
 const router = createRouter({
