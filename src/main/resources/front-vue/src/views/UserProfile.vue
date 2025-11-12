@@ -155,6 +155,60 @@
         </div>
       </div>
 
+      <div v-if="role === 'expert'" class="expert-profile-container">
+        <h3>我的个人档案</h3>
+
+        <!-- 档案展示视图 -->
+        <div v-if="!isEditing && expertProfile" class="profile-card">
+          <div class="profile-details">
+             <img :src="expertProfile.photoUrl || defaultAvatar" alt="Expert Photo" class="profile-photo">
+            <div class="profile-info-text">
+              <p><strong>专业领域：</strong>{{ expertProfile.specialization }}</p>
+              <p><strong>咨询费：</strong>¥{{ expertProfile.consultationFee }} / 次</p>
+              <p><strong>简介：</strong></p>
+              <p class="bio">{{ expertProfile.bio }}</p>
+            </div>
+          </div>
+          <div class="profile-actions">
+            <button @click="enterEditMode">更新档案</button>
+            <button @click="deleteProfile" class="delete-btn">删除档案</button>
+          </div>
+        </div>
+
+        <!-- 创建/编辑表单视图 -->
+        <div v-if="isEditing" class="profile-form">
+          <h4>{{ expertProfile ? '更新' : '创建' }}您的专家档案</h4>
+          <div class="form-group">
+            <label>专业领域：</label>
+            <input v-model="profileForm.specialization" placeholder="例如：水稻种植、病虫害防治" />
+          </div>
+          <div class="form-group">
+            <label>咨询费 (元/次)：</label>
+            <input type="number" v-model="profileForm.consultationFee" placeholder="例如：50" />
+          </div>
+          <div class="form-group">
+            <label>简介：</label>
+            <textarea v-model="profileForm.bio" placeholder="介绍您的专业背景和经验" rows="4"></textarea>
+          </div>
+          <div class="form-group">
+            <label>更新照片：</label>
+            <input type="file" @change="handleFileChange" accept="image/*" />
+          </div>
+          <div class="form-actions">
+            <button @click="saveProfile" class="save-btn">保存</button>
+            <button @click="cancelEdit">取消</button>
+          </div>
+        </div>
+
+        <!-- 提示创建档案 -->
+        <div v-if="!isEditing && !expertProfile" class="profile-prompt">
+          <p>您还没有创建专家档案，这会影响农户找到您并向您咨询。</p>
+          <button @click="enterEditMode">立即创建档案</button>
+        </div>
+      </div>
+
+
+
     </section>
   </div>
 
@@ -165,6 +219,7 @@ import { ref, onMounted, watch } from 'vue'
 import axios from '../utils/axios'
 import router from "@/router/index.js";
 import HeaderComponent from "@/components/HeaderComponent.vue";
+import defaultAvatar from '@/assets/default.jpg'; 
 
 const token = localStorage.getItem('token')
 
@@ -187,6 +242,16 @@ const newAddress = ref({
   streetAddress: '',
   postalCode: ''
 })
+
+// === 专家档案相关状态 ===
+const expertProfile = ref(null);
+const isEditing = ref(false);
+const profileForm = ref({
+  specialization: '',
+  bio: '',
+  consultationFee: '',
+});
+const selectedFile = ref(null);
 
 // 切换视图
 function switchView(view) {
@@ -247,46 +312,144 @@ async function setDefault(id) {
   }
 }
 
-onMounted(async () => {
-  loadAddresses()
-  if (!token) return
+// === 专家档案方法 ===
+async function fetchExpertProfile() {
+  try {
+    const res = await axios.get('/expert/profile'); // API: 获取当前专家档案
+    expertProfile.value = res.data;
+  } catch (error) {
+    if (error.response && error.response.status === 404) {
+      expertProfile.value = null; // 档案不存在是正常情况
+      console.log('当前专家还未创建档案。');
+    } else {
+      console.error('获取专家档案失败', error);
+      alert('获取专家档案失败，请稍后重试。');
+    }
+  }
+}
+
+function enterEditMode() {
+  // 如果已有档案，用现有数据填充表单；否则，用空数据
+  profileForm.value = expertProfile.value
+      ? { ...expertProfile.value }
+      : { specialization: '', bio: '', consultationFee: '' };
+  isEditing.value = true;
+}
+
+function cancelEdit() {
+  isEditing.value = false;
+  selectedFile.value = null; // 清除已选文件
+}
+
+function handleFileChange(event) {
+  selectedFile.value = event.target.files[0];
+}
+
+async function saveProfile() {
+  const formData = new FormData();
+  // 将表单数据添加到 FormData 对象
+  formData.append('specialization', profileForm.value.specialization);
+  formData.append('bio', profileForm.value.bio);
+  formData.append('consultationFee', profileForm.value.consultationFee);
+  if (selectedFile.value) {
+    formData.append('photo', selectedFile.value);
+  }
 
   try {
-    // 调后端 /api/user/info 接口
+    // 使用一个接口同时处理创建和更新
+    await axios.post('/expert/profile', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data' // 文件上传必须的请求头
+      }
+    });
+    alert('档案保存成功！');
+    isEditing.value = false;
+    selectedFile.value = null;
+    await fetchExpertProfile(); // 保存成功后刷新档案数据
+  } catch (error) {
+    console.error('保存专家档案失败', error);
+    alert('保存失败：' + (error.response?.data?.message || '请检查输入内容'));
+  }
+}
+
+async function deleteProfile() {
+  if (!confirm('确定要删除您的专家档案吗？此操作不可撤销。')) return;
+
+  try {
+    await axios.delete('/expert/profile'); // API: 删除当前专家档案
+    alert('档案删除成功！');
+    expertProfile.value = null; // 清空本地数据
+    isEditing.value = false; // 如果在编辑模式下删除，则退出编辑
+  } catch (error) {
+    console.error('删除专家档案失败', error);
+    alert('删除失败，请稍后重试。');
+  }
+}
+
+onMounted(async () => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    // 如果没有token，直接退出，防止后续代码出错
+    console.log("用户未登录，终止初始化。");
+    return; 
+  }
+
+  try {
+    // 1. 首先，总是需要获取当前登录用户的基本信息
     const res = await axios.get('/user/info', {
       headers: {
         Authorization: `Bearer ${token}`
       }
-    })
+    });
 
     if (res.data.success) {
-      userInfo.value = res.data.user
-      userId.value = res.data.user.userId
-      userName.value = res.data.user.userName
-      role.value = res.data.user.role
-      email.value = res.data.user.email
-      localStorage.setItem('userInfo', JSON.stringify(res.data.user))
+      const user = res.data.user;
+      
+      // 更新公共的用户信息状态
+      userInfo.value = user;
+      userId.value = user.userId;
+      userName.value = user.userName;
+      role.value = user.role;
+      email.value = user.email;
+      localStorage.setItem('userInfo', JSON.stringify(user));
+
+      // 2.根据获取到的角色，执行不同的加载逻辑
+      console.log(`当前用户角色是: ${role.value}`);
+      
+      if (role.value === 'expert') {
+        // 是专家，加载专家档案
+        console.log("正在为专家加载个人档案...");
+        await fetchExpertProfile(); 
+      } else if (role.value === 'buyer' || role.value === 'farmer') {
+        // 是买家或农户，加载地址信息
+        console.log("正在为买家/农户加载地址...");
+        await loadAddresses();
+      } else {
+        console.log(`未知的用户角色: ${role.value}，不执行额外加载操作。`);
+      }
+
     } else {
-      console.warn('Token 无效或过期')
+      console.warn('Token 无效或过期', res.data.message);
     }
   } catch (err) {
-    console.error('获取用户信息失败', err)
+    console.error('获取用户信息或后续加载失败', err);
   }
-})
+});
+
 
 watch(currentView, val => {
-  if (val === 'address') loadAddresses()
-})
+  if ((role.value === 'buyer' || role.value === 'farmer') && val === 'address') {
+    loadAddresses();
+  }
+});
 
 function exit(){
-  // 清除本地存储的用户信息
-  localStorage.removeItem('token')
-  localStorage.removeItem('userInfo')
-  localStorage.removeItem('userId')
-
-  // 跳转到登录页
-  router.push('/login')
+  localStorage.removeItem('token');
+  localStorage.removeItem('userInfo');
+  localStorage.removeItem('userId');
+  router.push('/login');
 }
+
 </script>
 
 <style scoped>
@@ -420,5 +583,96 @@ button.active {
 .info {
   padding-left: 2rem;
   text-align: left;
+}
+
+.expert-profile-container {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.expert-profile-container h3 {
+  margin-top: 0;
+  color: #2D7D4F;
+  border-bottom: 2px solid #F0F9F4;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.profile-card {
+  margin-top: 1rem;
+}
+
+.profile-details {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.profile-photo {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #e0e0e0;
+  background-color: #f0f0f0;
+}
+
+.profile-info-text p {
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}
+.profile-info-text .bio {
+  white-space: pre-wrap; /* 保留简介中的换行和空格 */
+}
+
+
+.profile-actions, .form-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 1rem;
+}
+
+.profile-actions button, .form-actions button, .profile-prompt button {
+  padding: 8px 16px;
+  border-radius: 5px;
+  border: 1px solid #2D7D4F;
+  background-color: #2D7D4F;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.profile-actions button:hover, .form-actions button:hover, .profile-prompt button:hover {
+  background-color: #256842;
+}
+
+.profile-actions .delete-btn {
+  background-color: #c82333;
+  border-color: #bd2130;
+}
+.profile-actions .delete-btn:hover {
+  background-color: #a71d2a;
+}
+.form-actions button:last-child {
+  background-color: #f0f0f0;
+  color: #333;
+  border-color: #ccc;
+}
+.form-actions button:last-child:hover {
+   background-color: #e0e0e0;
+}
+
+.profile-prompt {
+  text-align: center;
+  padding: 2rem;
+  background-color: #F0F9F4;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+.profile-form h4 {
+  margin-bottom: 1.5rem;
 }
 </style>

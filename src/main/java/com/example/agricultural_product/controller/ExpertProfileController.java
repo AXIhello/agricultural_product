@@ -2,12 +2,15 @@ package com.example.agricultural_product.controller;
 
 import com.example.agricultural_product.pojo.ExpertProfile;
 import com.example.agricultural_product.service.ExpertProfileService;
+import com.example.agricultural_product.service.FileStorageService;
 import com.example.agricultural_product.utils.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal; 
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,6 +20,9 @@ public class ExpertProfileController {
 
     @Autowired
     private ExpertProfileService expertProfileService;
+
+    @Autowired
+    private FileStorageService fileStorageService;
 
     // JWT 鉴权方法
     private boolean checkToken(HttpServletRequest request) {
@@ -44,7 +50,11 @@ public class ExpertProfileController {
     @PostMapping
     public ResponseEntity<Map<String, Object>> createOrUpdateProfile(
             HttpServletRequest request,
-            @RequestBody ExpertProfile profile) {
+            @RequestParam("specialization") String specialization,
+            @RequestParam("bio") String bio,
+            @RequestParam("consultationFee") BigDecimal consultationFee,
+            // 文件是可选的
+            @RequestParam(value = "photo", required = false) MultipartFile photo) {
         
         if (!checkToken(request)) {
             return ResponseEntity.status(401).body(Map.of("success", false, "message", "未授权"));
@@ -53,6 +63,22 @@ public class ExpertProfileController {
         Long expertId = getUserIdFromToken(request);
         if (expertId == null) {
             return ResponseEntity.status(401).body(Map.of("success", false, "message", "无法获取用户ID"));
+        }
+
+        // 创建一个 ExpertProfile 对象并填充数据
+        ExpertProfile profile = new ExpertProfile();
+        profile.setSpecialization(specialization);
+        profile.setBio(bio);
+        profile.setConsultationFee(consultationFee);
+
+        // 处理文件上传
+        if (photo != null && !photo.isEmpty()) {
+            try {
+                String photoUrl = fileStorageService.storeFile(photo); // 调用文件存储服务
+                profile.setPhotoUrl(photoUrl);
+            } catch (Exception e) {
+                 return ResponseEntity.status(500).body(Map.of("success", false, "message", "文件上传失败: " + e.getMessage()));
+            }
         }
 
         try {
