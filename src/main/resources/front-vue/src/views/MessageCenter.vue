@@ -1,10 +1,9 @@
 <template>
-  <div class="message-center-container">
+  <div class="main-bg">
     <HeaderComponent />
     <main class="content">
       <div class="page-header">
-        <h1>消息中心</h1>
-        <p>在这里查看您所有的会话</p>
+        <h3>在这里查看您所有的会话</h3>
       </div>
 
       <div class="session-list-wrapper">
@@ -130,16 +129,17 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.message-center-container {
+.main-bg {
   display: flex;
   flex-direction: column;
-  background-color: #f7f9fa;
-  min-height: 100vh;
+  height: 100vh;
+  width: 1800px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .content {
-  width: 100%;
-  max-width: 800px;
+  width: 90%;
   margin: 2rem auto;
   padding: 2rem;
   background-color: #ffffff;
@@ -149,13 +149,6 @@ onMounted(() => {
 
 .page-header {
   border-bottom: 1px solid #e0e0e0;
-  padding-bottom: 1rem;
-  margin-bottom: 2rem;
-}
-
-.page-header h1 {
-  margin: 0;
-  color: #333;
 }
 
 .page-header p {

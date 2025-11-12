@@ -172,7 +172,6 @@
                 <div class="card-actions">
                   <button class="view-btn" @click="goToProductDetail(product)">查看详情</button>
                   <button class="add-to-cart-btn" @click="addToCart(product)">添加到购物车</button>
-                  <button class="contact-btn" @click="contactSeller(product)">联系卖家</button>
                 </div>
               </div>
               <p v-if="!products.length" class="empty-state">还没有任何商品。</p>
@@ -277,10 +276,10 @@ import HeaderComponent from '../components/HeaderComponent.vue';
 import placeholder from "@/assets/img.png";
 
 
-const userInfo = ref({})
-const userId = ref('')
-const userName = ref('游客')
-const role = ref('未登录')
+const userInfo = ref(JSON.parse(localStorage.getItem('userInfo') || '{}'))
+const userId = ref(userInfo.value?.userId || null)
+const userName = ref(userInfo.value?.userName || '游客')
+const role = ref(userInfo.value?.role || '未登录')
 
 // 从 localStorage 拿 token
 const token = localStorage.getItem('token')
@@ -394,23 +393,7 @@ async function goToChat(receiverId) {
  * 用于“所有商品”列表，点击后调用核心函数
  * @param {object} product - 商品对象
  */
-async function contactSeller(product) {
-  if (!product || !product.farmerId) {
-    console.error("该商品缺少卖家信息:", product);
-    alert('无法联系卖家，卖家信息丢失。');
-    return;
-  }
-  await goToChat(product.farmerId);
-}
 
-/**
- * 用于“我的订单”列表，点击后调用核心函数
- * @param {number | string} farmerId - 农户的ID
- */
-async function contactFarmer(farmerId) {
-  // 这个函数现在变得非常简单，直接调用核心函数即可
-  await goToChat(farmerId);
-}
 
 
 async function loadDemands() {
@@ -757,30 +740,7 @@ const goToPay = (orderId) => {
 }
 
 onMounted(async () => {
-
   if (!token) return
-
-  try {
-    // 调后端 /api/user/info 接口
-    const res = await axios.get('/user/info', {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    })
-
-    if (res.data.success) {
-      userInfo.value = res.data.user
-      userId.value = res.data.user.userId
-      userName.value = res.data.user.userName
-      role.value = res.data.user.role
-      // 如果需要可保存到 localStorage
-      localStorage.setItem('userInfo', JSON.stringify(res.data.user))
-    } else {
-      console.warn('Token 无效或过期')
-    }
-  } catch (err) {
-    console.error('获取用户信息失败', err)
-  }
 
   await loadDemands()
   await loadAddresses()

@@ -219,15 +219,15 @@ import { ref, onMounted, watch } from 'vue'
 import axios from '../utils/axios'
 import router from "@/router/index.js";
 import HeaderComponent from "@/components/HeaderComponent.vue";
-import defaultAvatar from '@/assets/default.jpg'; 
+import defaultAvatar from '@/assets/default.jpg';
 
 const token = localStorage.getItem('token')
 
-const userInfo = ref({})
-const userId = ref('')
-const userName = ref('未登录')
-const role = ref('游客')
-const email = ref('')
+const userInfo = ref(JSON.parse(localStorage.getItem('userInfo') || '{}'))
+const userId = ref(userInfo.value?.userId || null)
+const userName = ref(userInfo.value?.userName || '游客')
+const role = ref(userInfo.value?.role || '未登录')
+const email = ref(userInfo.value?.email || '')
 
 const currentView = ref('address')
 const addresses = ref([])
@@ -397,39 +397,17 @@ async function deleteProfile() {
 }
 
 onMounted(async () => {
-  const token = localStorage.getItem('token');
   if (!token) {
     // 如果没有token，直接退出，防止后续代码出错
     console.log("用户未登录，终止初始化。");
-    return; 
+    return;
   }
 
   try {
-    // 1. 首先，总是需要获取当前登录用户的基本信息
-    const res = await axios.get('/user/info', {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-
-    if (res.data.success) {
-      const user = res.data.user;
-      
-      // 更新公共的用户信息状态
-      userInfo.value = user;
-      userId.value = user.userId;
-      userName.value = user.userName;
-      role.value = user.role;
-      email.value = user.email;
-      localStorage.setItem('userInfo', JSON.stringify(user));
-
-      // 2.根据获取到的角色，执行不同的加载逻辑
-      console.log(`当前用户角色是: ${role.value}`);
-      
       if (role.value === 'expert') {
         // 是专家，加载专家档案
         console.log("正在为专家加载个人档案...");
-        await fetchExpertProfile(); 
+        await fetchExpertProfile();
       } else if (role.value === 'buyer' || role.value === 'farmer') {
         // 是买家或农户，加载地址信息
         console.log("正在为买家/农户加载地址...");
@@ -437,12 +415,8 @@ onMounted(async () => {
       } else {
         console.log(`未知的用户角色: ${role.value}，不执行额外加载操作。`);
       }
-
-    } else {
-      console.warn('Token 无效或过期', res.data.message);
-    }
   } catch (err) {
-    console.error('获取用户信息或后续加载失败', err);
+    console.error('后续加载失败', err);
   }
 });
 
@@ -469,21 +443,6 @@ function exit(){
   height: 100vh;
   width: 1800px;
   background-color: #F0F9F4;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.header {
-  width: 100%;
-  background: #2D7D4F; /* 深绿色背景色 */
-  color: white;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 20px;
-  height: 60px;
-  font-size: 15px;
-  font-weight: 600;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }

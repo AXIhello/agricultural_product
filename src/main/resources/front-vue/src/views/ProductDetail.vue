@@ -41,6 +41,7 @@
         </div>
 
         <div class="action-section">
+          <button class="contact-btn" @click="contactSeller(product)">联系卖家</button>
           <div class="quantity-control">
              <label>数量:</label>
              <el-input-number 
@@ -79,7 +80,10 @@ const quantity = ref(1)
 const loading = ref(true)
 const isAddingToCart = ref(false)
 const token = localStorage.getItem('token')
+
 const userInfo = ref(JSON.parse(localStorage.getItem('userInfo') || '{}'))
+
+const userId = ref(userInfo.value?.userId || null)
 
 // 获取商品详情
 const loadProductDetail = async () => {
@@ -107,7 +111,47 @@ const loadProductDetail = async () => {
     loading.value = false // 无论成功失败，都结束 loading
   }
 }
+async function contactSeller(product) {
+  if (!product || !product.farmerId) {
+    console.error("该商品缺少卖家信息:", product);
+    alert('无法联系卖家，卖家信息丢失。');
+    return;
+  }
+  await goToChat(product.farmerId);
+}
+async function goToChat(receiverId) {
+  // 1. 检查用户是否已登录
+  if (!userId.value) {
+    alert('请先登录才能发起聊天！');
+    return;
+  }
 
+  // 2. 检查 receiverId 是否有效
+  if (!receiverId) {
+    alert('无法联系，对方信息丢失。');
+    return;
+  }
+
+  // 3. 检查用户是否在和自己聊天
+  //    使用 String() 转换以确保类型一致
+  if (String(userId.value) === String(receiverId)) {
+    alert('您不能和自己发起聊天。');
+    return;
+  }
+
+  // 4. 跳转到聊天页面
+  console.log(`准备跳转到与用户 ${receiverId} 的聊天室`);
+  await router.push(`/chat/${receiverId}`);
+}
+
+/**
+ * 用于“我的订单”列表，点击后调用核心函数
+ * @param {number | string} farmerId - 农户的ID
+ */
+async function contactFarmer(farmerId) {
+  // 这个函数现在变得非常简单，直接调用核心函数即可
+  await goToChat(farmerId);
+}
 
 // 加入购物车
 const handleAddToCart = async () => {
