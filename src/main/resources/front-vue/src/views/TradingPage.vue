@@ -199,7 +199,7 @@
                   <button class="remove-btn" @click="removeFromCart(item.productId)">移除</button>
                 </div>
               </div>
-              <button class="submit-btn" @click="createOrder()">提交</button>
+              <button class="submit-btn" @click="createOrder()">提交订单</button>
             </div>
             <p v-else class="empty-state">购物车是空的。</p>
           </div>
@@ -257,8 +257,6 @@
           <!-- 我的订单 -->
           <div v-if="currentView === 'myOrders'">
             <div class="order-list">
-
-              <!-- 使用 <template> 和 v-if/v-else 来处理列表展示和空状态 -->
               <template v-if="myOrders && myOrders.length > 0">
                 <div v-for="order in myOrders" :key="order.orderId" class="order-card">
 
@@ -266,17 +264,17 @@
                   <div class="order-header">
                     <span>订单号: {{ order.orderId }}</span>
                     <span class="order-date">下单时间: {{ new Date(order.orderDate).toLocaleString() }}</span>
-                    <span class="order-status">{{ order.status }}</span>
+                    <span class="order-status" :class="getStatusClass(order.status)">
+                    {{ getStatusText(order.status) }}
+                    </span>
                   </div>
 
-                  <!-- 订单体 (商品列表) -->
+                  <!-- 订单体 -->
                   <div class="order-body">
                     <div v-if="order.orderItems && order.orderItems.length > 0">
-
-                      <!-- 遍历订单中的每一个商品 -->
                       <div v-for="item in order.orderItems" :key="item.itemId" class="order-item-container">
 
-                        <!-- 商品信息（左侧） -->
+                        <!-- 商品信息 -->
                         <div class="item-info">
                           <span class="item-name">{{ item.productName || '商品名未知' }}</span>
                           <div class="item-details">
@@ -284,14 +282,7 @@
                             <span>单价: ¥{{ item.unitPrice }}</span>
                           </div>
                         </div>
-
-                        <!-- 商品操作（右侧） -->
-                        <div class="item-actions" v-if="role !== 'farmer'">
-                          <button class="contact-btn" @click="() => goToChat(item.farmerId)">联系卖家</button>
-                        </div>
-
                       </div>
-
                     </div>
                     <div v-else>
                       <p>此订单无商品详情</p>
@@ -299,17 +290,31 @@
                   </div>
 
                   <!-- 订单尾部 -->
-                  <div class="order-footer">
-                    <p><strong>总金额:</strong> <span class="total-price">¥{{ order.totalAmount.toFixed(2) }}</span></p>
+                  <div class="order-footer">                        <!-- 联系卖家按钮 -->
+                    <div class="item-actions" v-if="role !== 'farmer'">
+                      <button class="contact-btn" @click="() => goToChat(item.farmerId)">联系卖家</button>
+                    </div>
+                    <p><strong>总金额:</strong>
+                      <span class="total-price">¥{{ order.totalAmount.toFixed(2) }}</span>
+                    </p>
+
+                    <!-- 状态对应按钮 -->
+                    <div class="order-actions">
+
+                      <button v-if="order.status === 'pending'" class="pay-btn" @click="goToPay(order.orderId)">立即支付</button>
+                      <button v-if="order.status === 'pending'" class="cancel-btn" @click="cancelOrder(order.orderId)">取消订单</button>
+                      <button v-if="order.status === 'completed'" class="view-btn" @click="viewDetail(order.orderId)">查看详情</button>
+                      <span v-if="order.status === 'cancelled'" class="cancel-text">订单已取消</span>
+                    </div>
                   </div>
 
                 </div>
               </template>
 
               <p v-else class="empty-state">您还没有任何订单。</p>
-
             </div>
           </div>
+
 
         </div>
       </div>
@@ -326,6 +331,7 @@ import HeaderComponent from '../components/HeaderComponent.vue';
 import placeholder from "@/assets/img.png";
 import { useAuthStore } from '@/stores/authStore'
 import { storeToRefs } from 'pinia'
+import {ElMessage} from "element-plus";
 
 const authStore = useAuthStore()
 const {userInfo, isLoggedIn, role} = storeToRefs(authStore)
@@ -530,7 +536,8 @@ async function loadCart() {
   if (!isLoggedIn.value) return;
   try {
     
-    const res = await axios.get('/cart', { params: { userId: userInfo.value.userId, pageNum: 1, pageSize: 50 } });
+    const res = await axios.get('/cart',
+        { params: { pageNum: 1, pageSize: 50 } });
     const pageData = res.data
     const items = pageData.records || []
 
@@ -606,7 +613,7 @@ async function addToCart(product) {
   try {
     
     const res = await axios.post('/cart/add', null, {
-      params: { userId: userInfo.value.userId, productId: product.productId, quantity: 1 }
+      params: { productId: product.productId, quantity: 1 }
     });
 
     if (res.data) {
@@ -627,7 +634,7 @@ async function changeQuantity(productId, newQty) {
   try {
 
     const res = await axios.post('/cart/update', null, {
-      params: { userId: userInfo.value.userId, productId, quantity: newQty }
+      params: { productId, quantity: newQty }
     });
   
     if (res.data) {
@@ -643,7 +650,8 @@ async function changeQuantity(productId, newQty) {
 async function removeFromCart(productId) {
   if (!isLoggedIn.value) return;
   try {
-    const res =  await axios.delete('/cart/item', { params: { userId: userInfo.value.userId, productId } })
+    const res =  await axios.delete('/cart/item',
+        { params: { productId } })
     if (res.data) {
       alert('移除成功')
       loadCart()
@@ -735,9 +743,9 @@ async function handleAddDemand() {
 
 //加载我的订单
 async function loadMyOrders() {
-  if (!isLoggedIn.value) { 
-    console.log("用户未登录，无法加载订单"); 
-    return; 
+  if (!isLoggedIn.value) {
+    console.log("用户未登录，无法加载订单");
+    return;
   }
 
   try {
@@ -766,15 +774,42 @@ async function loadMyOrders() {
   }
 }
 
+// 状态中文映射
+const getStatusText = (status) => {
+  switch (status) {
+    case 'pending':
+      return '待支付'
+    case 'completed':
+      return '已完成'
+    case 'cancelled':
+      return '已取消'
+    default:
+      return status || '未知状态'
+  }
+}
+
+// 状态样式类（用于颜色）
+const getStatusClass = (status) => {
+  switch (status) {
+    case 'pending':
+      return 'status-pending'
+    case 'completed':
+      return 'status-completed'
+    case 'cancelled':
+      return 'status-cancelled'
+    default:
+      return ''
+  }
+}
+
+
 // 取消订单
 const cancelOrder = async (orderId) => {
   try {
-    const res = await axios.put(`/orders/${orderId}/cancel`, null, {
-      headers: { Authorization: token }
-    })
+    const res = await axios.put(`/orders/${orderId}/cancel`)
     if (res.data) {
       ElMessage.success('订单已取消')
-      orders.value = orders.value.map(o =>
+      myOrders.value = myOrders.value.map(o =>
           o.orderId === orderId ? { ...o, status: 'cancelled' } : o
       )
     } else {
@@ -1403,5 +1438,69 @@ nav a:hover {
 }
 .actions button:nth-child(2):hover {
   background: #d32f2f;
+}
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f8f8f8;
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+.order-status {
+  font-weight: bold;
+}
+
+.status-pending {
+  color: #ff9800; /* 橙色 */
+}
+.status-completed {
+  color: #4caf50; /* 绿色 */
+}
+.status-cancelled {
+  color: #f44336; /* 红色 */
+}
+
+.order-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-top: 1px solid #ddd;
+}
+
+.order-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.pay-btn {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.cancel-btn {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.view-btn {
+  background-color: #2196f3;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.cancel-text {
+  color: #999;
+  font-size: 14px;
 }
 </style>

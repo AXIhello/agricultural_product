@@ -4,11 +4,14 @@ import com.example.agricultural_product.service.PaymentService;
 import com.example.agricultural_product.service.OrderService;
 import com.example.agricultural_product.pojo.Order;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
@@ -135,33 +138,36 @@ public class AlipayController {
      * 支付成功页面跳转（同步通知）
      */
     @GetMapping("/return")
-    public String returnPage(HttpServletRequest request) {
+    public void returnPage(HttpServletRequest request, HttpServletResponse response) throws IOException {
         try {
             String outTradeNo = request.getParameter("out_trade_no");
             String totalAmount = request.getParameter("total_amount");
+            String result = "success"; // 默认成功
 
             if (outTradeNo == null) {
-                return "支付失败：缺少订单号";
-            }
-
-            Integer orderId = Integer.parseInt(outTradeNo);
-            Order order = orderService.getOrderById(orderId);
-            if (order == null) {
-                return "支付失败：订单不存在";
-            }
-
-            if (!"completed".equals(order.getStatus())) {
-                boolean updated = orderService.updateOrderStatus(orderId, "completed");
-                logger.info("订单 {} 状态更新为 completed，结果={}", orderId, updated);
+                result = "fail";
             } else {
-                logger.info("订单 {} 已是 completed 状态，无需重复更新", orderId);
+                Integer orderId = Integer.parseInt(outTradeNo);
+                Order order = orderService.getOrderById(orderId);
+
+                if (order == null) {
+                    result = "fail";
+                } else {
+                    if (!"completed".equals(order.getStatus())) {
+                        orderService.updateOrderStatus(orderId, "completed");
+                    }
+                }
             }
 
-            // 返回支付成功提示（可换成前端页面跳转）
-            return "支付成功！订单号：" + outTradeNo + "，金额：" + totalAmount;
+            // 统一跳到前端支付结果页
+            response.sendRedirect("http://localhost:5173/pay-result?result=" + result
+                    + "&orderId=" + outTradeNo
+                    + "&amount=" + totalAmount);
+
         } catch (Exception e) {
             logger.error("处理支付回调异常", e);
-            return "支付异常：" + e.getMessage();
+            response.sendRedirect("http://localhost:5173/pay-result?result=fail");
         }
     }
+
 }

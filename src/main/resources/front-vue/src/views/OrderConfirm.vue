@@ -34,10 +34,32 @@
       </div>
 
       <!-- 总价与支付 -->
+
+      <!-- 总价与支付 -->
       <div class="order-summary">
-        <h3>总价：¥{{ totalPrice }}</h3>
-        <button class="pay-btn" @click="payOrder">立即支付</button>
+        <div class="order-info">
+          <div class="price">总价：¥{{ totalPrice }}</div>
+
+          <div class="status" v-if="order?.status === 'completed'">
+            已支付
+          </div>
+        </div>
+
+        <div class="btn-group">
+          <button
+              v-if="order?.status === 'pending'"
+              class="pay-btn"
+              @click="payOrder"
+          >
+            立即支付
+          </button>
+
+          <button class="back-btn" @click="goToTrading">
+            返回交易页
+          </button>
+        </div>
       </div>
+
     </div>
 
     <p v-else class="loading">正在加载订单信息...</p>
@@ -159,12 +181,17 @@ async function payOrder() {
     ElMessage.error('支付失败，请稍后重试')
   }
 }
+
+function goToTrading() {
+  router.push('/trading')
+}
+
 </script>
 
 
 <style scoped>
 .order-container {
-  width: 1800px;
+  width: 1000px;
   max-width: 2400px;
   margin: 30px auto;
   background: #fff;
@@ -175,6 +202,7 @@ async function payOrder() {
 }
 
 .order-info p {
+
   margin: 6px 0;
   font-size: 15px;
 }
@@ -233,5 +261,60 @@ async function payOrder() {
   color: #888;
   margin-top: 60px;
   font-size: 16px;
+}
+
+/*按钮部分*/
+
+.order-summary {
+  width: 100%;
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  border-top: 1px solid #4caf50; /* ✅ 绿色线条 */
+  padding-top: 20px; /* 给线条和内容留一点空间 */
+}
+
+.price {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.status {
+  font-size: 22px;
+  color: #4caf50; /* 绿色 */
+  font-weight: bold;
+}
+
+.btn-group {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+}
+
+.pay-btn {
+  background-color: #4caf50;
+  color: white;
+  padding: 10px 25px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.pay-btn:hover {
+  background-color: #45a049;
+}
+
+.back-btn {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 25px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.back-btn:hover {
+  background-color: #52b788;
 }
 </style>

@@ -34,6 +34,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/email/**").permitAll()
                         .requestMatchers("/api/apply/**").permitAll()
 
+                        .requestMatchers("/api/alipay/notify", "/api/alipay/return").permitAll()
+
+
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/chat/stream").permitAll() 
             
