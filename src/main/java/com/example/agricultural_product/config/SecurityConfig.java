@@ -29,14 +29,14 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         
-                        
+                        .requestMatchers("/api/expert/profile/list").permitAll()
                         .requestMatchers("/api/user/login", "/api/user/register").permitAll()
                         .requestMatchers("/api/email/**").permitAll()
                         .requestMatchers("/api/apply/**").permitAll()
 
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/chat/stream").permitAll() 
-                        
+            
                         .requestMatchers("/api/**").authenticated()
                         // 其他非 /api/ 的路径（例如 /）允许访问
                         .anyRequest().permitAll() 

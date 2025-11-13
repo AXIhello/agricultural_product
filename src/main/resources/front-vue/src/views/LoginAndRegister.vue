@@ -106,6 +106,160 @@
   </div>
 </template>
 
+
+<script>
+import axios from '../utils/axios';
+import { useAuthStore } from '@/stores/authStore'; 
+import router from '@/router';
+import '../style.css';
+
+export default {
+  name: 'LoginAndRegister',
+  data() {
+    return {
+      isLogin: true,
+      form: {
+        userName: '',
+        password: '',
+        role: 'bank',
+        confirmPassword: '',
+        email: '',
+        verificationCode: ''
+      },
+      errorMsg: '',
+      successMsg: '',
+      cooldown: 0
+    };
+  },
+  methods: {
+    clearMessages() {
+      this.errorMsg = '';
+      this.successMsg = '';
+    },
+    switchToRegister() {
+      this.isLogin = false;
+      this.resetForm();
+    },
+    switchToLogin() {
+      this.isLogin = true;
+      this.resetForm();
+    },
+    resetForm() {
+      this.form = {
+        userName: '',
+        password: '',
+        role: '',
+        confirmPassword: '',
+        email: '',
+        verificationCode: ''
+      };
+      this.clearMessages();
+    },
+
+    //处理登录
+    async handleLogin() {
+      this.clearMessages();
+      const { userName, password, role } = this.form;
+      if (!userName || !password || !role) {
+        this.errorMsg = '用户名、密码和角色都不能为空！';
+        return;
+      }
+
+      try {
+
+        const authStore = useAuthStore();  //获取store实例
+
+        await authStore.login(this.form);  
+
+        this.successMsg = '登录成功！正在跳转...';
+        setTimeout(() => this.$router.push('/main'), 1000);
+
+      } catch (error) {
+        console.error(error);
+        this.errorMsg = error.response?.data?.message || '服务器连接失败或用户名、密码错误。';
+      }
+    },
+
+    //处理注册
+    async handleRegister() {
+      this.clearMessages();
+      const { userName, password, confirmPassword, role, email, verificationCode } = this.form;
+
+      if (password !== confirmPassword) {
+        this.errorMsg = '两次输入的密码不匹配！';
+        return;
+      }
+
+      if (!userName || !password || !role || !email || !verificationCode) {
+        this.errorMsg = '所有字段都不能为空！';
+        return;
+      }
+
+      try {
+        // 验证验证码
+        const verifyRes = await axios.post('/email/verify-code', { email, code: verificationCode });
+        if (!verifyRes.data.success) {
+          this.errorMsg = '验证码错误或已过期！';
+          return;
+        }
+
+        // 注册用户
+        const response = await axios.post('/user/register', { userName, password, role, email });
+        if (response.data.success) {
+          this.successMsg = '注册成功，你现在可以登录了！';
+          setTimeout(() => this.switchToLogin(), 2000);
+        } else {
+          this.errorMsg = response.data.message || '注册失败，请稍后重试！';
+        }
+      } catch (error) {
+        console.error(error);
+        this.errorMsg = error.response?.data?.message || '注册失败，服务器发生错误。';
+      }
+    },
+    async sendVerificationCode() {
+      if (!this.form.email) {
+        this.errorMsg = '请输入邮箱地址！';
+        return;
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(this.form.email)) {
+        this.errorMsg = '请输入有效的邮箱地址！';
+        return;
+      }
+      try {
+        const response = await axios.get('/email/send-code', { params: { email: this.form.email } });
+        if (response.data.success) {
+          this.successMsg = '验证码已发送，请查收邮件！';
+          this.startCooldown();
+        } else {
+          this.errorMsg = response.data.message || '验证码发送失败，请稍后重试！';
+        }
+      } catch (error) {
+        console.error(error);
+        this.errorMsg = error.response?.data?.message || '发送验证码失败，请稍后重试！';
+      }
+    },
+    startCooldown() {
+      this.cooldown = 60;
+      const timer = setInterval(() => {
+        this.cooldown--;
+        if (this.cooldown <= 0) clearInterval(timer);
+      }, 1000);
+    },
+    goBack() {
+      window.location.href = "/main";
+    },
+    goToUserApplication() {
+      this.$router.push({
+        path: '/apply',
+  
+      });
+    }
+  }
+};
+</script>
+
+
 <style>
 /* 样式保持不变，可直接使用你原来的 */
 .auth-container {
@@ -226,156 +380,3 @@
   text-decoration: underline; 
 }
 </style>
-
-<script>
-import axios from '../utils/axios';
-
-import '../style.css';
-
-export default {
-  name: 'LoginAndRegister',
-  data() {
-    return {
-      isLogin: true,
-      form: {
-        userName: '',
-        password: '',
-        role: 'bank',
-        confirmPassword: '',
-        email: '',
-        verificationCode: ''
-      },
-      errorMsg: '',
-      successMsg: '',
-      cooldown: 0
-    };
-  },
-  methods: {
-    clearMessages() {
-      this.errorMsg = '';
-      this.successMsg = '';
-    },
-    switchToRegister() {
-      this.isLogin = false;
-      this.resetForm();
-    },
-    switchToLogin() {
-      this.isLogin = true;
-      this.resetForm();
-    },
-    resetForm() {
-      this.form = {
-        userName: '',
-        password: '',
-        role: '',
-        confirmPassword: '',
-        email: '',
-        verificationCode: ''
-      };
-      this.clearMessages();
-    },
-    async handleLogin() {
-      this.clearMessages();
-      const { userName, password, role } = this.form;
-      if (!userName || !password || !role) {
-        this.errorMsg = '用户名、密码和角色都不能为空！';
-        return;
-      }
-
-      try {
-        const response = await axios.post('/user/login', { userName, password, role });
-        if (response.data.success) {
-          this.successMsg = '登录成功！正在跳转...';
-
-          // 保存 token 和用户信息
-          localStorage.setItem('token', response.data.token);
-          localStorage.setItem('user', JSON.stringify(response.data.user));
-
-          // 延迟跳转主页
-          setTimeout(() => this.$router.push('/main'), 1500);
-
-        } else {
-          this.errorMsg = response.data.message || '登录失败，请稍后重试！';
-        }
-      } catch (error) {
-        console.error(error);
-        this.errorMsg = error.response?.data?.message || '服务器连接失败或用户名、密码错误。';
-      }
-    },
-    async handleRegister() {
-      this.clearMessages();
-      const { userName, password, confirmPassword, role, email, verificationCode } = this.form;
-
-      if (password !== confirmPassword) {
-        this.errorMsg = '两次输入的密码不匹配！';
-        return;
-      }
-
-      if (!userName || !password || !role || !email || !verificationCode) {
-        this.errorMsg = '所有字段都不能为空！';
-        return;
-      }
-
-      try {
-        // 验证验证码
-        const verifyRes = await axios.post('/email/verify-code', { email, code: verificationCode });
-        if (!verifyRes.data.success) {
-          this.errorMsg = '验证码错误或已过期！';
-          return;
-        }
-
-        // 注册用户
-        const response = await axios.post('/user/register', { userName, password, role, email });
-        if (response.data.success) {
-          this.successMsg = '注册成功，你现在可以登录了！';
-          setTimeout(() => this.switchToLogin(), 2000);
-        } else {
-          this.errorMsg = response.data.message || '注册失败，请稍后重试！';
-        }
-      } catch (error) {
-        console.error(error);
-        this.errorMsg = error.response?.data?.message || '注册失败，服务器发生错误。';
-      }
-    },
-    async sendVerificationCode() {
-      if (!this.form.email) {
-        this.errorMsg = '请输入邮箱地址！';
-        return;
-      }
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(this.form.email)) {
-        this.errorMsg = '请输入有效的邮箱地址！';
-        return;
-      }
-      try {
-        const response = await axios.get('/email/send-code', { params: { email: this.form.email } });
-        if (response.data.success) {
-          this.successMsg = '验证码已发送，请查收邮件！';
-          this.startCooldown();
-        } else {
-          this.errorMsg = response.data.message || '验证码发送失败，请稍后重试！';
-        }
-      } catch (error) {
-        console.error(error);
-        this.errorMsg = error.response?.data?.message || '发送验证码失败，请稍后重试！';
-      }
-    },
-    startCooldown() {
-      this.cooldown = 60;
-      const timer = setInterval(() => {
-        this.cooldown--;
-        if (this.cooldown <= 0) clearInterval(timer);
-      }, 1000);
-    },
-    goBack() {
-      window.location.href = "/main";
-    },
-    goToUserApplication() {
-      this.$router.push({
-        path: '/apply',
-  
-      });
-    }
-  }
-};
-</script>

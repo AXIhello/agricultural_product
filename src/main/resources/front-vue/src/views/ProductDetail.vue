@@ -71,6 +71,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import axios from '../utils/axios'
 import placeholder from '../assets/img.png' // 引入占位图
+import { useAuthStore } from '@/stores/authStore'
+import { storeToRefs } from 'pinia'
 
 const imgUrl = ref(placeholder)
 const route = useRoute()
@@ -79,11 +81,9 @@ const product = ref({})
 const quantity = ref(1)
 const loading = ref(true)
 const isAddingToCart = ref(false)
-const token = localStorage.getItem('token')
 
-const userInfo = ref(JSON.parse(localStorage.getItem('userInfo') || '{}'))
-
-const userId = ref(userInfo.value?.userId || null)
+const authStore = useAuthStore();
+const { userInfo, isLoggedIn } = storeToRefs(authStore)
 
 // 获取商品详情
 const loadProductDetail = async () => {
@@ -94,8 +94,7 @@ const loadProductDetail = async () => {
     console.log(product.value)
 
     const imageRes = await axios.get(`/products/${product.value.productId}/image`, {
-      headers: { Authorization: token },
-      responseType: 'blob' // 返回二进制
+      responseType: 'blob'
     })
 
     // 如果请求成功且有数据
@@ -111,6 +110,7 @@ const loadProductDetail = async () => {
     loading.value = false // 无论成功失败，都结束 loading
   }
 }
+
 async function contactSeller(product) {
   if (!product || !product.farmerId) {
     console.error("该商品缺少卖家信息:", product);
@@ -119,14 +119,16 @@ async function contactSeller(product) {
   }
   await goToChat(product.farmerId);
 }
+
 async function goToChat(receiverId) {
-  // 1. 检查用户是否已登录
-  if (!userId.value) {
-    alert('请先登录才能发起聊天！');
+  // 检查用户是否已登录
+  if (!isLoggedIn.value) {
+    ElMessage.warning('请先登录才能发起聊天！');
+    router.push('/login');
     return;
   }
 
-  // 2. 检查 receiverId 是否有效
+  // 检查 receiverId 是否有效
   if (!receiverId) {
     alert('无法联系，对方信息丢失。');
     return;
@@ -149,22 +151,22 @@ async function goToChat(receiverId) {
  * @param {number | string} farmerId - 农户的ID
  */
 async function contactFarmer(farmerId) {
-  // 这个函数现在变得非常简单，直接调用核心函数即可
+
   await goToChat(farmerId);
 }
 
 // 加入购物车
 const handleAddToCart = async () => {
-  // ✅ 增加登录判断
-  if (!userInfo.value.userId) {
-    ElMessage.warning('请先登录后再操作！')
-    router.push('/login')
-    return
+  
+  if (!isLoggedIn.value) {
+    ElMessage.warning('请先登录后再操作！');
+    router.push('/login');
+    return;
   }
   
   isAddingToCart.value = true
   try {
-    // ✅ 修复：加入购物车的请求格式通常需要 userId
+    // 加入购物车的请求格式通常需要 userId
     await axios.post('/cart/add', null, {
       params: {
         userId: userInfo.value.userId,
@@ -183,10 +185,10 @@ const handleAddToCart = async () => {
 
 // 立即购买
 const buyNow = () => {
-  if (!userInfo.value.userId) {
-    ElMessage.warning('请先登录后再操作！')
-    router.push('/login')
-    return
+  if (!isLoggedIn.value) {
+    ElMessage.warning('请先登录后再操作！');
+    router.push('/login');
+    return;
   }
 
   ElMessage.info('“立即购买”功能正在开发中，您可以先将商品加入购物车')

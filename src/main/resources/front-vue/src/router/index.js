@@ -13,6 +13,7 @@ import ProductDetail from "@/views/ProductDetail.vue";
 import Chat from "@/views/Chat.vue";
 import MessageCenter from '../views/MessageCenter.vue'
 import PayResult from '@/views/PayResult.vue'
+import { useAuthStore } from '@/stores/authStore';
 
 const routes = [
   {
@@ -83,7 +84,11 @@ const routes = [
   {
     path:'/admin-review',
     name:'AdminReview',
-    component: AdminReview
+    component: AdminReview,
+    meta:{
+      requiresAuth: true,    
+      requiredRole: 'admin'//只有管理员可以访问
+    }
   },
 
   {
@@ -118,5 +123,31 @@ const router = createRouter({
   history: createWebHistory(),
   routes
 })
+
+//创建全局导航守卫
+router.beforeEach((to, from, next) => {
+  // 在守卫内部获取 store 实例
+  const authStore = useAuthStore();
+  const { isLoggedIn, role } = authStore;
+
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+  const requiredRole = to.meta.requiredRole;
+
+  // 1. 检查页面是否需要登录
+  if (requiresAuth && !isLoggedIn) {
+    alert('请先登录后再访问此页面。');
+    next('/login'); // 重定向到登录页
+  } 
+  // 2. 检查页面是否需要特定角色
+  else if (requiredRole && role !== requiredRole) {
+    alert('抱歉，您没有权限访问此页面。');
+    // 留在当前页面，或者跳转到首页
+    next(from.path || '/main'); 
+  } 
+  // 3. 如果一切正常，放行
+  else {
+    next();
+  }
+});
 
 export default router

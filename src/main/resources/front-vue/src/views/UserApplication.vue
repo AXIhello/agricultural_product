@@ -244,10 +244,12 @@ export default {
         });
 
         if (response.data.code === 200) { // 根据你的后端返回结果修改
-          this.successMsg = '申请已提交，请等待管理员审核！';
+          this.successMsg = '申请已提交，请等待管理员审核！页面将在3秒后跳转到登录页...';
           //  重置表单
           this.resetForm();
-          // 可以考虑自动跳转，或者显示成功的消息
+          setTimeout(() => {
+            this.$router.push('/login');
+          }, 3000);
         } else {
           this.errorMsg = response.data.message || '提交申请失败，请稍后重试！';
         }
@@ -268,7 +270,7 @@ export default {
       };
     },
     goBack() {
-      this.$router.go(-1);  // 返回上一页， 假设使用了vue-router
+      this.$router.go(-1);  
     }
   }
 };

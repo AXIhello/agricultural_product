@@ -286,14 +286,11 @@
 import {onMounted, ref, watch} from 'vue'
 import axios from '../utils/axios'
 import HeaderComponent from "@/components/HeaderComponent.vue";
+import { useAuthStore } from '@/stores/authStore';
+import {storeToRefs} from 'pinia'
 
-const token = localStorage.getItem('token')
-
-const userInfo = ref({})
-const userId = ref('')
-const userName = ref('未登录')
-const role = ref('游客')
-const email = ref('')
+const authStore = useAuthStore()
+const {role} = storeToRefs(authStore)
 
 const showDetail = ref(false)
 const currentApp = ref({})
@@ -384,7 +381,7 @@ const createProduct = async () => {
 // 通用方法：加载银行产品
 const loadProducts = async () => {
   try {
-    const url = role === 'bank' ? '/bank/products/my' : '/bank/products/all'
+    const url = role.value === 'bank' ? '/bank/products/my' : '/bank/products/all'
     const res = await axios.get(url, {
       params: {
         pageNum: 1,
@@ -545,33 +542,10 @@ const rejectOffer = async (offerId) => {
 
 // 初始加载
 onMounted(async () => {
-  if (!token) return
-
-  try {
-    // 调后端 /api/user/info 接口
-    const res = await axios.get('/user/info', {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    })
-
-    if (res.data.success) {
-      console.log('用户：', res.data)
-      userInfo.value = res.data.user
-      userId.value = res.data.user.userId
-      userName.value = res.data.user.userName
-      role.value = res.data.user.role
-      email.value = res.data.user.email
-      localStorage.setItem('userInfo', JSON.stringify(res.data.user))
-    } else {
-      console.warn('Token 无效或过期')
-    }
-  } catch (err) {
-    console.error('获取用户信息失败', err)
-  }
-
+  
   await loadApplications()
   await loadProducts()
+
 })
 
 watch(currentView, val => {

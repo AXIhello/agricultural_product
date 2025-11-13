@@ -46,31 +46,37 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import axios from '../utils/axios'
-import router from '@/router/index.js'
 import defaultImage from '../assets/img.png'
 import { ElMessage } from 'element-plus'
+import { useAuthStore } from '@/stores/authStore'
+import { storeToRefs } from 'pinia'
 
 const route = useRoute()
+const router = useRouter();
 const order = ref(null)
 const orderItems = ref([])
 const address = ref(null)
-const token = localStorage.getItem('token')
 
-// 拼接 Bearer token
-const authHeader = {
-  headers: { Authorization: `Bearer ${token}` }
-}
+const authStore = useAuthStore();
+const { isLoggedIn } = storeToRefs(authStore);
 
 // 获取订单及地址信息
 onMounted(async () => {
+
+  if (!isLoggedIn.value) {
+    ElMessage.error('请先登录再查看订单！');
+    router.push('/login');
+    return;
+  }
+
   const orderId = route.params.orderId
   if (!orderId) return
 
   try {
     // ① 获取订单详情
-    const res = await axios.get(`/orders/${orderId}`, authHeader)
+    const res = await axios.get(`/orders/${orderId}`)
     const data = res.data
     order.value = data.order
     orderItems.value = data.orderItems || []
@@ -78,7 +84,7 @@ onMounted(async () => {
 
     // ② 获取地址
     if (order.value?.shippingAddressId) {
-      const addrRes = await axios.get(`/address/${order.value.shippingAddressId}`, authHeader)
+      const addrRes = await axios.get(`/address/${order.value.shippingAddressId}`)
       address.value = addrRes.data
       console.log("订单地址数据:", addrRes.data)
     } else {
@@ -132,7 +138,6 @@ async function payOrder() {
 
   try {
     const res = await axios.post(`/alipay/pay/${orderId}`, {}, {
-      ...authHeader,
       responseType: 'text'
     })
 

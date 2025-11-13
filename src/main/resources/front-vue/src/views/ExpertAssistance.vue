@@ -80,7 +80,11 @@
 import { ref, onMounted, computed } from 'vue';
 import axios from '../utils/axios';
 import HeaderComponent from "@/components/HeaderComponent.vue";
+import { useAuthStore } from '@/stores/authStore';
+import { storeToRefs } from 'pinia';
 
+const authStore = useAuthStore();
+const { userInfo: user, isLoggedIn } = storeToRefs(authStore);// user 是 userInfo 的别名，isLoggedIn 判断是否登录
 
 const questions = ref([]);
 const newQuestion = ref({
@@ -113,8 +117,6 @@ const getUserInfo = () => {
     return null; // 没有找到用户信息
 };
 
-const user = computed(() => getUserInfo());
-
 // 格式化日期
 const formatDate = (dateTimeString) => {
     if (!dateTimeString) return '';
@@ -140,18 +142,21 @@ const fetchQuestions = async () => {
       url = `/expert-questions/search?keyword=${searchKeyword.value}&pageNum=${currentPage.value}&pageSize=${pageSizeNumber}`;
     }
     
-    console.log('请求URL:', url); 
     const response = await axios.get(url);
-    console.log('完整响应数据:', response); 
-    console.log('响应数据data:', response.data); 
 
+    const data = response.data;
 
-    //  确保 response.data.total 是数字类型
-    if (typeof response.data.total === 'number') {
-      totalItems.value = response.data.total;
+    if (data && data.total !== null && data.total !== undefined) {
+        const parsedTotal = parseInt(data.total, 10);
+        if (!isNaN(parsedTotal)) {
+            totalItems.value = parsedTotal;
+        } else {
+            console.error("从API收到的total值不是一个有效的数字:", data.total);
+            totalItems.value = 0;
+        }
     } else {
-      console.error("Invalid total from API:", response.data.total);
-      totalItems.value = 0; // 或者设置成其他默认值
+        console.warn("API响应中缺少total字段或其值为null/undefined");
+        totalItems.value = 0;
     }
 
     console.log('totalItems:', totalItems.value); 
@@ -195,15 +200,25 @@ const changePage = (page) => {
 };
 
 // 发布问题
-const publishQuestion = async () => {
+async function publishQuestion() {
+    
+    if (!isLoggedIn.value) {
+        publishMessage.value = '请先登录！';
+        return;
+    }  
+
     try {
-        const userData = getUserInfo();
-        const userId = userData?.userId;
+        const currentUserId = user.value?.userId;
+
+        if (!currentUserId) {
+          alert('无法获取用户信息，请重新登录后再发布问题！');
+          return;
+        }
 
         const requestBody = {
             title: newQuestion.value.title,
             content: newQuestion.value.content,
-            farmerId: userId //  提问者id就是用户id
+            farmerId: currentUserId //  提问者id就是用户id
         };
 
         const response = await axios.post('/expert-questions', requestBody);
@@ -235,6 +250,11 @@ const submitAnswer = async (questionId) => {
   const content = newAnswers.value[questionId];
   if (!content) {
     answerMessages.value[questionId] = '请输入回答内容。';
+    return;
+  }
+
+  if (!isLoggedIn.value) {
+    answerMessages.value[questionId] = '请先登录！';
     return;
   }
 

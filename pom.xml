@@ -121,7 +121,20 @@
         </dependency>
 
 
+    
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.12</version>
+      </dependency>
     </dependencies>
+
+    <dependency>
+    <groupId>io.jsonwebtoken</groupId>
+    <artifactId>jjwt-jackson</artifactId> 
+    <version>0.11.5</version>
+    <scope>runtime</scope>
+</dependency>
 
     <build>
         <plugins>

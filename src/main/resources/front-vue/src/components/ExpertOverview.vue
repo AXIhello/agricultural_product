@@ -1,38 +1,52 @@
 <template>
   <div class="expert-overview-container">
+    <div v-if="!experts.length">正在加载专家列表...</div>
+
     <div class="expert" v-for="expert in experts" :key="expert.id">
-      <img :src="expert.avatar" alt="专家头像" style="width: 80px; height: 80px; border-radius: 50%; margin-bottom: 10px;">
+      <img :src="getFullImageUrl(expert.avatar)" alt="专家头像" style="width: 80px; height: 80px; border-radius: 50%; margin-bottom: 10px;">
       <h4 style="font-size: 16px; margin-bottom: 5px;">{{ expert.name }}</h4>
-      <p style="font-size: 14px; color: #666;">{{ expert.title }}</p>
       <p style="font-size: 14px;">擅长领域：{{ expert.specialty }}</p>
     </div>
+
   </div>
 </template>
 
 <script setup>
-const experts = [
-  {
-    id: 1,
-    name: '李专家',
-    title: '农业技术专家',
-    specialty: '种植、病虫害防治',
-    avatar: 'https://via.placeholder.com/80/007BFF/FFFFFF?text=专家1',
-  },
-  {
-    id: 2,
-    name: '王教授',
-    title: '农业经济学教授',
-    specialty: '农业政策、市场分析',
-    avatar: 'https://via.placeholder.com/80/28A745/FFFFFF?text=专家2',
-  },
-  {
-    id: 3,
-    name: '张博士',
-    title: '农业科技研发员',
-    specialty: '新品种培育、生物技术',
-    avatar: 'https://via.placeholder.com/80/DC3545/FFFFFF?text=专家3',
-  },
-];
+import { ref, onMounted } from 'vue';
+import axios from '../utils/axios'; 
+
+const experts = ref([]);
+
+onMounted(() => {
+  fetchExperts();
+});
+
+
+async function fetchExperts() {
+  try {
+    // 调用后端创建的 API
+    const response = await axios.get('/expert/profile/list');
+    
+    // 假设后端返回的数据结构是 { success: true, data: [...] }
+    if (response.data && response.data.success) {
+      experts.value = response.data.data;
+    }
+  } catch (error) {
+    console.error('加载专家列表失败:', error);
+  }
+}
+
+// 辅助函数，用于处理图片URL
+// 如果你的 photo_url 已经是完整的URL，则不需要这个函数
+function getFullImageUrl(url) {
+  if (!url || url.startsWith('http')) {
+    return url || 'https://via.placeholder.com/80'; // 提供一个默认图片
+  }
+  // 如果 url 是相对路径（如 /uploads/...），你需要拼接上你的后端服务器地址
+  // 例如： return `http://localhost:8080${url}`;
+  // 更好的方式是配置开发代理（proxy）
+  return url;
+}
 </script>
 
 <style scoped>

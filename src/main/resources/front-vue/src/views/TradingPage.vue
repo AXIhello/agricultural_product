@@ -204,6 +204,56 @@
             <p v-else class="empty-state">购物车是空的。</p>
           </div>
 
+          <!-- 求购需求 -->
+          <div v-if="currentView === 'demands'">
+
+            <div class="request-list">
+              <!-- 求购需求卡片 -->
+              <div
+                  v-for="request in demands"
+                  :key="request.demandId"
+                  class="request-card"
+              >
+                <p class="request-title"><strong>用户 {{ request.buyerId }}： 我想要  </strong> {{ request.productNameDesired }}</p>
+                <p class="request-quantity">需求量： {{ request.quantityDesired }} {{ request.unitDesired }}</p>
+                <p class="request-details">需求描述： {{ request.details }}</p>
+              </div>
+
+
+              <p v-if="!demands.length" class="empty-state">暂无求购需求</p>
+
+              <button v-if="!demands.length" @click="switchView('addDemand')" class="add-demand-btn">发布求购需求</button>
+            </div>
+          </div>
+
+          <!-- 发布求购需求 -->
+          <div v-if="currentView === 'addDemand'">
+
+            <form @submit.prevent="handleAddDemand" class="add-product-form">
+              <div class="form-group">
+                <label for="demandName">需求商品名称:</label>
+                <input type="text" id="demandName" v-model="newDemand.productNameDesired" required>
+              </div>
+              <div class="form-group">
+                <label for="demandQuantity">需求数量 (Kg):</label>
+                <input type="number" id="demandQuantity" v-model.number="newDemand.quantityDesired" required min="1">
+              </div>
+              <div class="form-group">
+                <label for="maxPrice">期望最高单价 (元/Kg):</label>
+                <input type="number" id="maxPrice" v-model.number="newDemand.maxPricePerUnit" required min="0.01" step="0.01">
+              </div>
+              <div class="form-group">
+                <label for="deliveryDate">期望交货日期:</label>
+                <input type="date" id="deliveryDate" v-model="newDemand.deliveryDateDesired" required>
+              </div>
+              <div class="form-group">
+                <label for="details">补充说明:</label>
+                <textarea id="details" v-model="newDemand.details" rows="3" placeholder="可选"></textarea>
+              </div>
+              <button type="submit" class="submit-btn">确认发布</button>
+            </form>
+          </div>
+
           <!-- 我的订单 -->
           <div v-if="currentView === 'myOrders'">
             <div class="order-list">
@@ -274,15 +324,11 @@ import axios from '../utils/axios'
 import router from "@/router/index.js";
 import HeaderComponent from '../components/HeaderComponent.vue';
 import placeholder from "@/assets/img.png";
+import { useAuthStore } from '@/stores/authStore'
+import { storeToRefs } from 'pinia'
 
-
-const userInfo = ref(JSON.parse(localStorage.getItem('userInfo') || '{}'))
-const userId = ref(userInfo.value?.userId || null)
-const userName = ref(userInfo.value?.userName || '游客')
-const role = ref(userInfo.value?.role || '未登录')
-
-// 从 localStorage 拿 token
-const token = localStorage.getItem('token')
+const authStore = useAuthStore()
+const {userInfo, isLoggedIn, role} = storeToRefs(authStore)
 
 const mainCategories = ref(['蔬菜','水产','水果','肉类'])
 
@@ -310,7 +356,6 @@ const newDemand = ref({
   deliveryDateDesired: '',
   details: ''
 })
-
 
 // 订单数据
 const myOrders = ref([])
@@ -347,11 +392,12 @@ async function loadProducts() {
 }
 
 async function loadMyProducts() {
-  try{
-    const res = await axios.get(`/products/farmer/${userId.value}`)
-    myProducts.value = res.data.records||[]
-  }catch(err){
-    console.error('加载我的商品失败',err)
+  if (!isLoggedIn.value || role.value !== 'farmer') return;
+  try {
+    const res = await axios.get(`/products/farmer/${userInfo.value.userId}`);
+    myProducts.value = res.data.records || [];
+  } catch(err) {
+    console.error('加载我的商品失败', err);
   }
 }
 
@@ -360,32 +406,27 @@ async function goToProductDetail(product) {
     await router.push(`/product/${product.productId}`);
   }
 }
+
 /**
  * 根据接收者的ID，跳转到对应的聊天页面
  * @param {number | string} receiverId - 聊天对象的ID
  */
 async function goToChat(receiverId) {
-  // 1. 检查用户是否已登录
-  if (!userId.value) {
-    alert('请先登录才能发起聊天！');
-    return;
+
+  if (!isLoggedIn.value) { 
+    alert('请先登录才能发起聊天！'); 
+    return; 
   }
 
-  // 2. 检查 receiverId 是否有效
-  if (!receiverId) {
-    alert('无法联系，对方信息丢失。');
-    return;
+  if (!receiverId) { 
+    alert('无法联系，对方信息丢失。'); 
+    return; 
   }
 
-  // 3. 检查用户是否在和自己聊天
-  //    使用 String() 转换以确保类型一致
-  if (String(userId.value) === String(receiverId)) {
-    alert('您不能和自己发起聊天。');
-    return;
+  if (String(userInfo.value?.userId) === String(receiverId)) { 
+    alert('您不能和自己发起聊天。'); 
+    return; 
   }
-
-  // 4. 跳转到聊天页面
-  console.log(`准备跳转到与用户 ${receiverId} 的聊天室`);
   await router.push(`/chat/${receiverId}`);
 }
 
@@ -408,6 +449,17 @@ async function loadDemands() {
 }
 
 async function handleAddProduct() {
+  console.log("正在运行最新版本的 handleAddProduct 函数！");
+  if (!isLoggedIn.value || role.value !== 'farmer') { 
+    alert('只有农户才能发布商品！'); 
+    return; 
+  }
+
+  if (!userInfo.value || !userInfo.value.userId) {
+    alert('无法获取您的用户信息，请尝试重新登录后再发布。');
+    return; // 立即中止函数执行
+  }
+
   try {
     // 校验必填项
     if (!newProduct.value.prodCat) {
@@ -415,11 +467,15 @@ async function handleAddProduct() {
       return
     }
 
-    newProduct.value.farmerId = userId
+    const productData = { 
+      ...newProduct.value, 
+      farmerId: Number(userInfo.value.userId)
+    };
+
+    console.log("【最终诊断】准备发送给后端的 productData 对象:", JSON.stringify(productData, null, 2)); 
 
     //构造 multipart/form-data
     const formData = new FormData()
-
     // product 是一个 JSON 对象，要先序列化成字符串再用 Blob 封装
     const productBlob = new Blob([JSON.stringify(newProduct.value)], {
       type: 'application/json'
@@ -435,7 +491,6 @@ async function handleAddProduct() {
     const res = await axios.post('/products/publish', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
-        Authorization: token // 如果不需要鉴权，可以删掉
       }
     })
 
@@ -472,14 +527,11 @@ const selectedAddressId = ref(null)
 
 // 从后端加载购物车 + 商品详情 + 图片
 async function loadCart() {
+  if (!isLoggedIn.value) return;
   try {
-    const token = localStorage.getItem('token')
-    const res = await axios.get('/cart', {
-      params: { userId: userId.value, pageNum: 1, pageSize: 50 },
-      headers: { Authorization: `Bearer ${token}` }
-    })
-
-    const pageData = res.data || {}
+    
+    const res = await axios.get('/cart', { params: { userId: userInfo.value.userId, pageNum: 1, pageSize: 50 } });
+    const pageData = res.data
     const items = pageData.records || []
 
     // 并行加载每个商品的详情和图片
@@ -497,7 +549,7 @@ async function loadCart() {
                 headers: { Authorization: `Bearer ${token}` },
                 responseType: 'blob' // 返回二进制
               })
-              imageUrl = URL.createObjectURL(imageRes.data)
+              if (imageRes.data.size > 0) imageUrl = URL.createObjectURL(imageRes.data)
               console.log('图片获取成功')
             } catch {
               // 如果图片获取失败，使用默认占位图
@@ -522,10 +574,10 @@ async function loadCart() {
     )
 
     cartItems.value = detailedItems
-    totalPrice.value = detailedItems.reduce(
-        (sum, i) => sum + i.price * i.quantity,
-        0
-    )
+    // totalPrice.value = detailedItems.reduce(
+    //     (sum, i) => sum + i.price * i.quantity,
+    //     0
+    // )
   } catch (err) {
     console.error('加载购物车失败:', err)
     alert('加载购物车失败，请稍后重试')
@@ -534,15 +586,15 @@ async function loadCart() {
 
 //从后端加载用户地址
 async function loadAddresses() {
+  if (!isLoggedIn.value) return;
   try {
-    const token = localStorage.getItem('token')
-    const res = await axios.get('/address/user', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    addresses.value = res.data || []
-    if (addresses.value.length > 0) {
-      selectedAddressId.value = addresses.value[0].addressId // 默认选中第一个
+    
+    const res = await axios.get('/address/user');
+    addresses.value = res.data || [];
+    if (addresses.value.length > 0 && !selectedAddressId.value) {
+      selectedAddressId.value = addresses.value[0].addressId;
     }
+
   } catch (err) {
     console.error('加载地址失败:', err)
   }
@@ -550,14 +602,13 @@ async function loadAddresses() {
 
 // 添加到购物车
 async function addToCart(product) {
+  if (!isLoggedIn.value) { alert('请先登录！'); return; }
   try {
+    
     const res = await axios.post('/cart/add', null, {
-      params: {
-        userId: userId.value,
-        productId: product.productId,
-        quantity: 1
-      }
-    })
+      params: { userId: userInfo.value.userId, productId: product.productId, quantity: 1 }
+    });
+
     if (res.data) {
       alert('已添加到购物车！')
       loadCart()
@@ -572,15 +623,13 @@ async function addToCart(product) {
 
 // 修改数量
 async function changeQuantity(productId, newQty) {
-  if (newQty <= 0) return
+  if (newQty <= 0 || !isLoggedIn.value) return
   try {
+
     const res = await axios.post('/cart/update', null, {
-      params: {
-        userId: userId.value,
-        productId,
-        quantity: newQty
-      }
-    })
+      params: { userId: userInfo.value.userId, productId, quantity: newQty }
+    });
+  
     if (res.data) {
       const item = cartItems.value.find(i => i.productId === productId)
       if (item) item.quantity = newQty
@@ -592,10 +641,9 @@ async function changeQuantity(productId, newQty) {
 
 // 移除商品
 async function removeFromCart(productId) {
+  if (!isLoggedIn.value) return;
   try {
-    const res = await axios.delete('/cart/item', {
-      params: { userId: userId.value, productId }
-    })
+    const res =  await axios.delete('/cart/item', { params: { userId: userInfo.value.userId, productId } })
     if (res.data) {
       alert('移除成功')
       loadCart()
@@ -607,6 +655,12 @@ async function removeFromCart(productId) {
 
 
 async function createOrder() {
+
+  if (!isLoggedIn.value) { 
+    alert('请先登录！'); 
+    return; 
+  }
+
   if (!selectedAddressId.value) {
     alert('请先选择收货地址')
     return
@@ -621,11 +675,7 @@ async function createOrder() {
       }))
     }
 
-    const res = await axios.post('/orders', reqBody, {
-      params: { userId: userId.value },
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    const orderId =  res.data || [9999]
+    const res = await axios.post('/orders', reqBody);
 
     if (res.data) {
       alert(`订单提交成功！`)
@@ -642,15 +692,25 @@ async function createOrder() {
 
 
 // 计算总价
-const totalPrice = computed(() =>
-    cartItems.value.reduce((sum, item) => sum + item.price * item.quantity, 0)
-)
+const totalPrice = computed(() => {
+  return detailedItems.value.reduce(
+    (sum, item) => sum + (item.price * item.quantity),
+    0
+  );
+})
 
 async function handleAddDemand() {
+  if (!isLoggedIn.value) { 
+    alert('请先登录！'); 
+    return; 
+  }
+  
+  const currentUserId = userInfo.value?.userId;
+
   try {
     const demandToSend = {
       ...newDemand.value,
-      buyerId: userId.value
+      buyerId: currentUserId
     }
 
     const res = await axios.post('/purchase-demands', demandToSend)
@@ -675,17 +735,14 @@ async function handleAddDemand() {
 
 //加载我的订单
 async function loadMyOrders() {
-  if (!userId.value||!token) {
-    console.log("用户未登录，无法加载订单");
-    return;
+  if (!isLoggedIn.value) { 
+    console.log("用户未登录，无法加载订单"); 
+    return; 
   }
+
   try {
 
-    const res = await axios.get('/orders', {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+    const res = await axios.get('/orders');
 
     if (res.data && Array.isArray(res.data)) {
       myOrders.value = res.data;
@@ -740,13 +797,17 @@ const goToPay = (orderId) => {
 }
 
 onMounted(async () => {
-  if (!token) return
 
-  await loadDemands()
-  await loadAddresses()
-  await loadProducts()
-  await loadCart()
-  if (role === 'farmer') await loadMyProducts()
+  await loadProducts();
+  await loadDemands();
+  if (isLoggedIn.value) {
+    await loadAddresses();
+    await loadCart();
+    await loadMyOrders();
+    if (role.value === 'farmer') {
+      await loadMyProducts();
+    }
+  }
 })
 
 watch(currentView, (val) => {
@@ -765,7 +826,7 @@ watch(currentView, (val) => {
     loadMyOrders()
   }
 
-  if(val === 'myProducts') {
+  if(val === 'myProducts'&& role.value === 'farmer') {
     loadMyProducts()
   }
 })

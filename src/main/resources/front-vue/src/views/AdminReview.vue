@@ -1,6 +1,7 @@
 <template>
   <div>
     <HeaderComponent />
+    <div v-if="isAdmin" class="admin-content">
     <h2>审核信息</h2>
     <!--  显示待审核的申请列表，以及审核的按钮等  -->
     <p v-if="loading">加载中...</p>
@@ -17,18 +18,32 @@
       </div>
       <p v-if="applications.length === 0">暂无待审核申请。</p>
     </div>
+    </div>
+
+    <div v-else class="access-denied">
+      <h2>无权访问</h2>
+      <p>此页面仅限管理员访问。</p>
+    </div>
+
   </div>
 </template>
 
 <script setup>
 // 1. 清理导入，只保留一个并命名为 request
 import request from '../utils/axios.js';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted ,computed} from 'vue';
 import HeaderComponent from '../components/HeaderComponent.vue';
+import { useAuthStore } from '@/stores/authStore';
+import { storeToRefs } from 'pinia';
 
 defineOptions({
   name: 'AdminReviewPage'
 });
+
+const authStore = useAuthStore();
+const { role } = storeToRefs(authStore);
+
+const isAdmin = computed(() => role.value === 'admin');
 
 const applications = ref([]);
 const loading = ref(true);
@@ -152,7 +167,11 @@ const rejectApplication = async (applicationId) => {
 
 
 onMounted(() => {
-  fetchApplications();
+  if (isAdmin.value) {
+    fetchApplications();
+  } else {
+    console.warn("一个非管理员用户尝试访问 AdminReview 页面。");
+  }
 });
 </script>
 

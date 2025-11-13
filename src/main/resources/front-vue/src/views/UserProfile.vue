@@ -5,9 +5,9 @@
     <section class="content">
       <div style="display: flex; gap: 50rem">
         <div class="info">
-          <p><label>用户名： </label>{{userName}}</p>
-          <p><label>邮箱： </label>{{email}}</p>
-          <p><label>身份： </label>{{role}}</p>
+          <p><label>用户名： </label>{{ userInfo.userName }}</p>
+          <p><label>邮箱： </label>{{ userInfo.email }}</p>
+          <p><label>身份： </label>{{ role }}</p>
         </div>
 
         <div>
@@ -219,16 +219,15 @@ import { ref, onMounted, watch } from 'vue'
 import axios from '../utils/axios'
 import router from "@/router/index.js";
 import HeaderComponent from "@/components/HeaderComponent.vue";
+import { useAuthStore } from '@/stores/authStore';
+import { storeToRefs } from 'pinia';
 import defaultAvatar from '@/assets/default.jpg';
 
-const token = localStorage.getItem('token')
+const authStore = useAuthStore();// 使用 Pinia 的认证存储
 
-const userInfo = ref(JSON.parse(localStorage.getItem('userInfo') || '{}'))
-const userId = ref(userInfo.value?.userId || null)
-const userName = ref(userInfo.value?.userName || '游客')
-const role = ref(userInfo.value?.role || '未登录')
-const email = ref(userInfo.value?.email || '')
+const { userInfo, role } = storeToRefs(authStore);//从 store 中解构出响应式的数据
 
+const hasInitialLoadFinished = ref(false)
 const currentView = ref('address')
 const addresses = ref([])
 
@@ -396,42 +395,63 @@ async function deleteProfile() {
   }
 }
 
-onMounted(async () => {
-  if (!token) {
-    // 如果没有token，直接退出，防止后续代码出错
-    console.log("用户未登录，终止初始化。");
-    return;
-  }
+// onMounted(async () => {
+//   if (!token) {
+//     // 如果没有token，直接退出，防止后续代码出错
+//     console.log("用户未登录，终止初始化。");
+//     return;
+//   }
 
+//   try {
+//       if (role.value === 'expert') {
+//         // 是专家，加载专家档案
+//         console.log("正在为专家加载个人档案...");
+//         await fetchExpertProfile();
+//       } else if (role.value === 'buyer' || role.value === 'farmer') {
+//         // 是买家或农户，加载地址信息
+//         console.log("正在为买家/农户加载地址...");
+//         await loadAddresses();
+//       } else {
+//         console.log('当前用户信息:', userInfo.value);
+//         console.log(`未知的用户角色: ${role.value}，不执行额外加载操作。`);
+//       }
+//   } catch (err) {
+//     console.error('后续加载失败', err);
+//   }
+// });
+
+onMounted(() => {
+  console.log("组件已挂载，等待角色信息...");
+});
+
+watch(role, (newRole, oldRole) => {
+  console.log(`角色从 '${oldRole}' 变为 '${newRole}'`);
+  
+  // 只有当角色从一个无效值变为一个有效值时，才执行加载
+  if (newRole && newRole !== '未登录' && !hasInitialLoadFinished.value) {
+    hasInitialLoadFinished.value = true; // 标记为已加载
+    loadDataForRole(newRole);
+  }
+}, { immediate: true }); 
+
+async function loadDataForRole(currentRole) {
   try {
-      if (role.value === 'expert') {
-        // 是专家，加载专家档案
-        console.log("正在为专家加载个人档案...");
-        await fetchExpertProfile();
-      } else if (role.value === 'buyer' || role.value === 'farmer') {
-        // 是买家或农户，加载地址信息
-        console.log("正在为买家/农户加载地址...");
-        await loadAddresses();
-      } else {
-        console.log(`未知的用户角色: ${role.value}，不执行额外加载操作。`);
-      }
+    if (currentRole === 'expert') {
+      console.log("角色确认为专家，开始加载个人档案...");
+      await fetchExpertProfile();
+    } else if (currentRole === 'buyer' || currentRole === 'farmer') {
+      console.log("角色确认为买家/农户，开始加载地址...");
+      await loadAddresses();
+    } else {
+      console.log(`未知的用户角色: ${currentRole}，不执行额外加载操作。`);
+    }
   } catch (err) {
     console.error('后续加载失败', err);
   }
-});
-
-
-watch(currentView, val => {
-  if ((role.value === 'buyer' || role.value === 'farmer') && val === 'address') {
-    loadAddresses();
-  }
-});
+}
 
 function exit(){
-  localStorage.removeItem('token');
-  localStorage.removeItem('userInfo');
-  localStorage.removeItem('userId');
-  router.push('/login');
+  authStore.logout();
 }
 
 </script>

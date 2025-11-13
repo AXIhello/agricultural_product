@@ -1,6 +1,7 @@
 package com.example.agricultural_product.service.impl;
 
 import com.example.agricultural_product.mapper.ExpertProfileMapper;
+import com.example.agricultural_product.dto.ExpertInfoDTO;
 import com.example.agricultural_product.pojo.ExpertProfile;
 import com.example.agricultural_product.service.ExpertProfileService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List; 
+import java.util.stream.Collectors; 
 
 @Service
 public class ExpertProfileServiceImpl implements ExpertProfileService {
@@ -81,4 +84,20 @@ public class ExpertProfileServiceImpl implements ExpertProfileService {
         profile.setUpdateTime(LocalDateTime.now());
         return expertProfileMapper.updateById(profile) > 0;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<ExpertInfoDTO> getAllExperts() {
+
+        List<ExpertInfoDTO> experts = expertProfileMapper.findAllExperts();
+
+        for (ExpertInfoDTO expert : experts) {
+            expert.setTitle("认证专家");
+        }
+
+        return experts;
+    }
+    
 }

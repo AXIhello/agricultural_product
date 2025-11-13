@@ -13,6 +13,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,6 +27,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
+
+    private static final Logger log = LoggerFactory.getLogger(ProductController.class); 
 
     @Autowired
     private ProductService productService;
@@ -40,6 +44,17 @@ public class ProductController {
         }
         String token = authHeader.substring(7);
         return JwtUtil.validateToken(token);
+    }
+
+    private Long getUserIdFromToken(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            // 假设JwtUtil.getUserIdFromToken会校验token并返回用户ID
+            // 如果token无效，它应该返回null或抛出异常
+            return JwtUtil.getUserId(token); // <-- 你需要确保JwtUtil中有这个方法
+        }
+        return null;
     }
 
     // 获取商品列表（不返回路径）
@@ -124,12 +139,24 @@ public class ProductController {
         }
     }
 
-    // 发布商品（multipart，图片可选）
+    // =====【已修改】发布商品（multipart，图片可选）=====
     @PostMapping(value = "/publish", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Boolean> publishProductWithImage(HttpServletRequest request,
                                                            @RequestPart("product") Product product,
                                                            @RequestPart(value = "image", required = false) MultipartFile image) {
-        if (!checkToken(request)) return ResponseEntity.status(401).build();
+
+        // 1. 从Token中获取用户ID
+        Long farmerId = getUserIdFromToken(request);
+        if (farmerId == null) {
+            // 如果token无效或无法解析出用户ID，则返回未授权
+            return ResponseEntity.status(401).build();
+        }
+
+        // 2. 将获取到的ID设置到product对象中，这是解决问题的关键！
+        product.setFarmerId(farmerId);
+
+        log.info("【后端最终诊断】Controller 接收到的并设置了 farmerId 的 Product 对象: {}", product.toString());
+
         try {
             if (image != null && !image.isEmpty()) {
                 Path dir = Paths.get(uploadDir, "products").toAbsolutePath().normalize();
@@ -139,21 +166,33 @@ public class ProductController {
                 String filename = UUID.randomUUID().toString().replace("-", "") + ext;
                 Path target = dir.resolve(filename);
                 Files.copy(image.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
-                // 存储相对 uploads/ 的路径，便于二进制读取接口拼装本地路径
                 product.setImagePath("products/" + filename);
             }
         } catch (Exception e) {
-            // 忽略图片处理异常，不影响商品发布
+            log.error("图片上传失败，但不影响商品发布流程", e);
         }
+
+        // 3. 调用服务进行保存
         boolean success = productService.publishProduct(product);
         return ResponseEntity.ok(success);
     }
 
-    // 发布商品（原JSON接口，保持兼容）
+    // =====【已修改】发布商品（原JSON接口，保持兼容）=====
     @PostMapping(value = "/publish", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Boolean> publishProduct(HttpServletRequest request,
                                                   @RequestBody Product product) {
-        if (!checkToken(request)) return ResponseEntity.status(401).build();
+        
+        // 1. 同样地，从Token中获取用户ID
+        Long farmerId = getUserIdFromToken(request);
+        if (farmerId == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        // 2. 设置farmerId
+        product.setFarmerId(farmerId);
+        log.info("【后端JSON接口】设置了 farmerId 的 Product 对象: {}", product.toString());
+        
+        // 3. 调用服务
         boolean success = productService.publishProduct(product);
         return ResponseEntity.ok(success);
     }

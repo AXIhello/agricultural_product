@@ -10,8 +10,9 @@
       <div class="messages" ref="messageContainer">
         <div v-if="isLoading" class="loading-state">正在加载消息...</div>
         <div v-else-if="messages.length === 0" class="empty-state">还没有消息，开始聊天吧！</div>
+
         <div v-else v-for="message in messages" :key="message.messageId"
-             :class="['message-item', message.senderId === currentUser.userId ? 'sent' : 'received']">
+              :class="['message-item', message.senderId === currentUser?.userId ? 'sent' : 'received']">
           <div class="message-bubble">
             <p class="message-content">{{ message.content }}</p>
             <span class="message-time">{{ formatMessageTime(message.sendTime) }}</span>
@@ -40,11 +41,12 @@
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import axios from '../utils/axios'; // 确保您的axios实例路径正确
+import axios from '../utils/axios'; 
+import { useAuthStore } from '@/stores/authStore';
+import { storeToRefs } from 'pinia';
 
 // --- Reactive State ---
 const route = useRoute();
-const currentUser = ref({}); // 当前登录用户信息
 const receiverId = ref(null); // 聊天对象的ID
 const currentSession = ref(null); // 当前会话对象
 const messages = ref([]); // 消息列表
@@ -55,18 +57,19 @@ const messageContainer = ref(null); // DOM引用，用于滚动
 // --- SSE 连接对象 ---
 let eventSource = null;
 
+const authStore = useAuthStore();
+const { userInfo: currentUser, isLoggedIn, token } = storeToRefs(authStore);// currentUser 就是 userInfo 的别名，isLoggedIn 和 token 也是响应式的
+
 // --- Lifecycle Hooks ---
 onMounted(() => {
-  // 1. 获取当前登录用户的信息
-  const userInfoStr = localStorage.getItem('userInfo');
-  if (!userInfoStr) {
-    alert('请先登录！');
-    // router.push('/login'); // 可选：跳转到登录页
-    return;
+  
+  if (!isLoggedIn.value) {
+    alert('请先登录后再进行聊天！');
+    router.push('/login');
+    return; 
   }
-  currentUser.value = JSON.parse(userInfoStr);
 
-  // 2. 从路由参数初始化聊天
+  // 从路由参数初始化聊天
   receiverId.value = parseInt(route.params.receiverId, 10);
   if (receiverId.value) {
     initializeChat(receiverId.value);
@@ -153,11 +156,10 @@ async function sendMessage() {
  * 建立Server-Sent Events (SSE)连接以接收实时消息
  */
 function setupSseConnection() {
-  const token = localStorage.getItem('token');
-  if (!token) return;
 
-  // 后端接口要求token通过查询参数传递
-  const url = `/api/chat/stream?token=${token}`;
+  if (!token.value) return;
+
+  const url = `/api/chat/stream?token=${token.value}`;
   
   eventSource = new EventSource(url);
 

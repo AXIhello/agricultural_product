@@ -1,10 +1,14 @@
 package com.example.agricultural_product.controller;
 
+import com.example.agricultural_product.dto.ExpertInfoDTO;
 import com.example.agricultural_product.pojo.ExpertProfile;
+import com.example.agricultural_product.pojo.Result;
 import com.example.agricultural_product.service.ExpertProfileService;
 import com.example.agricultural_product.service.FileStorageService;
 import com.example.agricultural_product.utils.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
+
+// import org.junit.runner.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.math.BigDecimal; 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/expert/profile")
@@ -23,6 +28,7 @@ public class ExpertProfileController {
 
     @Autowired
     private FileStorageService fileStorageService;
+
 
     // JWT 鉴权方法
     private boolean checkToken(HttpServletRequest request) {
@@ -160,5 +166,15 @@ public class ExpertProfileController {
             "success", deleted,
             "message", deleted ? "删除成功" : "删除失败"
         ));
+    }
+
+    /**
+     * 列出所有专家的基本信息（公开访问）
+     * GET /api/expert/profile/list
+     */
+    @GetMapping("/list") 
+    public Result<List<ExpertInfoDTO>> listExperts() {
+        List<ExpertInfoDTO> experts = expertProfileService.getAllExperts();
+        return Result.success(experts); // 假设你有一个统一的 Result 封装类
     }
 }

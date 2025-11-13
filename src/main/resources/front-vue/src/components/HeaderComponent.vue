@@ -30,29 +30,27 @@
 </template>
 
 <script>
+import { mapState } from 'pinia';
+import { useAuthStore } from '@/stores/authStore';
+
 export default {
   name: 'HeaderComponent',
-  data() {
-    return {
-      role: null,
-    };
-  },
+ 
   computed: {
+    // 使用 mapState 将 store 中的 `role` 状态映射到本组件的 `this.role`
+    // 现在 this.role 是一个计算属性，它会自动响应 store 中的变化
+    ...mapState(useAuthStore, ['role']),
+   
     isAdmin() {
       return this.role === 'admin';
     },
     isFinancing(){
-      console.log('身份已检验',this.role);
+      console.log('身份已检验', this.role);
       return this.role === 'farmer' || this.role === 'bank' || this.role === 'admin';
     }
+    
   },
-  mounted() {
-    const user = JSON.parse(localStorage.getItem('user'));
-    console.log(user);
-    if (user && user.role) {
-      this.role = user.role;
-    }
-  },
+  
 };
 </script>
 

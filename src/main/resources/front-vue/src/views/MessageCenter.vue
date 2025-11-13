@@ -42,12 +42,16 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from '../utils/axios'; // 确认axios实例路径
 import HeaderComponent from '../components/HeaderComponent.vue'; // 引入头部组件
+import { useAuthStore } from '@/stores/authStore';
+import {storeToRefs} from 'pinia'
+
+const authStore = useAuthStore();
+const { userInfo: currentUser, isLoggedIn } = storeToRefs(authStore);
 
 // --- State ---
 const router = useRouter();
 const sessions = ref([]);
 const isLoading = ref(true);
-const currentUser = ref({});
 
 // --- Methods ---
 
@@ -76,7 +80,7 @@ async function loadSessions() {
  * @returns {object} 包含对方用户ID的对象.
  */
 function getPeerUser(session) {
-  if (!currentUser.value.userId) return { id: '未知' };
+  if (!currentUser.value?.userId) return { id: '未知' };
   const peerId = session.userAId === currentUser.value.userId ? session.userBId : session.userAId;
   return { id: peerId };
 }
@@ -88,10 +92,9 @@ function getPeerUser(session) {
 function goToChat(session) {
   const peer = getPeerUser(session);
   // 添加对自己ID的判断
-  if (peer.id !== '未知' && peer.id !== currentUser.value.userId) { 
+  if (peer.id !== '未知' && peer.id !== currentUser.value?.userId) { 
     router.push(`/chat/${peer.id}`);
-  } else if (peer.id === currentUser.value.userId) {
-    // 如果是自己，则不跳转，并给出提示
+  } else if (peer.id === currentUser.value?.userId) {
     console.warn("Attempted to open a chat with self. Operation blocked.");
     alert('您不能和自己聊天。');
   }
@@ -117,9 +120,7 @@ function formatTime(dateTimeStr) {
 
 // --- Lifecycle Hook ---
 onMounted(() => {
-  const userInfoStr = localStorage.getItem('userInfo');
-  if (userInfoStr) {
-    currentUser.value = JSON.parse(userInfoStr);
+  if (isLoggedIn.value) {  
     loadSessions();
   } else {
     alert('请先登录以查看消息！');
