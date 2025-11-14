@@ -366,7 +366,7 @@ CREATE TABLE IF NOT EXISTS `tb_chat_message` (
   `sender_id` BIGINT NOT NULL COMMENT '发送者ID',
   `receiver_id` BIGINT NOT NULL COMMENT '接收者ID',
   `content` VARCHAR(2000) NOT NULL COMMENT '消息内容',
-  `msg_type` ENUM('text','image') NOT NULL DEFAULT 'text' COMMENT '消息类型',
+  `msg_type` ENUM('text','image','auto') NOT NULL DEFAULT 'text' COMMENT '消息类型',
   `is_read` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否已读',
   `send_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '发送时间',
   PRIMARY KEY (`message_id`) USING BTREE,
@@ -394,5 +394,21 @@ CREATE TABLE IF NOT EXISTS `tb_expert_working_slots` (
   INDEX `idx_expert_date`(`expert_id`, `work_date`),
   CONSTRAINT `fk_slot_expert_user` FOREIGN KEY (`expert_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='专家工作时间段';
+
+-- 自动回复规则表（卖家配置）
+CREATE TABLE IF NOT EXISTS `tb_auto_reply_rules` (
+  `rule_id` bigint NOT NULL AUTO_INCREMENT COMMENT '规则ID',
+  `seller_id` bigint NOT NULL COMMENT '卖家用户ID',
+  `keyword` varchar(100) NOT NULL COMMENT '关键词',
+  `match_type` enum('contains','exact','regex') NOT NULL DEFAULT 'contains' COMMENT '匹配类型',
+  `reply_text` text NOT NULL COMMENT '回复文本',
+  `enabled` tinyint(1) NOT NULL DEFAULT 1 COMMENT '是否启用',
+  `priority` int NOT NULL DEFAULT 100 COMMENT '优先级（越小越优先）',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`rule_id`),
+  KEY `idx_seller` (`seller_id`),
+  CONSTRAINT `fk_auto_reply_seller` FOREIGN KEY (`seller_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='聊天自动回复规则（卖家端）';
 
 SET FOREIGN_KEY_CHECKS = 1; -- 重新启用外键检查
