@@ -3,319 +3,377 @@
     <HeaderComponent />
 
     <section class="content">
-      <!-- 农户视图 -->
-      <div v-if="role === 'farmer'" class="farmer-view-container">
-        <nav class="farmer-nav">
-          <button @click="switchView('products')" :class="{ active: currentView === 'products' }">所有商品</button>
+      <!-- 顶部导航 -->
+      <nav class="main-nav">
+        <template v-if="role === 'farmer'">
+          <button @click="switchView('products')" :class="{ active: currentView === 'products' }">所有产品</button>
+          <button @click="switchView('predict')" :class="{ active: currentView === 'predict' }">行情大厅</button>
           <button @click="switchView('demands')" :class="{ active: currentView === 'demands' }">求购需求</button>
-          <button @click="switchView('myProducts')" :class="{ active: currentView === 'myProducts' }">我的商品</button>
-          <button @click="switchView('addProduct')" :class="{ active: currentView === 'addProduct' }">上架商品</button>
-          <button @click="switchView('myOrders')" :class="{ active: currentView === 'myOrders' }">我的订单</button>
-        </nav>
+          <button @click="switchView('myProducts')" :class="{ active: currentView === 'myProducts' }">我的产品</button>
+        </template>
 
-        <div class="view-content-wrapper">
-          <!-- 所有商品 -->
-          <div v-if="currentView === 'products'">
-            <div class="product-list">
-              <div v-for="product in products" :key="product.productId" class="product-card">
-                <h3>{{ product.productName }}</h3>
-                <p>价格: ¥{{ product.price }} / {{ product.unitInfo }}</p>
-                <p>库存: {{ product.stock }} {{ product.unitInfo }}</p>
-
-                <div class="card-actions">
-                  <button class="view-btn" @click="goToProductDetail(product)">查看详情</button>
-                  <button v-if="role !== 'farmer'" class="add-to-cart-btn" @click="addToCart(product)">
-                    添加到购物车
-                  </button>
-                </div>
-              </div>
-              <p v-if="!products.length" class="empty-state">还没有任何商品。</p>
-            </div>
-          </div>
-
-          <!-- 求购需求 -->
-          <div v-if="currentView === 'demands'">
-            <h2>求购需求</h2>
-            <div class="request-list">
-              <div v-for="request in demands" :key="request.demandId" class="request-card">
-                <p class="request-title"><strong>用户 {{ request.buyerId }}：</strong> 想要 {{ request.productNameDesired }}</p>
-                <p class="request-quantity">需求量：{{ request.quantityDesired }} {{ request.unitDesired }}</p>
-                <p class="request-details">需求描述：{{ request.details }}</p>
-              </div>
-              <p v-if="!demands.length" class="empty-state">暂无求购需求</p>
-            </div>
-          </div>
-
-          <!-- 我的商品 -->
-          <div v-if="currentView === 'myProducts'">
-            <div class="product-list">
-              <div v-for="product in myProducts" :key="product.productId" class="product-card">
-                <h3>{{ product.productName }}</h3>
-                <p>价格: ¥{{ product.price }} / {{ product.unitInfo }}</p>
-                <p>库存: {{ product.stock }} {{ product.unitInfo }}</p>
-                <div class="card-actions">
-                  <button class="edit-btn">编辑</button>
-                  <button class="view-btn" @click="goToProductDetail(product)">详情</button>
-                  <button class="delete-btn">下架</button>
-                </div>
-              </div>
-              <p v-if="!myProducts.length" class="empty-state">您还没有发布任何产品</p>
-            </div>
-          </div>
-
-          <!-- 添加商品 -->
-          <div v-if="currentView === 'addProduct'">
-            <form @submit.prevent="handleAddProduct" class="add-product-form">
-              <div class="form-group">
-                <label for="name">商品名称:</label>
-                <input type="text" id="name" v-model="newProduct.productName" required>
-              </div>
-
-              <div class="form-group">
-                <label for="prodCat">商品大分类:</label>
-                <select id="prodCat" v-model="newProduct.prodCat" required >
-                  <option v-for="category in mainCategories" :key="category" :value="category">
-                    {{ category }}
-                  </option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label for="prodPcat">商品小分类:</label>
-                <input type="text" id="prodPcat" v-model="newProduct.prodPcat" placeholder="例如: 红富士苹果, 龙虾" required>
-              </div>
-
-              <div class="form-group">
-                <label for="price">价格 (元/{{ newProduct.unitInfo || '单位' }}):</label>
-                <input type="number" id="price" v-model.number="newProduct.price" required min="0.01" step="0.01">
-              </div>
-
-              <div class="form-group">
-                <label for="unitInfo">单位:</label>
-                <input type="text" id="unitInfo" v-model="newProduct.unitInfo" placeholder="例如: 斤, 公斤, 箱, 个" required>
-              </div>
-
-              <div class="form-group">
-                <label for="stock">库存量 ({{ newProduct.unitInfo || '单位' }}):</label>
-                <input type="number" id="stock" v-model.number="newProduct.stock" required min="1">
-              </div>
-
-              <div class="form-group">
-                <label for="image">商品图片:</label>
-                <input type="file" id="image" @change="handleImageUpload" accept="image/*">
-                <img v-if="newProduct.imagePath" :src="newProduct.imagePath" alt="预览" class="preview">
-              </div>
-
-              <div class="form-group">
-                <label for="description">描述:</label>
-                <textarea id="description" v-model="newProduct.description" placeholder="请输入商品的详细说明"></textarea>
-              </div>
-
-              <button type="submit" class="submit-btn">确认发布</button>
-            </form>
-          </div>
-
-          <!-- 我的订单 -->
-          <div v-if="currentView === 'myOrders'">
-            <div class="order-list">
-              <template v-if="myOrders && myOrders.length > 0">
-                <div v-for="order in myOrders" :key="order.orderId" class="order-card">
-                  <div class="order-header">
-                    <span>订单号: {{ order.orderId }}</span>
-                    <span class="order-date">下单时间: {{ new Date(order.orderDate).toLocaleString() }}</span>
-                    <span class="order-status">{{ order.status }}</span>
-                  </div>
-                  <div class="order-body">
-                    <div v-if="order.orderItems && order.orderItems.length > 0">
-                      <div v-for="item in order.orderItems" :key="item.itemId" class="order-item">
-                        <span>{{ item.productName || '商品名未知' }}</span>
-                        <span>数量: {{ item.quantity }}</span>
-                        <span>单价: ¥{{ item.unitPrice }}</span>
-                      </div>
-                    </div>
-                    <div v-else><p>此订单无商品详情</p></div>
-                  </div>
-                  <div class="order-footer">
-                    <!-- 后端返回的是 userId -->
-                    <p><strong>买家ID:</strong> {{ order.userId }}</p>
-                    <!-- 后端返回的是 totalAmount -->
-                    <p><strong>总金额:</strong> <span class="total-price">¥{{ order.totalAmount.toFixed(2) }}</span></p>
-                  </div>
-                </div>
-              </template>
-              <p v-else class="empty-state">您还没有任何订单。</p>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- 普通用户视图 -->
-      <div v-else class="buyer-view-container">
-        <nav class="buyer-nav">
-          <button @click="switchView('products')" :class="{ active: currentView === 'products' }">所有商品</button>
+        <template v-else>
+          <button @click="switchView('products')" :class="{ active: currentView === 'products' }">所有产品</button>
+          <button @click="switchView('predict')" :class="{ active: currentView === 'predict' }">行情大厅</button>
           <button @click="switchView('cart')" :class="{ active: currentView === 'cart' }">我的购物车</button>
           <button @click="switchView('demands')" :class="{ active: currentView === 'demands' }">求购需求</button>
           <button @click="switchView('addDemand')" :class="{ active: currentView === 'addDemand' }">发布求购需求</button>
           <button @click="switchView('myOrders')" :class="{ active: currentView === 'myOrders' }">我的订单</button>
-        </nav>
+        </template>
+      </nav>
 
-        <div class="view-content-wrapper">
-          <!-- 所有商品 -->
-          <div v-if="currentView === 'products'">
-            <div class="product-list">
-              <div v-for="product in products" :key="product.productId" class="product-card">
-                <h3>{{ product.productName }}</h3>
-                <p>价格: ¥{{ product.price }} / {{ product.unitInfo }}</p>
-                <p>库存: {{ product.stock }} {{ product.unitInfo }}</p>
-
-                <div class="card-actions">
-                  <button class="view-btn" @click="goToProductDetail(product)">查看详情</button>
-                  <button class="add-to-cart-btn" @click="addToCart(product)">添加到购物车</button>
-                </div>
-              </div>
-              <p v-if="!products.length" class="empty-state">还没有任何商品。</p>
-            </div>
-          </div>
-
-          <!-- 购物车 -->
-          <div v-if="currentView === 'cart'" class="cart-view">
-            <div v-if="cartItems.length" class="cart-list">
-              <div class="cart-card" v-for="item in cartItems" :key="item.productId">
-                <div class="product-image">
-                  <img :src="item.imageUrl || placeholder" alt="商品图片" />
-                </div>
-                <div class="cart-info">
-                  <h3 class="cart-name">{{ item.productName }}</h3>
-                  <p class="cart-price">¥{{ item.price }} / {{ item.unitInfo }}</p>
-                  <div class="cart-quantity">
-                    <span>数量({{ item.unitInfo }}):</span>
-                    <button @click="changeQuantity(item.productId, item.quantity - 1)" :disabled="item.quantity <= 1">-</button>
-                    <span class="qty">{{ item.quantity }}</span>
-                    <button @click="changeQuantity(item.productId, item.quantity + 1)">+</button>
-                  </div>
-                </div>
-                <div class="cart-actions">
-                  <button class="remove-btn" @click="removeFromCart(item.productId)">移除</button>
-                </div>
-              </div>
-              <button class="submit-btn" @click="createOrder()">提交订单</button>
-            </div>
-            <p v-else class="empty-state">购物车是空的。</p>
-          </div>
-
-          <!-- 求购需求 -->
-          <div v-if="currentView === 'demands'">
-
-            <div class="request-list">
-              <!-- 求购需求卡片 -->
-              <div
-                  v-for="request in demands"
-                  :key="request.demandId"
-                  class="request-card"
+      <!-- 内容区域 -->
+      <div class="view-content-wrapper">
+        <!-- 所有产品 -->
+        <div v-if="currentView === 'products'" class="product-page">
+          <!-- 左侧分类栏 -->
+          <aside class="category-sidebar">
+            <ul style="padding-left: 0;list-style: none;">
+              <li
+                  v-for="(subCats, cat) in categoryMap"
+                  :key="cat"
+                  class="category-group"
               >
-                <p class="request-title"><strong>用户 {{ request.buyerId }}： 我想要  </strong> {{ request.productNameDesired }}</p>
-                <p class="request-quantity">需求量： {{ request.quantityDesired }} {{ request.unitDesired }}</p>
-                <p class="request-details">需求描述： {{ request.details }}</p>
+                <h4 class="cat-title">{{ cat }}</h4>
+                <ul class="subcat-list">
+                  <li
+                      v-for="sub in subCats"
+                      :key="sub"
+                      :class="['subcat-item', { active: selectedSubcat === sub }]"
+                      @click="selectCategory(sub)"
+                  >
+                    {{ sub }}
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </aside>
+
+          <!-- 产品展示区 -->
+          <div class="product-list">
+            <div
+                v-for="product in products"
+                :key="product.productId"
+                class="product-card"
+            >
+              <div class="product-image">
+                <img :src="product.imageUrl" :alt="product.productName" />
               </div>
 
+              <div class="product-info">
+                <h3 class="product-name">{{ product.productName }}</h3>
+                <p class="product-price">¥{{ product.price }} / {{ product.unitInfo }}</p>
+                <p class="product-stock">库存: {{ product.stock }} {{ product.unitInfo }}</p>
+              </div>
 
-              <p v-if="!demands.length" class="empty-state">暂无求购需求</p>
+              <div class="card-actions">
+                <button class="view-btn" @click="goToProductDetail(product)">查看详情</button>
+                <button
+                    v-if="role !== 'farmer'"
+                    class="add-to-cart-btn"
+                    @click="addToCart(product)"
+                >
+                  加入购物车
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
 
-              <button v-if="!demands.length" @click="switchView('addDemand')" class="add-demand-btn">发布求购需求</button>
+        <!-- 价格预测 -->
+        <div v-if="currentView === 'predict'" class="prediction-page">
+          <!-- 产品列表 -->
+          <div class="product-list">
+            <div v-for="product in products" :key="product.productId" class="product-card">
+              <img :src="product.imagePath" alt="" class="product-image" />
+              <h3>{{ product.productName }}</h3>
+              <p>规格: {{ product.specInfo }}</p>
+              <p>当前价格: ¥{{ product.price }}</p>
+              <button @click="startPrediction(product)" :disabled="loading">开始预测</button>
             </div>
           </div>
 
-          <!-- 发布求购需求 -->
-          <div v-if="currentView === 'addDemand'">
-
-            <form @submit.prevent="handleAddDemand" class="add-product-form">
-              <div class="form-group">
-                <label for="demandName">需求商品名称:</label>
-                <input type="text" id="demandName" v-model="newDemand.productNameDesired" required>
-              </div>
-              <div class="form-group">
-                <label for="demandQuantity">需求数量 (Kg):</label>
-                <input type="number" id="demandQuantity" v-model.number="newDemand.quantityDesired" required min="1">
-              </div>
-              <div class="form-group">
-                <label for="maxPrice">期望最高单价 (元/Kg):</label>
-                <input type="number" id="maxPrice" v-model.number="newDemand.maxPricePerUnit" required min="0.01" step="0.01">
-              </div>
-              <div class="form-group">
-                <label for="deliveryDate">期望交货日期:</label>
-                <input type="date" id="deliveryDate" v-model="newDemand.deliveryDateDesired" required>
-              </div>
-              <div class="form-group">
-                <label for="details">补充说明:</label>
-                <textarea id="details" v-model="newDemand.details" rows="3" placeholder="可选"></textarea>
-              </div>
-              <button type="submit" class="submit-btn">确认发布</button>
-            </form>
+          <!-- 预测折线图 -->
+          <div class="prediction-chart">
+            <div v-if="loading">预测中，请稍候...</div>
+            <div ref="chartRef" style="width:100%;height:400px;"></div>
           </div>
+        </div>
 
-          <!-- 我的订单 -->
-          <div v-if="currentView === 'myOrders'">
-            <div class="order-list">
-              <template v-if="myOrders && myOrders.length > 0">
-                <div v-for="order in myOrders" :key="order.orderId" class="order-card">
+        <!-- 我的产品（仅农户） -->
+        <div v-if="role === 'farmer' && currentView === 'myProducts'" class="my-product-page">
+          <!-- 管理栏 -->
+          <div class="product-management-bar">
+            <button @click="openAddModal">添加商品</button>
 
-                  <!-- 订单头部 -->
-                  <div class="order-header">
-                    <span>订单号: {{ order.orderId }}</span>
-                    <span class="order-date">下单时间: {{ new Date(order.orderDate).toLocaleString() }}</span>
-                    <span class="order-status" :class="getStatusClass(order.status)">
-                    {{ getStatusText(order.status) }}
-                    </span>
-                  </div>
+            <!-- 筛选类别 -->
+            <select v-model="filterCategory">
+              <option value="">全部类别</option>
+              <option v-for="category in mainCategories" :key="category" :value="category">
+                {{ category }}
+              </option>
+            </select>
 
-                  <!-- 订单体 -->
-                  <div class="order-body">
-                    <div v-if="order.orderItems && order.orderItems.length > 0">
-                      <div v-for="item in order.orderItems" :key="item.itemId" class="order-item-container">
-
-                        <!-- 商品信息 -->
-                        <div class="item-info">
-                          <span class="item-name">{{ item.productName || '商品名未知' }}</span>
-                          <div class="item-details">
-                            <span>数量: {{ item.quantity }}</span>
-                            <span>单价: ¥{{ item.unitPrice }}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div v-else>
-                      <p>此订单无商品详情</p>
-                    </div>
-                  </div>
-
-                  <!-- 订单尾部 -->
-                  <div class="order-footer">                        <!-- 联系卖家按钮 -->
-                    <div class="item-actions" v-if="role !== 'farmer'">
-                      <button class="contact-btn" @click="() => goToChat(item.farmerId)">联系卖家</button>
-                    </div>
-                    <p><strong>总金额:</strong>
-                      <span class="total-price">¥{{ order.totalAmount.toFixed(2) }}</span>
-                    </p>
-
-                    <!-- 状态对应按钮 -->
-                    <div class="order-actions">
-
-                      <button v-if="order.status === 'pending'" class="pay-btn" @click="goToPay(order.orderId)">立即支付</button>
-                      <button v-if="order.status === 'pending'" class="cancel-btn" @click="cancelOrder(order.orderId)">取消订单</button>
-                      <button v-if="order.status === 'completed'" class="view-btn" @click="viewDetail(order.orderId)">查看详情</button>
-                      <span v-if="order.status === 'cancelled'" class="cancel-text">订单已取消</span>
-                    </div>
-                  </div>
-
+            <!-- 产品状态筛选 -->
+            <div class="status-filters">
+              <button @click="filterStatus='all'" :class="{active: filterStatus==='all'}">全部</button>
+              <button @click="filterStatus='active'" :class="{active: filterStatus==='active'}">上架中</button>
+              <button @click="filterStatus='inactive'" :class="{active: filterStatus==='inactive'}">已下架</button>
+              <div class="batch-operations">
+                <button @click="toggleBatchActions">批量操作</button>
+                <div v-if="showBatchActions" class="batch-dropdown">
+                  <button @click="batchDelete">一键删除</button>
+                  <button @click="batchDown">一键下架</button>
                 </div>
-              </template>
-
-              <p v-else class="empty-state">您还没有任何订单。</p>
+              </div>
             </div>
           </div>
 
+          <!-- 产品列表表头 -->
+          <div class="product-list-header">
+            <div class="col checkbox-col" v-if="showBatch">选择</div>
+            <div class="col img-col">图片</div>
+            <div class="col name-col">产品名称</div>
+            <div class="col price-col">价格</div>
+            <div class="col stock-col">库存</div>
+            <div class="col status-col">上架</div>
+            <div class="col action-col">操作</div>
+          </div>
 
+          <!-- 产品列表 -->
+          <div class="product-list">
+            <div v-for="product in filteredProducts" :key="product.productId" class="product-row">
+              <div class="col checkbox-col" v-if="showBatch">
+                <input type="checkbox" v-model="selectedProducts" :value="product.productId" />
+              </div>
+              <div class="col img-col">
+                <img :src="product.imageUrl" alt="" class="product-image" />
+              </div>
+              <div class="col name-col">{{ product.productName }}</div>
+              <div class="col price-col">¥{{ product.price.toFixed(2) }}</div>
+              <div class="col stock-col">{{ product.stock }}</div>
+              <div class="col status-col">
+                <label class="switch">
+                  <input type="checkbox" v-model="product.status" @change="toggleProductStatus(product)" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <div class="col action-col">
+                <button class="edit-btn" @click="editProduct(product)">编辑</button>
+                <button class="delete-btn" @click="deleteProduct(product)">删除</button>
+              </div>
+            </div>
+            <p v-if="!filteredProducts.length" class="empty-state">该类别还没有产品哦~</p>
+          </div>
+        </div>
+
+        <!-- 添加商品弹窗 -->
+        <div v-if="showAddProductModal" class="modal-overlay">
+          <div class="modal-container">
+
+            <!-- 右上角关闭按钮 -->
+            <button class="close-btn" @click="closeAddModal">×</button>
+
+            <h2 class="modal-title">添加商品</h2>
+
+            <div class="modal-body">
+
+              <!-- 商品名称 -->
+              <div class="modal-form-group row-layout">
+                <label>商品名称：</label>
+                <input v-model="newProduct.productName" type="text" placeholder="请输入商品名称" />
+              </div>
+
+              <!-- 商品图片 -->
+              <div class="modal-form-group">
+                <label>商品图片：</label>
+
+                <div class="image-upload-box" @click="triggerImageInput">
+                  <span v-if="!newProduct.imagePath">＋ 上传</span>
+                  <img v-else :src="newProduct.imagePath" alt="预览" />
+                </div>
+
+                <input type="file" ref="imageInput" style="display:none"
+                       @change="handleImageUpload" accept="image/*" />
+              </div>
+
+              <!-- 商品主类 -->
+              <div class="modal-form-group row-layout">
+                <label>商品主类：</label>
+                <select v-model="newProduct.prodCat" class="form-input">
+                  <option v-for="cat in mainCategories" :key="cat" :value="cat">
+                    {{ cat }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- 商品副类 -->
+              <div class="modal-form-group row-layout">
+                <label>商品副类：</label>
+                <input v-model="newProduct.prodPcat" type="text" placeholder="例如：叶菜类" />
+              </div>
+
+
+              <div class="modal-form-group row-layout">
+                <label>描述：</label>
+                <textarea v-model="newProduct.description" rows="2"></textarea>
+              </div>
+
+
+              <!-- 添加规格标题 + 按钮 -->
+              <div class="spec-header">
+                <label>商品规格：</label>
+                <button class="add-spec-btn" @click="addSpec">＋ 添加规格</button>
+              </div>
+
+              <!-- 动态规格框 -->
+              <div class="spec-box" v-for="(spec, index) in specs" :key="index">
+
+                <div class="spec-item-row">
+                  <label>规格名称：</label>
+                  <input v-model="spec.specInfo" type="text" />
+                </div>
+
+                <!-- 商品单位 -->
+                <div class="spec-item-row">
+                  <label>商品单位：</label>
+                  <input
+                      v-model="newProduct.unitInfo"
+                      type="text"
+                      placeholder="例如：斤 / 袋 / 份"
+                  />
+                </div>
+
+                <div class="spec-item-row">
+                  <label>价格(元):</label>
+                  <input type="number" v-model.number="spec.price" placeholder="请输入价格" />
+                </div>
+
+
+                <div class="spec-item-row">
+                  <label>库存量：</label>
+                  <input type="number" v-model.number="spec.stock" />
+                </div>
+
+                <button class="delete-spec-btn" @click="removeSpec(index)">删除该规格</button>
+              </div>
+
+            </div>
+
+            <!-- 底部按钮 -->
+            <div class="modal-footer">
+              <button class="cancel-btn" @click="closeAddModal">取消</button>
+              <button class="save-btn" @click="handleAddProduct">保存</button>
+            </div>
+
+          </div>
+        </div>
+
+
+
+        <!-- 购物车（仅买家） -->
+        <div v-if="role === 'buyer' && currentView === 'cart'">
+          <div v-if="cartItems.length" class="cart-list">
+            <div v-for="item in cartItems" :key="item.productId" class="cart-card">
+              <div class="cart-product-image">
+                <img :src="item.imageUrl || placeholder"  alt=""/>
+              </div>
+              <div class="cart-info">
+                <h3>{{ item.productName }}</h3>
+                <p>¥{{ item.price }} / {{ item.unitInfo }}</p>
+                <div class="cart-quantity">
+                  <button @click="changeQuantity(item.productId, item.quantity - 1)" :disabled="item.quantity <= 1">-</button>
+                  <span>{{ item.quantity }}</span>
+                  <button @click="changeQuantity(item.productId, item.quantity + 1)">+</button>
+                </div>
+              </div>
+              <button class="remove-btn" @click="removeFromCart(item.productId)">移除</button>
+            </div>
+            <button class="submit-btn" @click="createOrder()">提交订单</button>
+          </div>
+          <p v-else class="empty-state">购物车是空的。</p>
+        </div>
+
+        <!-- 求购需求 -->
+        <div v-if="currentView === 'demands'">
+          <div class="request-list">
+            <div v-for="request in demands" :key="request.demandId" class="request-card">
+              <p><strong>用户 {{ request.buyerId }}：</strong> 想要 {{ request.productNameDesired }}</p>
+              <p>需求量：{{ request.quantityDesired }} {{ request.unitDesired }}</p>
+              <p>需求描述：{{ request.details }}</p>
+            </div>
+            <p v-if="!demands.length" class="empty-state">暂无求购需求</p>
+          </div>
+        </div>
+
+        <!-- 发布求购需求（仅买家） -->
+        <div v-if="role !== 'farmer' && currentView === 'addDemand'">
+          <form @submit.prevent="handleAddDemand" class="add-product-form">
+            <div class="form-group">
+              <label>需求产品名称:</label>
+              <input v-model="newDemand.productNameDesired" required />
+            </div>
+            <div class="form-group">
+              <label>需求数量 (Kg):</label>
+              <input type="number" v-model.number="newDemand.quantityDesired" required />
+            </div>
+            <div class="form-group">
+              <label>期望最高单价 (元/Kg):</label>
+              <input type="number" v-model.number="newDemand.maxPricePerUnit" required />
+            </div>
+            <div class="form-group">
+              <label>期望交货日期:</label>
+              <input type="date" v-model="newDemand.deliveryDateDesired" required />
+            </div>
+            <div class="form-group">
+              <label>补充说明:</label>
+              <textarea v-model="newDemand.details"></textarea>
+            </div>
+            <button type="submit" class="submit-btn">确认发布</button>
+          </form>
+        </div>
+
+        <!-- 我的订单（农户 + 买家） -->
+        <div v-if="role === 'buyer' && currentView === 'myOrders'">
+          <div class="order-list">
+            <template v-if="myOrders && myOrders.length > 0">
+              <div v-for="order in myOrders" :key="order.orderId" class="order-card">
+                <div class="order-header">
+                  <span>订单号: {{ order.orderId }}</span>
+                  <span class="order-date">下单时间: {{ new Date(order.orderDate).toLocaleString() }}</span>
+                  <span class="order-status" :class="getStatusClass(order.status)">
+                    {{ getStatusText(order.status) }}
+                  </span>
+                </div>
+
+                <div class="order-body">
+                  <div v-if="order.orderItems?.length">
+                    <div v-for="item in order.orderItems" :key="item.itemId" class="order-item-container">
+                      <span class="item-name">{{ item.productName || '产品名未知' }}</span>
+                      <span>数量: {{ item.quantity }}</span>
+                      <span>单价: ¥{{ item.unitPrice }}</span>
+                    </div>
+                  </div>
+                  <div v-else><p>此订单无产品详情</p></div>
+                </div>
+
+                <div class="order-footer">
+                  <p><strong>总金额:</strong> ¥{{ order.totalAmount.toFixed(2) }}</p>
+
+                  <div class="order-actions">
+                    <button v-if="order.status === 'pending'" class="pay-btn" @click="goToPay(order.orderId)">立即支付</button>
+                    <button v-if="order.status === 'pending'" class="cancel-btn" @click="cancelOrder(order.orderId)">取消订单</button>
+                    <button v-if="order.status === 'completed'" class="view-btn" @click="viewDetail(order.orderId)">查看详情</button>
+                    <span v-if="order.status === 'cancelled'" class="cancel-text">订单已取消</span>
+                    <!-- 买家显示“联系卖家” -->
+                    <button v-if="role !== 'farmer'" class="contact-btn" @click="goToChat(order.farmerId)">联系卖家</button>
+                  </div>
+                </div>
+              </div>
+            </template>
+            <p v-else class="empty-state">您还没有任何订单。</p>
+          </div>
         </div>
       </div>
     </section>
@@ -324,49 +382,160 @@
 
 
 <script setup>
-import { ref, computed, onMounted, watch} from 'vue'
+import {computed, onMounted, ref, watch} from 'vue'
+import * as echarts from "echarts";
 import axios from '../utils/axios'
 import router from "@/router/index.js";
 import HeaderComponent from '../components/HeaderComponent.vue';
 import placeholder from "@/assets/img.png";
-import { useAuthStore } from '@/stores/authStore'
-import { storeToRefs } from 'pinia'
+import {useAuthStore} from '@/stores/authStore'
+import {storeToRefs} from 'pinia'
 import {ElMessage} from "element-plus";
 
+
+// ====== 主逻辑 ======
 const authStore = useAuthStore()
 const {userInfo, isLoggedIn, role} = storeToRefs(authStore)
-
-const mainCategories = ref(['蔬菜','水产','水果','肉类'])
-
 const currentView = ref('products')
 
-// 农户数据
-const myProducts = ref([])
-const newProduct = ref({ farmerId: '', productName: '', price: null,  unitInfo: '',stock: null, prodCat:'', prodPcat:'' , imagePath:''})
+function switchView(view) { currentView.value = view }
 
-const imageFile = ref(null)
+onMounted(async () => {
 
-// 普通用户数据
-const products = ref([])
-const cartItems = ref([])
-
-// 求购需求数据
-const demands = ref([])
-
-// 求购需求数据
-const newDemand = ref({
-  productNameDesired: '',
-  quantityDesired: null,
-  unitDesired: '',
-  maxPricePerUnit: null,
-  deliveryDateDesired: '',
-  details: ''
+  await loadProducts();
+  await loadDemands();
+  if (isLoggedIn.value) {
+    await loadAddresses();
+    await loadCart();
+    await loadMyOrders();
+    if (role.value === 'farmer') {
+      await loadMyProducts();
+    }
+  }
 })
 
-// 订单数据
-const myOrders = ref([])
-const loading = ref(true)// 时间格式化
-const formatTime = t => (t ? new Date(t).toLocaleString() : '')
+watch(currentView, (val) => {
+  if (val === 'cart') {
+    loadAddresses()
+    loadCart()
+  }
+  if(val === 'products') {
+    loadProducts()
+  }
+  if(val === 'demands') {
+    loadDemands()
+  }
+
+  if (val === 'myOrders') {
+    loadMyOrders()
+  }
+
+  if(val === 'myProducts'&& role.value === 'farmer') {
+    loadMyProducts()
+  }
+})
+
+
+// ====== 产品逻辑 ======
+const mainCategories = ref(['蔬菜','水产','水果','肉类'])
+const products = ref([])
+const selectedSubcat = ref(null)
+const imageFile = ref(null)
+
+// 产品列表和分类
+const myProducts = ref([]) // 后端获取的产品数组
+const filterCategory = ref('')
+const filterStatus = ref('all') // all / up / inactive
+
+// 批量操作
+const showBatchActions = ref(false)
+const showBatch = computed(() => showBatchActions.value)
+const selectedProducts = ref([])
+
+// 筛选后的产品列表
+const filteredProducts = computed(() => {
+  return myProducts.value.filter(p => {
+    const categoryMatch = !filterCategory.value || p.prodCat === filterCategory.value
+    const statusMatch =
+        filterStatus.value === 'all' ||
+        (filterStatus.value === 'active' && p.status === 'active') ||
+        (filterStatus.value === 'inactive' && p.status === 'inactive')
+    return categoryMatch && statusMatch
+  })
+})
+
+// 批量操作函数
+function toggleBatchActions() {
+  showBatchActions.value = !showBatchActions.value
+  if (!showBatchActions.value) selectedProducts.value = []
+}
+
+function toggleAll(e) {
+  if (e.target.checked) {
+    selectedProducts.value = filteredProducts.value.map(p => p.productId)
+  } else {
+    selectedProducts.value = []
+  }
+}
+//TODO
+async function batchDelete() {
+  if (!selectedProducts.value.length) return alert('请选择产品')
+  try {
+    // 调接口批量删除
+    await axios.post('/products/batch-delete', { ids: selectedProducts.value })
+    alert('批量删除成功')
+    // 更新本地产品列表
+    myProducts.value = myProducts.value.filter(p => !selectedProducts.value.includes(p.productId))
+    selectedProducts.value = []
+  } catch (err) {
+    console.error(err)
+    alert('批量删除失败')
+  }
+}
+//TODO
+async function batchDown() {
+  if (!selectedProducts.value.length) return alert('请选择产品')
+  try {
+    await axios.post('/products/batch-inactive', { ids: selectedProducts.value })
+    alert('批量下架成功')
+    myProducts.value.forEach(p => {
+      if (selectedProducts.value.includes(p.productId)) p.status = 'inactive'
+    })
+    selectedProducts.value = []
+  } catch (err) {
+    console.error(err)
+    alert('批量下架失败')
+  }
+}
+
+// 单个产品操作
+// TODO: 跳转到编辑页面或弹窗
+function editProduct(product) {
+  console.log('编辑产品', product)
+}
+//TODO
+async function deleteProduct(product) {
+  if (!confirm('确定删除该产品？')) return
+  try {
+    await axios.post(`/products/delete/${product.productId}`)
+    myProducts.value = myProducts.value.filter(p => p.productId !== product.productId)
+    alert('删除成功')
+  } catch (err) {
+    console.error(err)
+    alert('删除失败')
+  }
+}
+//TODO
+async function toggleProductStatus(product) {
+  try {
+    const newStatus = product.status === 'active' ? 'inactive' : 'active'
+    await axios.post(`/products/update-status/${product.productId}`, { status: newStatus })
+    product.status = newStatus
+  } catch (err) {
+    console.error(err)
+    alert('切换状态失败')
+  }
+}
 
 function handleImageUpload(event) {
   // 获取上传的文件对象
@@ -386,24 +555,179 @@ function handleImageUpload(event) {
   console.log('新产品：', newProduct.value)
 }
 
-function switchView(view) { currentView.value = view }
+
+const showAddProductModal = ref(false)
+
+function openAddModal() {
+  showAddProductModal.value = true
+}
+
+function closeAddModal() {
+  showAddProductModal.value = false
+  resetForm()
+}
+
+const imageInput = ref(null)
+
+function triggerImageInput() {
+  imageInput.value.click()
+}
+
+const newProduct = ref({
+  description:'',
+  productName: '',
+  prodCat: '',
+  prodPcat: '',
+  unitInfo: '',
+  imagePath: ''
+})
+//规格列表
+const specs = ref([
+  { specInfo: '', unitInfo:'', price: null, stock: null, description: '' }
+])
+//添加规格
+function addSpec() {
+  specs.value.push({ specInfo: '', unitInfo:'', price: null, stock: null, description: '' })
+}
+//删除规格
+function removeSpec(index) {
+  specs.value.splice(index, 1)
+}
+//添加产品
+async function handleAddProduct() {
+  if (!isLoggedIn.value || role.value !== 'farmer') {
+    alert('只有农户才能发布产品！')
+    return
+  }
+
+  if (!userInfo.value || !userInfo.value.userId) {
+    alert('无法获取您的用户信息，请尝试重新登录后再发布。')
+    return
+  }
+
+  try {
+    for (const spec of specs.value) {
+      const productData = {
+        ...newProduct.value,
+        specInfo: spec.specInfo,
+        unitInfo: spec.unitInfo,
+        price: spec.price,
+        stock: spec.stock,
+        description: spec.description,
+        farmerId: Number(userInfo.value.userId)
+      }
+
+      const formData = new FormData()
+      const blob = new Blob([JSON.stringify(productData)], { type: 'application/json' })
+      formData.append('product', blob)
+
+      // 图片只在第一次上传
+      if (imageFile.value) {
+        formData.append('image', imageFile.value)
+      }
+
+      await axios.post('/products/publish', formData)
+
+      // 上传完图片后清空 imageFile，保证后续规格不重复上传
+      imageFile.value = null
+    }
+
+    alert('所有规格产品发布成功！')
+
+    // 重置表单
+    newProduct.value = { productName: '', prodCat: '', prodPcat: '', unitInfo: '', imagePath: '' }
+    specs.value = [{ specInfo: '', price: null, stock: null, description: '' }]
+    currentView.value = 'myProducts'
+    closeAddModal()
+  } catch (err) {
+    console.error('发布失败：', err)
+    alert('发布失败，请稍后重试')
+  }
+}
 
 async function loadProducts() {
-  try{
+  try {
     const res = await axios.get('/products')
-    products.value = res.data.records||[]
-  }catch(err){
-    console.error('加载全部商品失败',err)
+    const records = res.data.records || []
+
+    // 并行加载每个产品的图片
+    products.value = await Promise.all(
+        records.map(async (product) => {
+          try {
+            let imageUrl = ''
+            try {
+              const imageRes = await axios.get(`/products/${product.productId}/image`, {
+                responseType: 'blob'
+              })
+              if (imageRes.data.size > 0)
+                imageUrl = URL.createObjectURL(imageRes.data)
+            } catch {
+              // 如果图片加载失败，使用默认占位图
+              imageUrl = new URL('../assets/img.png', import.meta.url).href
+            }
+            console.log('全部产品：',imageUrl)
+            return { ...product, imageUrl }
+          } catch (err) {
+            console.warn('产品加载失败:', product.productId, err)
+            return { ...product, imageUrl: new URL('../assets/img.png', import.meta.url).href }
+          }
+        })
+    )
+  } catch (err) {
+    console.error('加载产品失败', err)
   }
+}
+
+// 分类结构：{ 大类: [小类1, 小类2, ...] }
+const categoryMap = computed(() => {
+  const map = {}
+  for (const p of products.value) {
+    if (!map[p.prodCat]) map[p.prodCat] = new Set()
+    map[p.prodCat].add(p.prodPcat)
+  }
+  // 转换 Set 为数组
+  for (const key in map) {
+    map[key] = Array.from(map[key])
+  }
+  return map
+})
+
+function selectCategory(subcat) {
+  selectedSubcat.value = subcat
 }
 
 async function loadMyProducts() {
   if (!isLoggedIn.value || role.value !== 'farmer') return;
   try {
     const res = await axios.get(`/products/farmer/${userInfo.value.userId}`);
-    myProducts.value = res.data.records || [];
+    const records = res.data.records || []
+
+    // 并行加载每个产品的图片
+    myProducts.value = await Promise.all(
+        records.map(async (product) => {
+          try {
+            let imageUrl = ''
+            try {
+              const imageRes = await axios.get(`/products/${product.productId}/image`, {
+                responseType: 'blob'
+              })
+              if (imageRes.data.size > 0)
+                imageUrl = URL.createObjectURL(imageRes.data)
+            } catch {
+              // 如果图片加载失败，使用默认占位图
+              imageUrl = new URL('../assets/img.png', import.meta.url).href
+            }
+            console.log('我的产品：',imageUrl)
+            return { ...product, imageUrl }
+          } catch (err) {
+            console.warn('产品加载失败:', product.productId, err)
+            return { ...product, imageUrl: new URL('../assets/img.png', import.meta.url).href }
+          }
+        })
+    )
+
   } catch(err) {
-    console.error('加载我的商品失败', err);
+    console.error('加载我的产品失败', err);
   }
 }
 
@@ -419,29 +743,165 @@ async function goToProductDetail(product) {
  */
 async function goToChat(receiverId) {
 
-  if (!isLoggedIn.value) { 
-    alert('请先登录才能发起聊天！'); 
-    return; 
+  if (!isLoggedIn.value) {
+    alert('请先登录才能发起聊天！');
+    return;
   }
 
-  if (!receiverId) { 
-    alert('无法联系，对方信息丢失。'); 
-    return; 
+  if (!receiverId) {
+    alert('无法联系，对方信息丢失。');
+    return;
   }
 
-  if (String(userInfo.value?.userId) === String(receiverId)) { 
-    alert('您不能和自己发起聊天。'); 
-    return; 
+  if (String(userInfo.value?.userId) === String(receiverId)) {
+    alert('您不能和自己发起聊天。');
+    return;
   }
   await router.push(`/chat/${receiverId}`);
 }
 
+
+// ====== 预测逻辑 ======
+async function startPrediction(product) {
+  try {
+    const requestData = {
+      labelPre: "预测",
+      productName: product.productName,
+      prodCat: product.prodCat,
+      prodPcat: product.prodPcat,
+      specInfo: product.specInfo,
+      unitInfo: product.unitInfo,
+      farmerId: product.farmerId,
+      price: product.price,
+      stock: product.stock,
+      status: product.status,
+    }
+
+    const res = await axios.post('/predictions', requestData)
+
+    if (res.status === 202 || res.data.status === 'RUNNING') {
+      // 返回 taskId
+      product.taskId = res.data.taskId
+      console.log(`预测任务已启动，taskId=${product.taskId}`)
+    } else if (res.data.status === 'SUCCESS') {
+      console.log('CRUD操作成功（非预测任务）')
+    }
+  } catch (err) {
+    console.error('启动预测任务失败', err)
+  }
+}
+
+const chartRef = ref(null);
+const chartData = ref([]);
+
 /**
- * 用于“所有商品”列表，点击后调用核心函数
- * @param {object} product - 商品对象
+ * 根据 taskId 轮询预测结果
  */
+async function pollPredictionStatus(product) {
+  if (!product.taskId) {
+    console.warn("没有 taskId，无法轮询");
+    return;
+  }
 
+  loading.value = true;
+  let completed = false;
 
+  try {
+    while (!completed) {
+      const res = await axios.get(`/api/predictions/status/${product.taskId}`);
+      const status = res.data.status;
+
+      if (status === "COMPLETED") {
+        chartData.value = res.data.data.map(p => ({
+          date: p.forecastDate,
+          price: Number(p.predictedPrice),
+        }));
+        completed = true;
+        drawChart(product.productName);
+      } else if (status === "FAILED") {
+        alert("预测失败: " + res.data.message);
+        completed = true;
+      } else {
+        // RUNNING 或 202
+        await new Promise(r => setTimeout(r, 1000));
+      }
+    }
+  } catch (err) {
+    console.error("轮询预测结果失败", err);
+  } finally {
+    loading.value = false;
+  }
+}
+
+function drawChart(productName) {
+  if (!chartRef.value || !chartData.value.length) return;
+
+  const myChart = echarts.init(chartRef.value);
+  const dates = chartData.value.map(d => d.date);
+  const prices = chartData.value.map(d => d.price);
+
+  // 计算趋势
+  const trendSymbols = prices.map((price, idx) => {
+    if (idx === 0) return ""; // 第一个点没有趋势
+    const diff = price - prices[idx - 1];
+    if (diff > 0) return "▲"; // 红色向上
+    if (diff < 0) return "▼"; // 绿色向下
+    return "—"; // 灰色横线
+  });
+
+  myChart.setOption({
+    title: { text: productName, left: "left" },
+    tooltip: {
+      trigger: "axis",
+      formatter: params => {
+        const p = params[0];
+        const trend = trendSymbols[p.dataIndex];
+        return `${p.axisValue}<br/>价格: ¥${p.data} ${trend}`;
+      },
+    },
+    xAxis: { type: "category", data: dates },
+    yAxis: { type: "value", axisLabel: { formatter: "¥{value}" } },
+    series: [
+      {
+        data: prices,
+        type: "line",
+        smooth: true,
+        label: {
+          show: true,
+          position: "top",
+          formatter: (params) => `${params.data} ${trendSymbols[params.dataIndex]}`,
+          color: function(params) {
+            const trend = trendSymbols[params.dataIndex];
+            if (trend === "▲") return "red";
+            if (trend === "▼") return "green";
+            return "gray";
+          }
+        },
+      },
+    ],
+  });
+}
+
+/**
+ * 清空图表
+ */
+function clearChart() {
+  if (chartRef.value) {
+    const myChart = echarts.init(chartRef.value);
+    myChart.clear();
+    chartData.value = [];
+  }
+}
+// ====== 需求逻辑 ======
+const demands = ref([])
+const newDemand = ref({
+  productNameDesired: '',
+  quantityDesired: null,
+  unitDesired: '',
+  maxPricePerUnit: null,
+  deliveryDateDesired: '',
+  details: ''
+})
 
 async function loadDemands() {
   try{
@@ -454,265 +914,26 @@ async function loadDemands() {
   }
 }
 
-async function handleAddProduct() {
-  console.log("正在运行最新版本的 handleAddProduct 函数！");
-  if (!isLoggedIn.value || role.value !== 'farmer') { 
-    alert('只有农户才能发布商品！'); 
-    return; 
-  }
 
-  if (!userInfo.value || !userInfo.value.userId) {
-    alert('无法获取您的用户信息，请尝试重新登录后再发布。');
-    return; // 立即中止函数执行
-  }
-
-  try {
-    // 校验必填项
-    if (!newProduct.value.prodCat) {
-      alert('请选择一个商品大分类！')
-      return
-    }
-
-    const productData = { 
-      ...newProduct.value, 
-      farmerId: Number(userInfo.value.userId)
-    };
-
-    console.log("【最终诊断】准备发送给后端的 productData 对象:", JSON.stringify(productData, null, 2)); 
-
-    //构造 multipart/form-data
-    const formData = new FormData()
-    // product 是一个 JSON 对象，要先序列化成字符串再用 Blob 封装
-    const productBlob = new Blob([JSON.stringify(newProduct.value)], {
-      type: 'application/json'
-    })
-    formData.append('product', productBlob) // 对应后端的 @RequestPart("product")
-
-    // 如果选择了图片，附加上
-    if (imageFile.value) {
-      formData.append('image', imageFile.value) // 对应后端的 @RequestPart("image")
-    }
-
-    //发请求
-    const res = await axios.post('/products/publish', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      }
-    })
-
-    // 处理返回结果
-    if (res.data) {
-      alert('商品发布成功！')
-
-      // 重置表单
-      newProduct.value = {
-        farmerId: '',
-        productName: '',
-        price: null,
-        unitInfo: '',
-        stock: null,
-        prodCat: '',
-        prodPcat: '',
-        description: '',
-        imagePath: ''
-      }
-      imageFile.value = null
-      currentView.value = 'myProducts'
-    }
-  } catch (err) {
-    console.error('发布失败：', err)
-    alert('发布失败，请稍后重试')
-  }
-}
-
-
-// ====== 购物车逻辑 ======
-// 从后端加载购物车 + 获取商品详情
-const addresses = ref([]) // 地址列表
-const selectedAddressId = ref(null)
-
-// 从后端加载购物车 + 商品详情 + 图片
-async function loadCart() {
-  if (!isLoggedIn.value) return;
-  try {
-    
-    const res = await axios.get('/cart',
-        { params: { pageNum: 1, pageSize: 50 } });
-    const pageData = res.data
-    const items = pageData.records || []
-
-    // 并行加载每个商品的详情和图片
-    const detailedItems = await Promise.all(
-        items.map(async (item) => {
-          try {
-            // 获取商品详情
-            const productRes = await axios.get(`/products/${item.productId}`)
-            const product = productRes.data
-
-            // 尝试获取商品图片
-            let imageUrl = ''
-            try {
-              const imageRes = await axios.get(`/products/${product.productId}/image`, {
-                headers: { Authorization: `Bearer ${token}` },
-                responseType: 'blob' // 返回二进制
-              })
-              if (imageRes.data.size > 0) imageUrl = URL.createObjectURL(imageRes.data)
-              console.log('图片获取成功')
-            } catch {
-              // 如果图片获取失败，使用默认占位图
-              console.log('<图片获取失败>', product)
-              imageUrl = new URL('../assets/img.png', import.meta.url).href
-            }
-
-            return {
-              ...item,
-              productName: product.productName,
-              price: product.price,
-              stock: product.stock,
-              imagePath: product.imagePath,
-              unitInfo: product.unitInfo,
-              imageUrl
-            }
-          } catch (err) {
-            console.warn('商品详情获取失败:', item.productId, err)
-            return { ...item, imageUrl: new URL('../assets/img.png', import.meta.url).href }
-          }
-        })
-    )
-
-    cartItems.value = detailedItems
-    // totalPrice.value = detailedItems.reduce(
-    //     (sum, i) => sum + i.price * i.quantity,
-    //     0
-    // )
-  } catch (err) {
-    console.error('加载购物车失败:', err)
-    alert('加载购物车失败，请稍后重试')
-  }
-}
-
-//从后端加载用户地址
-async function loadAddresses() {
-  if (!isLoggedIn.value) return;
-  try {
-    
-    const res = await axios.get('/address/user');
-    addresses.value = res.data || [];
-    if (addresses.value.length > 0 && !selectedAddressId.value) {
-      selectedAddressId.value = addresses.value[0].addressId;
-    }
-
-  } catch (err) {
-    console.error('加载地址失败:', err)
-  }
-}
-
-// 添加到购物车
-async function addToCart(product) {
-  if (!isLoggedIn.value) { alert('请先登录！'); return; }
-  try {
-    
-    const res = await axios.post('/cart/add', null, {
-      params: { productId: product.productId, quantity: 1 }
-    });
-
-    if (res.data) {
-      alert('已添加到购物车！')
-      loadCart()
-    } else {
-      alert('添加失败')
-    }
-  } catch (err) {
-    console.error(err)
-    alert('添加购物车失败')
-  }
-}
-
-// 修改数量
-async function changeQuantity(productId, newQty) {
-  if (newQty <= 0 || !isLoggedIn.value) return
-  try {
-
-    const res = await axios.post('/cart/update', null, {
-      params: { productId, quantity: newQty }
-    });
-  
-    if (res.data) {
-      const item = cartItems.value.find(i => i.productId === productId)
-      if (item) item.quantity = newQty
-    }
-  } catch (err) {
-    console.error('修改数量失败', err)
-  }
-}
-
-// 移除商品
-async function removeFromCart(productId) {
-  if (!isLoggedIn.value) return;
-  try {
-    const res =  await axios.delete('/cart/item',
-        { params: { productId } })
-    if (res.data) {
-      alert('移除成功')
-      loadCart()
-    }
-  } catch (err) {
-    console.error('移除失败', err)
-  }
-}
-
-
-async function createOrder() {
-
-  if (!isLoggedIn.value) { 
-    alert('请先登录！'); 
-    return; 
-  }
-
-  if (!selectedAddressId.value) {
-    alert('请先选择收货地址')
-    return
-  }
-
-  try {
-    const reqBody = {
-      addressId: selectedAddressId.value,
-      orderItems: cartItems.value.map(item => ({
-        productId: item.productId,
-        quantity: item.quantity
-      }))
-    }
-
-    const res = await axios.post('/orders', reqBody);
-
-    if (res.data) {
-      alert(`订单提交成功！`)
-      cartItems.value = []
-      await router.push(`/orders/${orderId}`)
-    } else {
-      alert('提交失败，请稍后再试')
-    }
-  } catch (err) {
-    console.error('提交订单失败:', err)
-    alert('提交失败，请检查登录状态或网络')
-  }
-}
-
+// ====== 订单逻辑 ======
+const myOrders = ref([])
+const loading = ref(true)// 时间格式化
+const formatTime = t => (t ? new Date(t).toLocaleString() : '')
 
 // 计算总价
 const totalPrice = computed(() => {
   return detailedItems.value.reduce(
-    (sum, item) => sum + (item.price * item.quantity),
-    0
+      (sum, item) => sum + (item.price * item.quantity),
+      0
   );
 })
 
 async function handleAddDemand() {
-  if (!isLoggedIn.value) { 
-    alert('请先登录！'); 
-    return; 
+  if (!isLoggedIn.value) {
+    alert('请先登录！');
+    return;
   }
-  
+
   const currentUserId = userInfo.value?.userId;
 
   try {
@@ -802,7 +1023,6 @@ const getStatusClass = (status) => {
   }
 }
 
-
 // 取消订单
 const cancelOrder = async (orderId) => {
   try {
@@ -831,40 +1051,180 @@ const goToPay = (orderId) => {
   router.push(`/orders/${orderId}`)
 }
 
-onMounted(async () => {
 
-  await loadProducts();
-  await loadDemands();
-  if (isLoggedIn.value) {
-    await loadAddresses();
-    await loadCart();
-    await loadMyOrders();
-    if (role.value === 'farmer') {
-      await loadMyProducts();
+// ====== 购物车逻辑 ======
+// 从后端加载购物车 + 获取产品详情
+const cartItems = ref([])
+const addresses = ref([]) // 地址列表
+const selectedAddressId = ref(null)
+
+// 从后端加载购物车 + 产品详情 + 图片
+async function loadCart() {
+  if (!isLoggedIn.value) return;
+  try {
+
+    const res = await axios.get('/cart',
+        { params: { pageNum: 1, pageSize: 50 } });
+    const pageData = res.data
+    const items = pageData.records || []
+
+    // 并行加载每个产品的详情和图片
+    cartItems.value = await Promise.all(
+        items.map(async (item) => {
+          try {
+            // 获取产品详情
+            const productRes = await axios.get(`/products/${item.productId}`)
+            const product = productRes.data
+
+            // 尝试获取产品图片
+            let imageUrl = ''
+            try {
+              const imageRes = await axios.get(`/products/${product.productId}/image`, {
+                responseType: 'blob' // 返回二进制
+              })
+              if (imageRes.data.size > 0) imageUrl = URL.createObjectURL(imageRes.data)
+              console.log('图片获取成功')
+            } catch {
+              // 如果图片获取失败，使用默认占位图
+              console.log('<图片获取失败>', product)
+              imageUrl = new URL('../assets/img.png', import.meta.url).href
+            }
+
+            return {
+              ...item,
+              productName: product.productName,
+              price: product.price,
+              stock: product.stock,
+              imagePath: product.imagePath,
+              unitInfo: product.unitInfo,
+              imageUrl
+            }
+          } catch (err) {
+            console.warn('产品详情获取失败:', item.productId, err)
+            return {...item, imageUrl: new URL('../assets/img.png', import.meta.url).href}
+          }
+        })
+    )
+    // totalPrice.value = detailedItems.reduce(
+    //     (sum, i) => sum + i.price * i.quantity,
+    //     0
+    // )
+  } catch (err) {
+    console.error('加载购物车失败:', err)
+    alert('加载购物车失败，请稍后重试')
+  }
+}
+
+//从后端加载用户地址
+async function loadAddresses() {
+  if (!isLoggedIn.value) return;
+  try {
+
+    const res = await axios.get('/address/user');
+    addresses.value = res.data || [];
+    if (addresses.value.length > 0 && !selectedAddressId.value) {
+      selectedAddressId.value = addresses.value[0].addressId;
     }
-  }
-})
 
-watch(currentView, (val) => {
-  if (val === 'cart') {
-    loadAddresses()
-    loadCart()
+  } catch (err) {
+    console.error('加载地址失败:', err)
   }
-  if(val === 'products') {
-    loadProducts()
+}
+
+// 添加到购物车
+async function addToCart(product) {
+  if (!isLoggedIn.value) { alert('请先登录！'); return; }
+  try {
+
+    const res = await axios.post('/cart/add', null, {
+      params: { productId: product.productId, quantity: 1 }
+    });
+
+    if (res.data) {
+      alert('已添加到购物车！')
+      loadCart()
+    } else {
+      alert('添加失败')
+    }
+  } catch (err) {
+    console.error(err)
+    alert('添加购物车失败')
   }
-  if(val === 'demands') {
-    loadDemands()
+}
+
+// 修改数量
+async function changeQuantity(productId, newQty) {
+  if (newQty <= 0 || !isLoggedIn.value) return
+  try {
+
+    const res = await axios.post('/cart/update', null, {
+      params: { productId, quantity: newQty }
+    });
+
+    if (res.data) {
+      const item = cartItems.value.find(i => i.productId === productId)
+      if (item) item.quantity = newQty
+    }
+  } catch (err) {
+    console.error('修改数量失败', err)
+  }
+}
+
+// 移除产品
+async function removeFromCart(productId) {
+  if (!isLoggedIn.value) return;
+  try {
+    const res =  await axios.delete('/cart/item',
+        { params: { productId } })
+    if (res.data) {
+      alert('移除成功')
+      loadCart()
+    }
+  } catch (err) {
+    console.error('移除失败', err)
+  }
+}
+
+async function createOrder() {
+
+  if (!isLoggedIn.value) {
+    alert('请先登录！');
+    return;
   }
 
-  if (val === 'myOrders') {
-    loadMyOrders()
+  if (!selectedAddressId.value) {
+    alert('请先选择收货地址')
+    return
   }
 
-  if(val === 'myProducts'&& role.value === 'farmer') {
-    loadMyProducts()
+  try {
+    const reqBody = {
+      addressId: selectedAddressId.value,
+      orderItems: cartItems.value.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity
+      }))
+    }
+
+    const res = await axios.post('/orders', reqBody);
+
+    if (res.data) {
+      alert(`订单提交成功！`)
+      cartItems.value = []
+      await router.push(`/orders/${orderId}`)
+    } else {
+      alert('提交失败，请稍后再试')
+    }
+
+    await axios.post('/cart/clear');
+
+  } catch (err) {
+    console.error('提交订单失败:', err)
+    alert('提交失败，请检查登录状态或网络')
   }
-})
+}
+
+
 </script>
 
 <style scoped>
@@ -919,12 +1279,12 @@ nav a:hover {
   border-bottom: 1px solid #eee;
 }
 
-.farmer-nav {
+.main-nav {
   display: flex;
   border-bottom: 2px solid #e0e0e0;
   margin-bottom: 25px;
 }
-.farmer-nav button {
+.main-nav button {
   padding: 10px 20px;
   border: none;
   background-color: transparent;
@@ -936,82 +1296,185 @@ nav a:hover {
   border-bottom: 3px solid transparent;
   margin-bottom: -2px;
 }
-.farmer-nav button:hover { color: #2D7D4F; }
-.farmer-nav button.active {
+.main-nav button:hover { color: #2D7D4F; }
+.main-nav button.active {
   color: #2D7D4F;
   border-bottom-color: #2D7D4F;
 }
-
-.buyer-nav {
-  display: flex;
-  border-bottom: 2px solid #e0e0e0;
-  margin-bottom: 25px;
+/* 左侧分类栏 */
+.category-sidebar {
+  width: 100px;
+  background-color: #f8f8f8;
+  border-radius: 8px;
+  font-size: 13px;
 }
 
-.buyer-nav button {
-  padding: 10px 20px;
-  border: none;
-  background-color: transparent;
+.cat-title {
+  font-weight: bold;
+  font-size: 20px;
+  margin: 6px 0 3px;
+  color: #2e7d32;
+}
+
+.subcat-list {
+  margin: 10px;
+  list-style: none;
+  padding: 0;
+}
+
+.subcat-item {
   cursor: pointer;
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: #555;
-  transition: color 0.3s, border-bottom-color 0.3s;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -2px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
 }
-.buyer-nav button:hover { color: #2D7D4F; }
-.buyer-nav button.active {
-  color: #2D7D4F;
-  border-bottom-color: #2D7D4F;
+
+.subcat-item:hover {
+  background-color: #e0f2f1;
+}
+
+.subcat-item.active {
+  background-color: #a5d6a7;
+  color: #fff;
+}
+
+/*产品样式*/
+.product-page {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
 .product-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
+  margin-left:10px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  align-items: flex-start;
 }
+
+/* 产品卡片 */
 .product-card {
-  border: 1px solid #e9e9e9;
-  border-radius: 8px;
-  padding: 20px;
-  background-color: #fafafa;
-  transition: box-shadow 0.3s;
+  width: 200px;
+  height: auto;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
 }
-.product-card:hover { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
-.product-card h3 { margin-top: 0; color: #2D7D4F; }
-.card-actions { margin-top: 15px; display: flex;  flex-wrap: wrap; gap: 10px; }
-.add-to-cart-btn {
-  background-color: #4CAF50;
-  color: #fff;
+
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* 图片部分 */
+.product-image {
+  position: relative;
+  padding-top: 10px;
+  width: 100%;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.product-image img {
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  width: 100%;
+  object-fit: cover;
+}
+/* 在图片下方叠加一个渐变层 */
+.product-image::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 20%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, #ffffff 100%);
+}
+/* 文字信息部分 */
+.product-info {
+  padding: 8px 10px;
+  font-size: 13px;
+  text-align: left;
+}
+
+.product-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin: 4px 0;
+}
+
+.product-price {
+  color: #e91e63;
+  font-weight: bold;
+  margin: 2px 0;
+}
+
+.product-stock {
+  color: #777;
+  font-size: 12px;
+}
+
+/* 按钮部分 */
+.card-actions {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 10px 10px;
+  gap: 6px;
+}
+
+.view-btn,
+.add-to-cart-btn,
+。contanct-btn{
+  flex: 1;
   border: none;
-  padding: 6px 12px;
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
+  font-size: 12px;
+  padding: 6px;
+  transition: background 0.2s;
 }
-.add-to-cart-btn:hover {
-  background-color: #45a049;
-}
+
 .view-btn {
-  background-color: #4CAF50;
-  color: #fff;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 5px;
-  cursor: pointer;
+  background-color: #81c784;
+  color: white;
 }
+
 .view-btn:hover {
-  background-color: #45a049;
+  background-color: #66bb6a;
 }
+
+.add-to-cart-btn {
+  background-color: #4caf50;
+  color: white;
+}
+
+.add-to-cart-btn:hover {
+  background-color: #43a047;
+}
+
+.empty-state {
+  width: 100%;
+  text-align: center;
+  color: #888;
+  font-size: 14px;
+  margin-top: 30px;
+}
+
 
 .contact-btn {
   background-color: #2196F3; /* 蓝色背景 */
   color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s;
 }
 
 .contact-btn:hover {
@@ -1024,12 +1487,6 @@ nav a:hover {
 .form-group input,.form-group select{ flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
 .form-group textarea { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
 
-.empty-state {
-  grid-column: 1 / -1;
-  text-align: center;
-  color: #888;
-  padding: 3rem;
-}
 
 .request-list {
   display: flex;
@@ -1076,13 +1533,13 @@ nav a:hover {
   max-width:  250px;
   margin-top: 16px;
   border-radius: 12px;
-  background-color: #4CAF50;
+  background-color: #52c41a;
   color: #fff;
   cursor: pointer;
 }
 
 .add-demand-btn:hover {
-  background-color: #45a049;
+  background-color: #52c41a;
 }
 
 .cart-view {
@@ -1179,15 +1636,8 @@ nav a:hover {
 }
 
 .submit-btn:hover {
-  background-color: #43a047;
+  background-color: #52c41a;
 }
-
-.empty-state {
-  text-align: center;
-  color: #888;
-  margin-top: 40px;
-}
-
 
 .address-section h3 {
   font-size: 18px;
@@ -1292,7 +1742,7 @@ nav a:hover {
   margin-top: 10px;
 }
 
-.product-image {
+.cart-product-image {
   flex: 0 0 100px;
   width: 100px;
   height: 100px;
@@ -1307,7 +1757,7 @@ nav a:hover {
   margin-right: 50px;
 }
 
-.product-image img {
+.cart-product-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -1341,7 +1791,7 @@ nav a:hover {
 
 .item-info {
   display: flex;
-  flex-direction: column; /* 让商品名和详情上下排列 */
+  flex-direction: column; /* 让产品名和详情上下排列 */
   gap: 5px; /* 上下间距 */
 }
 
@@ -1476,7 +1926,7 @@ nav a:hover {
 }
 
 .pay-btn {
-  background-color: #4caf50;
+  background-color: #52c41a;
   color: white;
   border: none;
   padding: 6px 12px;
@@ -1492,7 +1942,7 @@ nav a:hover {
   cursor: pointer;
 }
 .view-btn {
-  background-color: #2196f3;
+  background-color: #52c41a;
   color: white;
   border: none;
   padding: 6px 12px;
@@ -1502,5 +1952,406 @@ nav a:hover {
 .cancel-text {
   color: #999;
   font-size: 14px;
+}
+
+ .prediction-page {
+   display: flex;
+   gap: 20px;
+ }
+
+.prediction-chart {
+  flex: 1;
+}
+</style>
+
+//我的产品样式
+<style scoped>
+.my-product-page {
+  padding: 15px;
+  font-size: 14px;
+  color: #333;
+}
+
+.product-management-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.product-management-bar button,
+.product-management-bar select {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #52c41a;
+  background-color: white;
+  cursor: pointer;
+}
+
+.product-management-bar button:hover,
+.product-management-bar select:hover {
+  border-color: #389e0d;
+}
+
+.product-management-bar .add-btn {
+  border: 1px solid #52c41a;
+  background-color: white;
+  color: #52c41a;
+}
+
+.status-filters {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-filters button {
+  border: 1px solid #52c41a;
+  background: white;
+  color: #52c41a;
+}
+
+.status-filters button.active {
+  background: #52c41a;
+  color: white;
+}
+
+.batch-operations {
+  position: relative;
+}
+
+.batch-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #52c41a;
+  border-radius: 6px;
+  background: white;
+  margin-top: 4px;
+}
+
+.batch-dropdown button {
+  border: none;
+  background: none;
+  padding: 6px 10px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.batch-dropdown button:hover {
+  background-color: #f0f9eb;
+  color: #389e0d;
+}
+
+/* 表头 */
+.product-list-header {
+  display: flex;
+  padding: 8px 0;
+  border-bottom: 2px solid #e0e0e0;
+  font-weight: normal;
+}
+
+.product-list-header .col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.checkbox-col { width: 5%; }
+.img-col { width: 10%; }
+.name-col { width: 20%; text-align: left; padding-left: 5px; }
+.price-col { width: 15%; }
+.stock-col { width: 15%; }
+.status-col { width: 15%; }
+.action-col { width: 20%; display: flex; gap: 8px; justify-content: flex-start; }
+
+/* 产品列表 */
+.product-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.product-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #e0e0e0;
+  height: 80px;
+}
+.product-row .checkbox-col { width: 5%; }
+.product-row .img-col { width: 10%; }
+.product-row .name-col { width: 20%; text-align: left; padding-left: 5px; }
+.product-row .price-col { width: 15%; }
+.product-row .stock-col { width: 15%; }
+.product-row .status-col { width: 15%; }
+.product-row .action-col { width: 20%; display: flex; gap: 8px; justify-content: flex-start; }
+
+.product-row .col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.product-row .img-col {
+  aspect-ratio: 1 / 1;  /* 保持正方形 */
+  border-radius: 6px;
+}
+
+.product-row .img-col img {
+  padding-top: 0;
+  max-height: 100%;     /* 不超过 row 高度 */
+  width: auto;           /* 宽度自动按比例缩放 */
+  object-fit: cover;    /* 填充列，如果宽高超出会裁剪 */
+  border-radius: 6px;
+}
+
+.product-row .action-col button {
+  border: none;
+  background: #52c41a;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.product-row .action-col button:hover {
+  background: #389e0d;
+}
+
+/* 开关容器 */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;   /* 开关宽度 */
+  height: 20px;  /* 开关高度 */
+}
+
+/* 隐藏原始复选框 */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* 滑块 */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #ccc;
+  border-radius: 20px;
+  transition: 0.3s;
+}
+
+/* 滑块圆点 */
+.slider::before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+/* 打勾状态 */
+input:checked + .slider {
+  background-color: #52c41a;
+}
+
+input:checked + .slider::before {
+  transform: translateX(20px);
+}
+
+</style>
+
+//添加产品样式
+<style scoped>
+/* 遮罩层 */
+.modal-overlay {
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: rgba(0,0,0,0.45);
+display: flex;
+justify-content: center;
+align-items: center;
+z-index: 1100;
+}
+
+/* 弹窗主体 */
+.modal-container {
+width: 40%;
+height: 80%;
+background: #fff;
+border-radius: 10px;
+padding: 20px 25px;
+display: flex;
+flex-direction: column;
+position: relative;
+overflow-y: auto;
+}
+
+/* 右上角关闭按钮 */
+.close-btn {
+position: absolute;
+right: 15px;
+top: 10px;
+border: none;
+background: none;
+font-size: 24px;
+cursor: pointer;
+color: #999;
+}
+
+/* 标题 */
+.modal-title {
+text-align: center;
+font-size: 20px;
+margin-bottom: 15px;
+color: #2a7f2a;
+}
+
+/* 表单部分 */
+.modal-body {
+flex: 1;
+overflow-y: auto;
+padding-right: 5px;
+}
+
+.modal-form-group {
+margin-bottom: 15px;
+display: flex;
+flex-direction: row;
+}
+
+.modal-form-group label {
+font-size: 14px;
+margin-bottom: 5px;
+}
+
+.modal-form-group input,
+.modal-form-group textarea,
+.modal-form-group select {
+  flex: 1;
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+}
+
+/* 上传图片 */
+.image-upload-box {
+width: 120px;
+height: 120px;
+border: 1px dashed #67c23a;
+border-radius: 8px;
+display: flex;
+justify-content: center;
+align-items: center;
+cursor: pointer;
+overflow: hidden;
+}
+
+.image-upload-box img {
+width: 100%;
+height: 100%;
+object-fit: cover;
+}
+
+/* 规格标题 */
+.spec-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+
+.add-spec-btn {
+background: none;
+border: 1px solid #67c23a;
+padding: 5px 10px;
+border-radius: 4px;
+cursor: pointer;
+color: #67c23a;
+}
+
+/* 每个规格盒子 */
+.spec-box {
+border: 1px solid #e5e5e5;
+border-radius: 8px;
+padding: 10px;
+margin-bottom: 12px;
+}
+
+.spec-item-row {
+display: flex;
+flex-direction: row;
+margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.spec-item-row  label{
+  width:80px;
+  display: inline-block;
+  text-align: justify;
+}
+
+.spec-item-row label::after {
+  content: '';
+  display: inline-block;
+  width: 100%;
+}
+
+.spec-item-row  input,
+.spec-item-row  textarea,
+.spec-item-row  select {
+  flex: 1;
+  width: 100%;
+  height: 15px;
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+}
+.delete-spec-btn {
+background: none;
+border: none;
+color: red;
+cursor: pointer;
+font-size: 14px;
+}
+
+/* 底部按钮 */
+.modal-footer {
+display: flex;
+justify-content: space-between;
+margin-top: 15px;
+}
+
+.cancel-btn {
+background: none;
+border: 0.5px solid #cccccc;
+padding: 8px 20px;
+border-radius: 5px;
+color: black ;
+}
+
+.save-btn {
+background: #52c41a;
+border: none;
+padding: 8px 20px;
+border-radius: 5px;
+color: #fff;
 }
 </style>

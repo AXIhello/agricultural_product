@@ -666,7 +666,7 @@ button.active {
 
 .finance-card button {
   margin-top: 10px;
-  background-color: #52B788;
+  background-color: #52c41a;
   color: white;
   border: none;
   border-radius: 8px;
@@ -676,7 +676,7 @@ button.active {
 }
 
 .finance-card button:hover {
-  background-color: #40916C;
+  background-color: #4CAF50;
 }
 
 
@@ -704,11 +704,11 @@ button.active {
 }
 
 .add-btn {
-  background-color: #52b788;
+  background-color: #52c41a;
 }
 
 .submit-btn {
-  background-color: #40916c;
+  background-color: #52c41a;
 }
 
 .cancel-btn {
@@ -820,7 +820,7 @@ textarea {
 
 .reply-section {
   margin-top: 15px;
-  border: 1px solid #52b788;
+  border: 1px solid #52c41a;
   border-radius: 10px;        /* 圆角边框 */
   padding: 10px;              /* 内边距，让内容不贴边 */
 
@@ -840,7 +840,7 @@ input, textarea {
 }
 
 .submit-btn {
-  background-color: #28a745;
+  background-color: #52c41a;
   color: white;
   border: none;
   padding: 8px 12px;
@@ -849,7 +849,7 @@ input, textarea {
   margin-right: 10px;
 }
 .submit-btn:hover {
-  background-color: #218838;
+  background-color: #4CAF50;
 }
 
 .cancel-btn {

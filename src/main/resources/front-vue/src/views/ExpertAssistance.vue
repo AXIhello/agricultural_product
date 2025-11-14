@@ -24,7 +24,7 @@
 
     <!-- 问题列表 -->
     <div class="question-list">
-      <h3>问题列表(共 {{ questions.length }} 个问题)</h3>
+      <h3>问题列表(共 {{ totalItems }} 个问题)</h3>
       <!-- 调试信息 -->
       <div v-if="questions.length > 0" style="color: #666; font-size: 0.9rem; margin-bottom: 10px;">
         显示所有问题：{{ questions.length }} 个
@@ -45,7 +45,7 @@
           <div class="answers-section">
             <div v-for="answer in question.answers" :key="answer.answerId" class="answer-item">
               <p>回答内容: {{ answer.content }}</p>
-              <p>回答者ID: {{ answer.responderId }}</p>
+              <p>回答者ID: {{ answer.responderName }}</p>
               <p>回答时间: {{ formatDate(answer.createTime) }}</p>
               <button v-if="question.farmerId === user?.userId && question.status !== 'answered' " @click="acceptAnswer(question.questionId, answer.answerId)">采纳</button>
               <span v-else-if="answer.isAccepted === 1">已采纳</span>
@@ -127,7 +127,9 @@ const formatDate = (dateTimeString) => {
 
 // 获取问题列表
 const fetchQuestions = async () => {
+
   loading.value = true;
+
   try {
     const pageSizeNumber = Number(pageSize.value);
     if (isNaN(pageSizeNumber)) {
@@ -158,9 +160,6 @@ const fetchQuestions = async () => {
         console.warn("API响应中缺少total字段或其值为null/undefined");
         totalItems.value = 0;
     }
-
-    console.log('totalItems:', totalItems.value); 
-    console.log('records数量:', response.data.records ? response.data.records.length : 0); 
 
     questions.value = response.data.records;
     
@@ -321,21 +320,6 @@ onMounted(() => {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.header {
-  width: 100%;
-  background: #2D7D4F; /* 深绿色背景色 */
-  color: white;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 20px;
-  height: 60px;
-  font-size: 15px;
-  font-weight: 600;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
 nav ul {
   list-style: none;
   display: flex;
@@ -431,7 +415,7 @@ nav a:hover {
 }
 
 .question-form button {
-  background-color: #4CAF50;
+  background-color: #52c41a;
   color: white;
   padding: 12px 20px;
   border: none;
@@ -449,7 +433,7 @@ nav a:hover {
 }
 
 .success-message {
-  color: #4CAF50;
+  color: #52c41a;
   background-color: #e8f5e9;
   padding: 10px;
   border-radius: 4px;
@@ -584,7 +568,7 @@ nav a:hover {
 }
 
 .answer-form button {
-  background-color: #4CAF50;
+  background-color: #52c41a;
   color: white;
   padding: 10px 20px;
   border: none;
