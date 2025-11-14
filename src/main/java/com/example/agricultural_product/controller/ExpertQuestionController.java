@@ -7,6 +7,8 @@ import com.example.agricultural_product.service.AiAnswerService;
 import com.example.agricultural_product.service.ExpertAnswerService;
 import com.example.agricultural_product.service.ExpertQuestionService;
 import com.example.agricultural_product.utils.JwtUtil;
+import com.example.agricultural_product.vo.AnswerVO;
+
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -68,7 +70,7 @@ public class ExpertQuestionController {
 	}
 
 	@GetMapping("/{id}/answers")
-	public ResponseEntity<Page<ExpertAnswer>> listAnswers(HttpServletRequest request,
+	public ResponseEntity<Page<AnswerVO>> listAnswers(HttpServletRequest request,
 														  @PathVariable("id") Integer questionId,
 														  @RequestParam(defaultValue = "1") Integer pageNum,
 														  @RequestParam(defaultValue = "10") Integer pageSize) {
