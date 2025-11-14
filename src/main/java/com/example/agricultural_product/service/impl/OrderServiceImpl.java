@@ -12,6 +12,7 @@ import com.example.agricultural_product.pojo.OrderItem;
 import com.example.agricultural_product.pojo.Product;
 import com.example.agricultural_product.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,9 +25,16 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
     @Autowired
     private OrderItemMapper orderItemMapper;
-    
+
     @Autowired
     private ProductMapper productMapper;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
+    private String buildStockKey(Integer productId) {
+        return "seckill:stock:" + productId;
+    }
 
     @Override
     @Transactional
@@ -34,15 +42,31 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         if (userId == null || addressId == null || orderItems == null || orderItems.isEmpty()) {
             return null;
         }
-        // 计算总金额并验证商品（仅检查，不扣减）
+        // 计算总金额并验证商品（使用 Redis 预减库存防超卖）
         BigDecimal totalAmount = BigDecimal.ZERO;
         for (OrderItem item : orderItems) {
-            Product product = productMapper.selectById(item.getProductId());
+            Integer productId = item.getProductId();
+            String stockKey = buildStockKey(productId);
+            // 如果 Redis 中没有该商品库存，则初始化一次（从数据库加载）
+            if (Boolean.FALSE.equals(stringRedisTemplate.hasKey(stockKey))) {
+                Product dbProduct = productMapper.selectById(productId);
+                if (dbProduct == null || !"active".equals(dbProduct.getStatus())) {
+                    throw new RuntimeException("商品不存在或已下架");
+                }
+                // 将当前数据库库存写入 Redis
+                stringRedisTemplate.opsForValue().set(stockKey, String.valueOf(dbProduct.getStock()));
+            }
+            // 使用 Redis 进行预减库存（高并发下避免超卖）
+            Long remain = stringRedisTemplate.opsForValue().decrement(stockKey, item.getQuantity());
+            if (remain == null || remain < 0) {
+                // 回滚本次预减（加回去）
+                stringRedisTemplate.opsForValue().increment(stockKey, item.getQuantity());
+                throw new RuntimeException("商品库存不足");
+            }
+
+            Product product = productMapper.selectById(productId);
             if (product == null || !"active".equals(product.getStatus())) {
                 throw new RuntimeException("商品不存在或已下架");
-            }
-            if (product.getStock() < item.getQuantity()) {
-                throw new RuntimeException("商品库存不足");
             }
             BigDecimal itemTotal = product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
             totalAmount = totalAmount.add(itemTotal);
@@ -73,7 +97,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         // 直接调用 Mapper 中的方法
         return this.baseMapper.findOrdersWithItemsByUserId(userId);
     }
-    
+
     @Override
     public Order getOrderById(Integer orderId) {
         return this.getById(orderId);
@@ -93,7 +117,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         if (order == null) {
             return false;
         }
-        // 支付阶段：从 pending -> paid 时再扣减库存（再次检查防止并发超卖）
+        // 支付阶段：从 pending -> paid 时，从数据库正式扣减库存
         if ("paid".equals(status) && !"paid".equals(order.getStatus())) {
             List<OrderItem> orderItems = getOrderItemsByOrderId(orderId);
             for (OrderItem item : orderItems) {
@@ -148,12 +172,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         if (order == null || !order.getUserId().equals(userId)) {
             return false;
         }
-        
+
         // 只有已发货状态才能确认收货
         if (!"shipped".equals(order.getStatus())) {
             return false;
         }
-        
+
         order.setStatus("completed");
         order.setUpdateTime(LocalDateTime.now());
         return this.updateById(order);
@@ -164,9 +188,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         Page<Order> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Order::getUserId, userId)
-               .eq(Order::getStatus, status)
-               .orderByDesc(Order::getCreateTime);
+                .eq(Order::getStatus, status)
+                .orderByDesc(Order::getCreateTime);
         return this.page(page, wrapper);
     }
 }
-
