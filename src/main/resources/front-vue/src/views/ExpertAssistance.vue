@@ -321,21 +321,6 @@ onMounted(() => {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.header {
-  width: 100%;
-  background: #2D7D4F; /* 深绿色背景色 */
-  color: white;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 20px;
-  height: 60px;
-  font-size: 15px;
-  font-weight: 600;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
 nav ul {
   list-style: none;
   display: flex;
@@ -431,7 +416,7 @@ nav a:hover {
 }
 
 .question-form button {
-  background-color: #4CAF50;
+  background-color: #52c41a;
   color: white;
   padding: 12px 20px;
   border: none;
@@ -449,7 +434,7 @@ nav a:hover {
 }
 
 .success-message {
-  color: #4CAF50;
+  color: #52c41a;
   background-color: #e8f5e9;
   padding: 10px;
   border-radius: 4px;
@@ -584,7 +569,7 @@ nav a:hover {
 }
 
 .answer-form button {
-  background-color: #4CAF50;
+  background-color: #52c41a;
   color: white;
   padding: 10px 20px;
   border: none;

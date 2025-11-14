@@ -134,6 +134,8 @@ async function goToChat(receiverId) {
     return;
   }
 
+  const userId = userInfo.value.userId;
+
   // 3. 检查用户是否在和自己聊天
   //    使用 String() 转换以确保类型一致
   if (String(userId.value) === String(receiverId)) {
