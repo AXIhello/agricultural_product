@@ -2,7 +2,12 @@
   <div class="expert-overview-container">
     <div v-if="!experts.length">正在加载专家列表...</div>
 
-    <div class="expert" v-for="expert in experts" :key="expert.id">
+    <div 
+      class="expert" 
+      v-for="expert in experts" 
+      :key="expert.id"
+      @click="goToExpertDetail(expert.id)"
+    >
       <img :src="getFullImageUrl(expert.avatar)" alt="专家头像" style="width: 80px; height: 80px; border-radius: 50%; margin-bottom: 10px;">
       <h4 style="font-size: 16px; margin-bottom: 5px;">{{ expert.name }}</h4>
       <p style="font-size: 14px;">擅长领域：{{ expert.specialty }}</p>
@@ -14,7 +19,9 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import axios from '../utils/axios'; 
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const experts = ref([]);
 
 onMounted(() => {
@@ -47,6 +54,14 @@ function getFullImageUrl(url) {
   // 更好的方式是配置开发代理（proxy）
   return url;
 }
+
+function goToExpertDetail(id) {
+  console.log('尝试跳转到专家详情页，专家ID是:', id);
+  if (id) {
+    router.push(`/expert/${id}`);
+  }
+}
+
 </script>
 
 <style scoped>

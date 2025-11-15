@@ -115,6 +115,14 @@ const routes = [
     name: 'PayResult',
     component: PayResult,
     meta: { requiresAuth: true }
+  },
+
+  {
+    path: '/expert/:id', 
+    name: 'ExpertDetail',
+    component: () => import('../views/ExpertDetailPage.vue'), 
+    props: true,
+    meta: { requiresAuth: true } 
   }
 
 ]

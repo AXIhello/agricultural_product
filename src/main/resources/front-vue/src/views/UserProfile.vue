@@ -205,6 +205,11 @@
           <p>您还没有创建专家档案，这会影响农户找到您并向您咨询。</p>
           <button @click="enterEditMode">立即创建档案</button>
         </div>
+
+        <div style="margin-top: 2rem;">
+          <ExpertAvailability />
+        </div>
+
       </div>
 
 
@@ -219,6 +224,7 @@ import { ref, onMounted, watch } from 'vue'
 import axios from '../utils/axios'
 import router from "@/router/index.js";
 import HeaderComponent from "@/components/HeaderComponent.vue";
+import ExpertAvailability from '../components/ExpertAvailability.vue';
 import { useAuthStore } from '@/stores/authStore';
 import { storeToRefs } from 'pinia';
 import defaultAvatar from '@/assets/default.jpg';
@@ -394,31 +400,6 @@ async function deleteProfile() {
     alert('删除失败，请稍后重试。');
   }
 }
-
-// onMounted(async () => {
-//   if (!token) {
-//     // 如果没有token，直接退出，防止后续代码出错
-//     console.log("用户未登录，终止初始化。");
-//     return;
-//   }
-
-//   try {
-//       if (role.value === 'expert') {
-//         // 是专家，加载专家档案
-//         console.log("正在为专家加载个人档案...");
-//         await fetchExpertProfile();
-//       } else if (role.value === 'buyer' || role.value === 'farmer') {
-//         // 是买家或农户，加载地址信息
-//         console.log("正在为买家/农户加载地址...");
-//         await loadAddresses();
-//       } else {
-//         console.log('当前用户信息:', userInfo.value);
-//         console.log(`未知的用户角色: ${role.value}，不执行额外加载操作。`);
-//       }
-//   } catch (err) {
-//     console.error('后续加载失败', err);
-//   }
-// });
 
 onMounted(() => {
   console.log("组件已挂载，等待角色信息...");
