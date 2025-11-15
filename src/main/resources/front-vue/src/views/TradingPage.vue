@@ -353,6 +353,7 @@
                       <span class="item-name">{{ item.productName || '产品名未知' }}</span>
                       <span>数量: {{ item.quantity }}</span>
                       <span>单价: ¥{{ item.unitPrice }}</span>
+                      <button v-if="role !== 'farmer'" class="contact-btn" @click="goToChat(item.farmerId)">联系卖家</button>
                     </div>
                   </div>
                   <div v-else><p>此订单无产品详情</p></div>
@@ -366,8 +367,6 @@
                     <button v-if="order.status === 'pending'" class="cancel-btn" @click="cancelOrder(order.orderId)">取消订单</button>
                     <button v-if="order.status === 'completed'" class="view-btn" @click="viewDetail(order.orderId)">查看详情</button>
                     <span v-if="order.status === 'cancelled'" class="cancel-text">订单已取消</span>
-                    <!-- 买家显示“联系卖家” -->
-                    <button v-if="role !== 'farmer'" class="contact-btn" @click="goToChat(order.farmerId)">联系卖家</button>
                   </div>
                 </div>
               </div>
@@ -1205,6 +1204,8 @@ async function createOrder() {
         quantity: item.quantity
       }))
     }
+
+    console.log('即将发送到后端的订单数据:', JSON.stringify(reqBody, null, 2));
 
     const res = await axios.post('/orders', reqBody);
 
