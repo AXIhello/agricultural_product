@@ -9,6 +9,7 @@ import com.example.agricultural_product.pojo.ChatMessage;
 import com.example.agricultural_product.pojo.ChatSession;
 import com.example.agricultural_product.service.ChatPushService;
 import com.example.agricultural_product.service.ChatService;
+import com.example.agricultural_product.service.AutoReplyService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,13 +22,16 @@ public class ChatServiceImpl implements ChatService {
     private final ChatSessionMapper sessionMapper;
     private final ChatMessageMapper messageMapper;
     private final ChatPushService pushService;
+    private final AutoReplyService autoReplyService; // 新增
 
     public ChatServiceImpl(ChatSessionMapper sessionMapper,
                            ChatMessageMapper messageMapper,
-                           ChatPushService pushService) {
+                           ChatPushService pushService,
+                           AutoReplyService autoReplyService) { // 新增
         this.sessionMapper = sessionMapper;
         this.messageMapper = messageMapper;
         this.pushService = pushService;
+        this.autoReplyService = autoReplyService; // 新增
     }
 
     private void assertParticipant(long sessionId, long userId) {
@@ -94,6 +98,12 @@ public class ChatServiceImpl implements ChatService {
 
         ChatMessage saved = messageMapper.selectById(m.getMessageId());
         pushService.notifyNewMessage(saved);
+
+        // 仅当对端（接收方）有规则，且本条不是自动消息时，尝试自动回复
+        if (!"auto".equalsIgnoreCase(type)) {
+            autoReplyService.tryAutoReplyForReceiver(other, sid, currentUserId, content);
+        }
+
         return saved;
     }
 
