@@ -324,12 +324,10 @@ public class PricePredictionServiceImpl implements PricePredictionService {
 
     private Product convertToProductEntity(PredictionRequest request) {
         Product product = new Product();
-        product.setProductId(request.getProductId());
         product.setProductName(request.getProductName());
         product.setDescription(request.getDescription());
         product.setPrice(request.getPrice().setScale(PRICE_SCALE, RoundingMode.HALF_UP));
         product.setStock(request.getStock());
-        product.setFarmerId(request.getFarmerId());
         product.setStatus(request.getStatus());
         product.setImagePath(request.getImagePath());
         product.setProdCat(request.getProdCat());
@@ -384,7 +382,6 @@ public class PricePredictionServiceImpl implements PricePredictionService {
         Assert.hasText(request.getProdPcat(), "产品小类（prodPcat）不能为空");
         Assert.hasText(request.getSpecInfo(), "产品规格（specInfo）不能为空");
         Assert.hasText(request.getUnitInfo(), "单位（unitInfo）不能为空");
-        Assert.notNull(request.getFarmerId(), "农户ID（farmerId）不能为空");
         Assert.notNull(request.getPrice(), "售价（price）不能为空");
         Assert.notNull(request.getStock(), "库存（stock）不能为空");
         Assert.hasText(request.getStatus(), "商品状态（status）不能为空");

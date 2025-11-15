@@ -1,6 +1,8 @@
 package com.example.agricultural_product.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.agricultural_product.dto.ProductStatusDTO;
+import com.example.agricultural_product.dto.ProductUpdateDTO;
 import com.example.agricultural_product.pojo.Product;
 import com.example.agricultural_product.service.ProductService;
 import com.example.agricultural_product.utils.JwtUtil;
@@ -28,7 +30,7 @@ import java.util.UUID;
 @RequestMapping("/api/products")
 public class ProductController {
 
-    private static final Logger log = LoggerFactory.getLogger(ProductController.class); 
+    private static final Logger log = LoggerFactory.getLogger(ProductController.class);
 
     @Autowired
     private ProductService productService;
@@ -181,7 +183,7 @@ public class ProductController {
     @PostMapping(value = "/publish", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Boolean> publishProduct(HttpServletRequest request,
                                                   @RequestBody Product product) {
-        
+
         // 1. 同样地，从Token中获取用户ID
         Long farmerId = getUserIdFromToken(request);
         if (farmerId == null) {
@@ -191,7 +193,7 @@ public class ProductController {
         // 2. 设置farmerId
         product.setFarmerId(farmerId);
         log.info("【后端JSON接口】设置了 farmerId 的 Product 对象: {}", product.toString());
-        
+
         // 3. 调用服务
         boolean success = productService.publishProduct(product);
         return ResponseEntity.ok(success);
@@ -211,4 +213,289 @@ public class ProductController {
         if (records == null) return;
         records.forEach(p -> { if (p != null) p.setImagePath(null); });
     }
+
+    /**
+     * 局部更新商品图片
+     * URL: /api/products/{id}/image
+     * Content-Type: multipart/form-data
+     */
+    @PatchMapping(value = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Boolean> updateProductImage(HttpServletRequest request,
+                                                      @PathVariable("id") Integer productId,
+                                                      @RequestPart("image") MultipartFile image) {
+
+        // 1. 权限校验
+        // 检查 Token 是否有效
+        if (!checkToken(request)) {
+            return ResponseEntity.status(401).body(false); // 401 Unauthorized
+        }
+
+        // 获取用户ID，用于权限判断：确保农户只能修改自己的商品
+        Long farmerId = getUserIdFromToken(request);
+        if (farmerId == null) {
+            return ResponseEntity.status(401).body(false);
+        }
+
+        // 2. 文件上传与路径生成
+        String newImagePath = null;
+        try {
+            if (image == null || image.isEmpty()) {
+                // 允许传入空文件表示删除图片？或者直接返回错误？这里选择返回错误
+                return ResponseEntity.badRequest().body(false);
+            }
+
+            // 文件存储逻辑：路径与您现有的 /publish 接口保持一致
+            Path dir = Paths.get(uploadDir, "products").toAbsolutePath().normalize();
+            Files.createDirectories(dir);
+
+            String original = image.getOriginalFilename();
+            String ext = (original != null && original.lastIndexOf('.') >= 0) ? original.substring(original.lastIndexOf('.')) : "";
+            String filename = UUID.randomUUID().toString().replace("-", "") + ext;
+            Path target = dir.resolve(filename);
+
+            // 执行文件拷贝/上传
+            Files.copy(image.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+
+            // 存储到数据库的相对路径（例如: products/xxxx.jpg）
+            newImagePath = "products/" + filename;
+
+        } catch (Exception e) {
+            log.error("更新商品ID: {} 的图片上传失败", productId, e);
+            return ResponseEntity.internalServerError().body(false);
+        }
+
+        // 3. 调用 Service 方法更新数据库记录
+        // Service 方法需要同时接收 farmerId 来进行权限检查
+        boolean success = productService.updateImagePath(productId, farmerId, newImagePath);
+
+        if (!success) {
+            // 如果失败，可能是 productId 不存在，或者 farmerId 无权操作
+            return ResponseEntity.status(403).body(false); // 403 Forbidden 或其他更具体的错误
+        }
+
+        return ResponseEntity.ok(true);
+    }
+
+    /**
+     * 更新商品基础信息
+     * URL: /api/products/{id}
+     * Content-Type: application/json
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<Boolean> updateProduct(HttpServletRequest request,
+                                                 @PathVariable("id") Integer productId,
+                                                 @RequestBody ProductUpdateDTO updateDTO) {
+        // 1. 权限校验
+        if (!checkToken(request)) {
+            return ResponseEntity.status(401).body(false);
+        }
+
+        Long farmerId = getUserIdFromToken(request);
+        if (farmerId == null) {
+            return ResponseEntity.status(401).body(false);
+        }
+
+        // 确保路径中的 ID 与请求体中的 ID 匹配
+        if (!productId.equals(updateDTO.getProductId())) {
+            return ResponseEntity.badRequest().body(false);
+        }
+
+        // 2. 调用 Service 执行更新
+        boolean success = productService.updateProductInfo(updateDTO, farmerId);
+
+        if (!success) {
+            // 如果更新失败，可能是权限问题或商品不存在
+            return ResponseEntity.status(403).body(false); // 403 Forbidden
+        }
+
+        return ResponseEntity.ok(true);
+    }
+
+    /**
+     * 删除商品
+     * URL: DELETE /api/products/{id}
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Boolean> deleteProduct(HttpServletRequest request,
+                                                 @PathVariable("id") Integer productId) {
+        // 1. 权限校验
+        if (!checkToken(request)) {
+            return ResponseEntity.status(401).body(false);
+        }
+
+        Long farmerId = getUserIdFromToken(request);
+        if (farmerId == null) {
+            return ResponseEntity.status(401).body(false);
+        }
+
+        // 2. 调用 Service 执行删除
+        boolean success = productService.deleteProduct(productId, farmerId);
+
+        if (!success) {
+            // 如果删除失败，可能是权限问题 (403) 或商品不存在 (404)
+            // 简单处理：返回 403 Forbidden
+            return ResponseEntity.status(403).body(false);
+        }
+
+        return ResponseEntity.ok(true);
+    }
+
+    /**
+     * 快捷更新商品状态（上架/下架）
+     * URL: PUT /api/products/{id}/status
+     * Body: {"status": "active" or "inactive"}
+     */
+    @PutMapping("/{id}/status")
+    public ResponseEntity<Boolean> updateProductStatus(HttpServletRequest request,
+                                                       @PathVariable("id") Integer productId,
+                                                       @RequestBody ProductStatusDTO statusDTO) { // 需创建一个简单的 DTO
+        // 1. 权限校验
+        if (!checkToken(request)) {
+            return ResponseEntity.status(401).body(false);
+        }
+
+        Long farmerId = getUserIdFromToken(request);
+        if (farmerId == null) {
+            return ResponseEntity.status(401).body(false);
+        }
+
+        String newStatus = statusDTO.getStatus();
+        if (newStatus == null || (!newStatus.equals("active") && !newStatus.equals("inactive"))) {
+            return ResponseEntity.badRequest().body(false);
+        }
+
+        // 2. 调用 Service 执行状态更新
+        boolean success = productService.updateProductStatus(productId, farmerId, newStatus);
+
+        if (!success) {
+            // 如果更新失败，可能是权限问题 (403) 或商品不存在 (404)
+            return ResponseEntity.status(403).body(false);
+        }
+
+        return ResponseEntity.ok(true);
+    }
+
+    /**
+     * URL: /api/products/all
+     * *当前登录用户查询商品。不进行名字筛选
+     * 允许参数 status="active", "inactive", 或不传（查询全部）。不进行名字筛选
+     */
+    @GetMapping("/all")
+    public ResponseEntity<Page<Product>> getAllProducts(HttpServletRequest request,
+                                                        @RequestParam(value = "status", required = false) String status,
+                                                        @RequestParam(defaultValue = "1") Integer pageNum,
+                                                        @RequestParam(defaultValue = "10") Integer pageSize) {
+        // 通常此接口用于管理员后台或特定场景，需要鉴权
+        if (!checkToken(request)) return ResponseEntity.status(401).build();
+
+        Page<Product> page = productService.getAllProductsListByStatus(status, pageNum, pageSize);
+        maskImagePath(page.getRecords());
+        return ResponseEntity.ok(page);
+    }
+
+
+    /**
+     * URL: /api/products/farmer
+     * 仅供当前登录农户查询自己的商品。不进行名字筛选
+     * 允许参数 status="active", "inactive", 或不传（查询全部）
+     */
+    @GetMapping("/farmer")
+    public ResponseEntity<Page<Product>> getFarmerProductsByStatus(HttpServletRequest request,
+                                                               @RequestParam(value = "status", required = false) String status,
+                                                               @RequestParam(defaultValue = "1") Integer pageNum,
+                                                               @RequestParam(defaultValue = "10") Integer pageSize) {
+        // 1. 权限校验并获取农户ID
+        Long farmerId = getUserIdFromToken(request);
+        if (farmerId == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        // 2. 调用服务
+        Page<Product> page = productService.getProductsByFarmerIdAndStatusPage(farmerId, status, pageNum, pageSize);
+        maskImagePath(page.getRecords());
+        return ResponseEntity.ok(page);
+    }
+
+    /**
+     * URL: /api/products/farmer
+     * 仅供当前登录用户查询商品。进行名字筛选
+     * 允许参数 status="active", "inactive", 或不传（查询全部）
+     */
+    @GetMapping("/ProductName")
+    public ResponseEntity<?> getProductsByStatus(HttpServletRequest request,
+                                                   @RequestParam(value = "status", required = false) String status,
+                                                   @RequestParam(value = "name", required = false) String productName,
+                                                   @RequestParam(defaultValue = "1") Integer pageNum,
+                                                   @RequestParam(defaultValue = "10") Integer pageSize) {
+
+
+        // --- 阶段一：未传入名字，返回去重商品名称列表 ---
+        if (productName == null || productName.trim().isEmpty()) {
+            log.info("【查询】，状态:{}，请求去重商品名称列表。",  status);
+
+            List<String> distinctNames = productService.getDistinctProductNamesByFarmerIdAndStatus( status);
+
+            // 返回 List<String>
+            return ResponseEntity.ok(distinctNames);
+        }
+
+        // --- 阶段二：传入名字，返回带分页的商品实体列表 ---
+        else {
+            log.info("【查询】状态:{}，商品名:{}，请求分页商品实体列表。",  status, productName);
+
+            // 调用修改后的 Service 方法，该方法现在支持 status 和 productName 过滤
+            Page<Product> page = productService.getProductsByStatusPage(status, productName, pageNum, pageSize);
+
+            // 屏蔽图片路径
+            maskImagePath(page.getRecords());
+
+            // 返回 Page<Product>
+            return ResponseEntity.ok(page);
+        }
+    }
+
+
+    /**
+     * URL: /api/products/farmer
+     * 仅供当前登录农户查询自己的商品。进行名字筛选
+     * 允许参数 status="active", "inactive", 或不传（查询全部）
+     */
+    @GetMapping("/farmerProductName")
+    public ResponseEntity<?> getFarmerProductsByStatus(HttpServletRequest request,
+                                                   @RequestParam(value = "status", required = false) String status,
+                                                   @RequestParam(value = "name", required = false) String productName,
+                                                   @RequestParam(defaultValue = "1") Integer pageNum,
+                                                   @RequestParam(defaultValue = "10") Integer pageSize) {
+
+        // 1. 权限校验
+        Long farmerId = getUserIdFromToken(request);
+        if (farmerId == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        // --- 阶段一：未传入名字，返回去重商品名称列表 ---
+        if (productName == null || productName.trim().isEmpty()) {
+            log.info("【查询】农户:{}，状态:{}，请求去重商品名称列表。", farmerId, status);
+
+            List<String> distinctNames = productService.getDistinctProductNamesByFarmerIdAndStatus(farmerId, status);
+
+            // 返回 List<String>
+            return ResponseEntity.ok(distinctNames);
+        }
+
+        // --- 阶段二：传入名字，返回带分页的商品实体列表 ---
+        else {
+            log.info("【查询】农户:{}，状态:{}，商品名:{}，请求分页商品实体列表。", farmerId, status, productName);
+
+            // 调用修改后的 Service 方法，该方法现在支持 status 和 productName 过滤
+            Page<Product> page = productService.getProductsByFarmerIdAndStatusPage(farmerId, status, productName, pageNum, pageSize);
+
+            // 屏蔽图片路径
+            maskImagePath(page.getRecords());
+
+            // 返回 Page<Product>
+            return ResponseEntity.ok(page);
+        }
+    }
+
 }
