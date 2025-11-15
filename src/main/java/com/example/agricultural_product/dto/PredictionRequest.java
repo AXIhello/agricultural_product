@@ -8,12 +8,10 @@ import java.time.LocalDateTime;
 
 @Data
 public class PredictionRequest {
-    private Integer productId;
     private String productName;
     private String description;
     private BigDecimal price;
     private Integer stock;
-    private Long farmerId;
     private String status;
     private String imagePath;
     private LocalDateTime createTime;
