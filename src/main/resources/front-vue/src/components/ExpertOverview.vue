@@ -31,10 +31,10 @@ onMounted(() => {
 
 async function fetchExperts() {
   try {
-    // 调用后端创建的 API
+    
     const response = await axios.get('/expert/profile/list');
     
-    // 假设后端返回的数据结构是 { success: true, data: [...] }
+    
     if (response.data && response.data.success) {
       experts.value = response.data.data;
     }

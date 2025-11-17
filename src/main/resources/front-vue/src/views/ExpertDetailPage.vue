@@ -12,7 +12,7 @@
           <div class="profile-details">
             <img :src="expertProfile.photoUrl || defaultAvatar" alt="Expert Photo" class="profile-photo">
             <div class="profile-info-text">
-              <h4>{{ expertProfile.userName || '专家姓名' }}</h4>
+              <h4>{{ expertName || '专家姓名' }}</h4>
               <p><strong>专业领域：</strong>{{ expertProfile.specialization }}</p>
               <p><strong>咨询费：</strong>¥{{ expertProfile.consultationFee }} / 次</p>
               <p><strong>简介：</strong></p>
@@ -83,6 +83,7 @@ const isLoadingSlots = ref(true);
 const isBooking = ref(false);
 
 const expertId = route.params.id; // 从URL中获取专家ID
+const expertName = ref('')
 
 console.log('ExpertDetailPage.vue 已加载，从URL获取到的专家ID是:', expertId);
 console.log('完整的路由参数对象:', route.params);
@@ -113,6 +114,22 @@ async function fetchExpertProfile() {
     isLoadingProfile.value = false;
   }
 }
+
+async function loadExpertName() {
+  try {
+    const response = await axios.get(`/expert/profile/list`);
+    if (response.data && response.data.success) {
+      const list = response.data.data;
+      const item = list.find(obj => obj.id === String(expertId));
+      expertName.value = item ? item.name : '专家'
+    } else {
+      expertName.value = '专家'
+    }
+  } catch (error) {
+    console.error(`获取专家(ID: ${expertId})姓名失败:`, error);
+    expertName.value = '专家'
+  }
+} 
 
 async function fetchAvailableSlots() {
   isLoadingSlots.value = true;
@@ -175,6 +192,8 @@ onMounted(() => {
     console.log('expertId 有效，即将调用 fetchExpertProfile 和 fetchAvailableSlots');
     fetchExpertProfile();
     fetchAvailableSlots();
+    loadExpertName();
+
   } else {
     // ✅ 添加一个 else 分支，方便调试
     console.error('在 onMounted 中检测到 expertId 无效或为空，因此未发送API请求！');

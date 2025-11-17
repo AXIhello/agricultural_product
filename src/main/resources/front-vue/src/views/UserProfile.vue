@@ -86,9 +86,11 @@
       </div>
 
       <div v-if="role === 'farmer'" class="farmer-view-container">
+        
         <nav class="farmer-nav">
           <button @click="switchView('address')" :class="{ active: currentView === 'address' }">我的地址</button>
           <button @click="switchView('addAddress')" :class="{ active: currentView === 'addAddress' }">新增地址</button>
+          <button @click="switchView('appointments')" :class="{ active: currentView === 'appointments' }">我的预约</button>
         </nav>
 
         <div class="view-content-wrapper">
@@ -152,10 +154,43 @@
               <button class="save-btn" @click="addAddress">保存地址</button>
             </div>
           </div>
+
+          <!-- 我的预约 -->
+          <div v-else-if="currentView === 'appointments'" class="appointments-view">
+            <div v-if="isLoadingAppointments" class="loading-state">正在加载预约记录...</div>
+            
+            <div v-else-if="appointments.length" class="appointments-list">
+              <div v-for="appt in appointments" :key="appt.id" class="appointment-card" :class="{ 'is-cancelled': appt.status === 'cancelled' }">
+                <div class="card-header">
+                  <h4>专家：{{ appt.expertName }}</h4>
+                  <span :class="['status-badge', translateStatus(appt.status)]">{{ appt.status }}</span>
+                </div>
+                <div v-if="appt.status === 'cancelled'" class="cancelled-overlay">
+                  已取消
+                </div>
+                <div class="card-body">
+                  <p><strong>预约日期：</strong>{{ appt.date }}</p>
+                  <p><strong>预约时间：</strong>{{ appt.timeSlot }}</p>
+                </div>
+                <div class="card-actions">
+                  <!-- 只有状态为'已预约'时才显示取消按钮 -->
+                  <button v-if="appt.status === 'scheduled'" class="delete-btn" @click="cancelAppointment(appt.id)">取消预约</button>
+                </div>
+              </div>
+            </div>
+         </div>
         </div>
       </div>
 
-      <div v-if="role === 'expert'" class="expert-profile-container">
+      <div v-if="role === 'expert'" class="expert-view-container">
+      <!-- NEW: Expert Navigation Tabs -->
+      <nav class="expert-nav">
+        <button @click="switchExpertView('profile')" :class="{ active: currentExpertView === 'profile' }">个人档案</button>
+        <button @click="switchExpertView('availability')" :class="{ active: currentExpertView === 'availability' }">可预约时间</button>
+        <button @click="switchExpertView('schedule')" :class="{ active: currentExpertView === 'schedule' }">我的日程</button>
+      </nav>
+
+      <div v-if="currentExpertView === 'profile'" class="expert-profile-container">
         <h3>我的个人档案</h3>
 
         <!-- 档案展示视图 -->
@@ -163,6 +198,7 @@
           <div class="profile-details">
              <img :src="expertProfile.photoUrl || defaultAvatar" alt="Expert Photo" class="profile-photo">
             <div class="profile-info-text">
+              <p><strong>{{ expertName|| '专家姓名'}}</strong></p>
               <p><strong>专业领域：</strong>{{ expertProfile.specialization }}</p>
               <p><strong>咨询费：</strong>¥{{ expertProfile.consultationFee }} / 次</p>
               <p><strong>简介：</strong></p>
@@ -206,11 +242,38 @@
           <button @click="enterEditMode">立即创建档案</button>
         </div>
 
-        <div style="margin-top: 2rem;">
-          <ExpertAvailability />
+      </div>
+
+      <div v-if="currentExpertView === 'availability'">
+        <ExpertAvailability />
+      </div>
+
+      <div v-if="currentExpertView === 'schedule'" class="schedule-view">
+      <h3>查看日程安排</h3>
+      <div class="date-selector">
+        <label for="schedule-date">选择日期：</label>
+        <input type="date" id="schedule-date" v-model="selectedDate" @change="fetchDailySchedule">
+      </div>
+
+      <div v-if="isLoadingSchedule" class="loading-state">正在加载日程...</div>
+      
+      <div v-else-if="dailyAppointments.length > 0" class="schedule-list">
+        <div v-for="appt in dailyAppointments" :key="appt.consultationId" class="schedule-item">
+          <div class="time-slot">{{ appt.timeSlot }}</div>
+          <div class="details">
+            <p><strong>农户：</strong>{{ appt.farmerName || `ID: ${appt.farmerId}` }}</p>
+          </div>
+          <div class="status">
+            <span :class="['status-badge', getStatusClass(appt.status)]">{{ appt.displayStatus }}</span>
+          </div>
         </div>
+      </div>
+
+      <p v-else class="empty-state">该日期没有预约安排。</p>
 
       </div>
+
+    </div>
 
 
 
@@ -248,6 +311,9 @@ const newAddress = ref({
   postalCode: ''
 })
 
+// 用于专家视图的标签页切换
+const currentExpertView = ref('profile');
+
 // === 专家档案相关状态 ===
 const expertProfile = ref(null);
 const isEditing = ref(false);
@@ -257,10 +323,26 @@ const profileForm = ref({
   consultationFee: '',
 });
 const selectedFile = ref(null);
+const expertName = ref('');
+
+// === 专家预约相关状态 ===
+const appointments = ref([]);
+const isLoadingAppointments = ref(false);
+const currentPage = ref(1);
+const totalPages = ref(1);
+const pageSize = ref(5); // 每页显示5条记录
+
+// === 专家日程相关状态 ===
+const selectedDate = ref(new Date().toISOString().split('T')[0]); // 默认为今天
+const dailyAppointments = ref([]);
+const isLoadingSchedule = ref(false);
 
 // 切换视图
-function switchView(view) {
+async function switchView(view) {
   currentView.value = view
+  if (view === 'appointments') {
+    await loadAppointments(1);
+  }
 }
 
 // 加载地址
@@ -317,7 +399,17 @@ async function setDefault(id) {
   }
 }
 
+// 专家视图标签页切换
+async function switchExpertView(view) {
+  currentExpertView.value = view;
+  // 当切换到日程视图且数据为空时，自动加载当天的日程
+  if (view === 'schedule' && dailyAppointments.value.length === 0) {
+    await fetchDailySchedule();
+  }
+}
+
 // === 专家档案方法 ===
+//获取专家档案
 async function fetchExpertProfile() {
   try {
     const res = await axios.get('/expert/profile'); // API: 获取当前专家档案
@@ -343,6 +435,24 @@ async function fetchExpertProfile() {
   }
 }
 
+//加载专家名字
+async function loadExpertName() {
+  try {
+    const response = await axios.get(`/expert/profile/list`);
+    if (response.data && response.data.success) {
+      const list = response.data.data;
+      const item = list.find(obj => obj.id === String(userInfo.value.userId));
+      expertName.value = item ? item.name : '专家'
+    } else {
+      expertName.value = '专家'
+    }
+  } catch (error) {
+    console.error(`获取专家(ID: ${expertId})姓名失败:`, error);
+    expertName.value = '专家'
+  }
+} 
+
+//编辑专家档案
 function enterEditMode() {
   // 如果已有档案，用现有数据填充表单；否则，用空数据
   profileForm.value = expertProfile.value
@@ -351,15 +461,18 @@ function enterEditMode() {
   isEditing.value = true;
 }
 
+//取消编辑
 function cancelEdit() {
   isEditing.value = false;
   selectedFile.value = null; // 清除已选文件
 }
 
+//处理文件选择
 function handleFileChange(event) {
   selectedFile.value = event.target.files[0];
 }
 
+//保存专家档案
 async function saveProfile() {
   const formData = new FormData();
   // 将表单数据添加到 FormData 对象
@@ -387,6 +500,7 @@ async function saveProfile() {
   }
 }
 
+//删除专家档案
 async function deleteProfile() {
   if (!confirm('确定要删除您的专家档案吗？此操作不可撤销。')) return;
 
@@ -400,6 +514,141 @@ async function deleteProfile() {
     alert('删除失败，请稍后重试。');
   }
 }
+
+//====我的专家预约相关方法====
+//加载预约记录
+async function loadAppointments(page) {
+  isLoadingAppointments.value = true;
+  try {
+    
+    const response = await axios.get('/expert-appointments/my', {
+      params: {
+        pageNum: page,
+        pageSize: pageSize.value
+      }
+    });
+    
+    const rawAppointments = response.data?.records || [];
+    totalPages.value = response.data?.pages || 1;
+
+    appointments.value = rawAppointments.map(appt => {
+      
+      const dateTime = new Date(appt.consultationTime);
+      
+      return {
+        
+        ...appt,
+        
+        id: appt.consultationId, 
+        date: dateTime.toLocaleDateString(), 
+        timeSlot: dateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), 
+        displayStatus: translateStatus(appt.status) 
+      };
+    });
+
+    currentPage.value = page;
+  } catch (error) {
+    console.error('加载预约记录失败:', error);
+    alert('加载预约记录失败，请稍后重试。');
+    appointments.value = [];
+  } finally {
+    isLoadingAppointments.value = false;
+  }
+}
+
+//取消预约
+async function cancelAppointment(appointmentId) {
+  if (!confirm('您确定要取消这个预约吗？')) {
+    return;
+  }
+  try {
+    const response = await axios.post('/expert-appointments/cancel', null, {
+      params: {
+        consultationId: appointmentId
+      }
+    });
+    if (response.data === true) {
+      alert('预约已成功取消！');
+      await loadAppointments(currentPage.value);
+    } else {
+      alert('取消操作失败，请稍后重试。');
+    }
+  } catch (error) {
+    console.error('取消预约失败:', error);
+    alert('取消预约失败：' + (error.response?.data?.message || '请稍后重试。'));
+  }
+}
+
+//下一页
+function goToNextPage() {
+  if (currentPage.value < totalPages.value) {
+    loadAppointments(currentPage.value + 1);
+  }
+}
+
+//上一页
+function goToPreviousPage() {
+  if (currentPage.value > 1) {
+    loadAppointments(currentPage.value - 1);
+  }
+}
+
+//查询状态对应的样式类
+function translateStatus(status) {
+  switch (status) {
+    case 'scheduled': return '已预约';
+    case 'completed': return '已完成';
+    case 'cancelled': return '已取消';
+    default: return '未知状态';
+  }
+}
+
+function getStatusClass(status) {
+  // 根据英文状态返回不同的 CSS 类名
+  switch (status) {
+    case 'scheduled': return 'status-confirmed';
+    case 'completed': return 'status-completed';
+    case 'cancelled': return 'status-cancelled';
+    default: return '';
+  }
+}
+
+//=====专家日程相关方法=====
+// 获取指定日期的日程安排
+async function fetchDailySchedule() {
+  isLoadingSchedule.value = true;
+  dailyAppointments.value = []; // 清空旧数据
+
+  try {
+    const response = await axios.get('/expert-appointments/expert/day', {
+      params: {
+        date: selectedDate.value
+      }
+    });
+    
+    const rawAppointments = response.data?.records || [];
+    
+    const sortedAppointments = rawAppointments.sort((a, b) => 
+      new Date(a.consultationTime) - new Date(b.consultationTime)
+    );
+    
+    dailyAppointments.value = sortedAppointments.map(appt => {
+      const dateTime = new Date(appt.consultationTime);
+      return {
+        ...appt,
+        timeSlot: dateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        displayStatus: translateStatus(appt.status) 
+      };
+    });
+
+  } catch (error) {
+    console.error(`获取日期 ${selectedDate.value} 的日程失败:`, error);
+    alert('加载日程失败，请稍后重试。');
+  } finally {
+    isLoadingSchedule.value = false;
+  }
+}
+
 
 onMounted(() => {
   console.log("组件已挂载，等待角色信息...");
@@ -420,6 +669,7 @@ async function loadDataForRole(currentRole) {
     if (currentRole === 'expert') {
       console.log("角色确认为专家，开始加载个人档案...");
       await fetchExpertProfile();
+      await loadExpertName();
     } else if (currentRole === 'buyer' || currentRole === 'farmer') {
       console.log("角色确认为买家/农户，开始加载地址...");
       await loadAddresses();
@@ -479,13 +729,13 @@ nav a:hover {
   border-radius: 8px;
 }
 
-.farmer-nav, .buyer-nav {
+.farmer-nav, .buyer-nav ,.expert-nav{
   display: flex;
   border-bottom: 2px solid #e0e0e0;
   margin-bottom: 25px;
 }
 
-.farmer-nav button, .buyer-nav button {
+.farmer-nav button, .buyer-nav button, .expert-nav button  {
   padding: 10px 20px;
   border: none;
   background-color: transparent;
@@ -496,7 +746,9 @@ nav a:hover {
   border-bottom: 3px solid transparent;
 }
 
-button.active {
+.farmer-nav button.active,
+.buyer-nav button.active,
+.expert-nav button.active {
   color: #2D7D4F;
   border-bottom-color: #2D7D4F;
 }
@@ -645,4 +897,142 @@ button.active {
 .profile-form h4 {
   margin-bottom: 1.5rem;
 }
+
+.appointments-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+.appointment-card {
+  border: 1px solid #e9e9e9;
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+}
+
+.appointment-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+.appointment-card .card-header h4 {
+  margin: 0;
+  color: #333;
+}
+
+.appointment-card .card-body p {
+  margin: 0.5rem 0;
+  color: #555;
+}
+
+.appointment-card .card-actions {
+  margin-top: auto; /* Pushes actions to the bottom */
+  padding-top: 1rem;
+  text-align: right;
+}
+
+/* Status Badges */
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: white;
+}
+.status-confirmed { background-color: #28a745; } /* Green */
+.status-completed { background-color: #17a2b8; } /* Blue */
+.status-cancelled { background-color: #6c757d; } /* Gray */
+
+/* Pagination Styles */
+.pagination-controls {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  grid-column: 1 / -1; /* Make it span all columns in the grid */
+}
+
+.pagination-controls button {
+  padding: 8px 16px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  cursor: pointer;
+}
+.pagination-controls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.pagination-controls span {
+  font-weight: bold;
+}
+
+.loading-state, .empty-state {
+  text-align: center;
+  color: #888;
+  padding: 2rem;
+  font-size: 1.1rem;
+}
+
+.date-selector {
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.date-selector label {
+  font-weight: bold;
+}
+.date-selector input[type="date"] {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.schedule-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid #e9e9e9;
+  border-radius: 8px;
+  background-color: #fafafa;
+}
+
+.schedule-item .time-slot {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #2D7D4F;
+  width: 120px;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.schedule-item .details {
+  flex-grow: 1;
+  border-left: 2px solid #e0e0e0;
+  padding-left: 1.5rem;
+  margin-left: 1.5rem;
+}
+.schedule-item .details p {
+  margin: 0;
+}
+
+.schedule-item .status {
+  margin-left: 1rem;
+}
+
 </style>

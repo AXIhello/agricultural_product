@@ -185,7 +185,7 @@ const fetchSlots = async () => {
     const data = response.data;
     slots.value = data.records || [];
     pagination.total = data.total;
-    pagination.pages = data.pages;
+    pagination.pages = Math.max(data.pages, 1);
     pagination.current = data.current;
   } catch (error) {
     console.error('获取时间段列表失败:', error);
