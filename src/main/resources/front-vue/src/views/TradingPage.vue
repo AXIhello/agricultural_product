@@ -141,7 +141,7 @@
           </div>
 
           <!-- 产品列表 -->
-          <div class="product-list">
+          <div class="my-product-list">
             <div v-for="product in filteredProducts" :key="product.productId" class="product-row">
               <div class="col checkbox-col" v-if="showBatch">
                 <input type="checkbox" v-model="selectedProducts" :value="product.productId" />
@@ -215,6 +215,16 @@
               </div>
 
 
+              <!-- 商品单位 -->
+              <div class="modal-form-group row-layout">
+                <label>商品单位：</label>
+                <input
+                    v-model="newProduct.unitInfo"
+                    type="text"
+                    placeholder="例如：斤 / 袋 / 份"
+                />
+              </div>
+
               <div class="modal-form-group row-layout">
                 <label>描述：</label>
                 <textarea v-model="newProduct.description" rows="2"></textarea>
@@ -233,16 +243,6 @@
                 <div class="spec-item-row">
                   <label>规格名称：</label>
                   <input v-model="spec.specInfo" type="text" />
-                </div>
-
-                <!-- 商品单位 -->
-                <div class="spec-item-row">
-                  <label>商品单位：</label>
-                  <input
-                      v-model="newProduct.unitInfo"
-                      type="text"
-                      placeholder="例如：斤 / 袋 / 份"
-                  />
                 </div>
 
                 <div class="spec-item-row">
@@ -563,7 +563,6 @@ function openAddModal() {
 
 function closeAddModal() {
   showAddProductModal.value = false
-  resetForm()
 }
 
 const imageInput = ref(null)
@@ -577,16 +576,16 @@ const newProduct = ref({
   productName: '',
   prodCat: '',
   prodPcat: '',
-  unitInfo: '',
+  unitInfo:''  ,
   imagePath: ''
 })
 //规格列表
 const specs = ref([
-  { specInfo: '', unitInfo:'', price: null, stock: null, description: '' }
+  { specInfo: '', price: null, stock: null }
 ])
 //添加规格
 function addSpec() {
-  specs.value.push({ specInfo: '', unitInfo:'', price: null, stock: null, description: '' })
+  specs.value.push({ specInfo: '', price: null, stock: null })
 }
 //删除规格
 function removeSpec(index) {
@@ -609,33 +608,33 @@ async function handleAddProduct() {
       const productData = {
         ...newProduct.value,
         specInfo: spec.specInfo,
-        unitInfo: spec.unitInfo,
         price: spec.price,
         stock: spec.stock,
-        description: spec.description,
-        farmerId: Number(userInfo.value.userId)
       }
 
+      console.log('上传的商品：',productData)
       const formData = new FormData()
       const blob = new Blob([JSON.stringify(productData)], { type: 'application/json' })
       formData.append('product', blob)
 
-      // 图片只在第一次上传
       if (imageFile.value) {
         formData.append('image', imageFile.value)
       }
 
-      await axios.post('/products/publish', formData)
+      const res = await axios.post('/products/publish', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
 
-      // 上传完图片后清空 imageFile，保证后续规格不重复上传
-      imageFile.value = null
     }
 
     alert('所有规格产品发布成功！')
 
     // 重置表单
+    imageFile.value = null
     newProduct.value = { productName: '', prodCat: '', prodPcat: '', unitInfo: '', imagePath: '' }
-    specs.value = [{ specInfo: '', price: null, stock: null, description: '' }]
+    specs.value = [{ specInfo: '', price: null, stock: null }]
     currentView.value = 'myProducts'
     closeAddModal()
   } catch (err) {
@@ -1350,7 +1349,7 @@ nav a:hover {
   margin-left:10px;
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 16px;
   align-items: flex-start;
 }
@@ -2071,7 +2070,7 @@ nav a:hover {
 .action-col { width: 20%; display: flex; gap: 8px; justify-content: flex-start; }
 
 /* 产品列表 */
-.product-list {
+.my-product-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -2237,6 +2236,9 @@ flex-direction: row;
 }
 
 .modal-form-group label {
+  width:80px;
+  display: inline-block;
+  text-align: justify;
 font-size: 14px;
 margin-bottom: 5px;
 }
@@ -2251,6 +2253,8 @@ margin-bottom: 5px;
   border-radius: 6px;
   outline: none;
 }
+
+
 
 /* 上传图片 */
 .image-upload-box {
