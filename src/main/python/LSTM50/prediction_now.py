@@ -12,17 +12,20 @@ from typing import Any, Dict, Optional, List
 import warnings
 import tensorflow as tf
 import keras
-import json  # <-- 新增 JSON 库
+import json
+import pathlib
 
 # 忽略 Pandas 性能警告等不影响逻辑的警告
 warnings.filterwarnings('ignore')
 
 # ----------------------------------------------------
-# 2. 配置和常量定义 (保持不变)
+# 2. 配置和常量定义 (重点修改路径)
 # ----------------------------------------------------
 # 数据和模型结果的路径（根据实际项目结构调整）
-DATA_DIR = r'src\main\python\LSTM50\data50'
-MODEL_RESULTS_DIR = r'src\main\python\LSTM50\product_allPredictions'
+# 假设 prediction_now.py (当前脚本) 位于 LSTM50 目录下，
+# data50 和 product_allPredictions 是其同级目录。
+DATA_DIR = 'data50'
+MODEL_RESULTS_DIR = 'product_allPredictions'
 
 # --- 文件名 ---
 PICKLE_FILE_NAME = 'lstm_data_collection.pkl'
@@ -38,7 +41,7 @@ MAX_PRODUCTS_TO_TRAIN = 50  # 限制加载的资产数量
 
 
 # ----------------------------------------------------
-# 3. 辅助函数 (保持不变，新增一个用于提取特定产品元数据的函数)
+# 3. 辅助函数
 # ----------------------------------------------------
 
 def load_lstm_data(file_path: str) -> Optional[dict[str, dict[str, Any]]]:
@@ -52,6 +55,7 @@ def load_lstm_data(file_path: str) -> Optional[dict[str, dict[str, Any]]]:
             print(f"致命错误：加载数据文件 {file_path} 失败：{e}", file=sys.stderr)
             return None
     else:
+        # 注意：这里 file_path 已经是拼接好的相对路径
         print(f"致命错误：未找到数据文件 {file_path}。请检查路径是否正确。", file=sys.stderr)
         return None
 
@@ -61,19 +65,19 @@ def get_required_assets(
         target_product: str
 ) -> Optional[Dict[str, Any]]:
     """获取目标产品的模型、Scaler、特征列、类别映射和历史DataFrame。"""
-    # ... (此函数保持不变，用于预测模式) ...
     if target_product not in lstm_data_collection:
         print(f"错误：产品 '{target_product}' 的数据资产未在PKL文件中找到。", file=sys.stderr)
         return None
 
     data_entry = lstm_data_collection[target_product]
 
+    # 使用 os.path.join 拼接，路径基于新的 MODEL_RESULTS_DIR
     safe_prod_name = "".join(c for c in target_product if c.isalnum() or c in (' ', '_')).rstrip()
     model_path = os.path.join(MODEL_RESULTS_DIR, f'{safe_prod_name}_lstm_model.keras')
     scaler_path = os.path.join(MODEL_RESULTS_DIR, f'{safe_prod_name}_price_scaler.pkl')
 
     if not (os.path.exists(model_path) and os.path.exists(scaler_path)):
-        print(f"错误：找不到 {target_product} 的模型或价格Scaler文件。", file=sys.stderr)
+        print(f"错误：找不到 {target_product} 的模型或价格Scaler文件。尝试路径: {model_path}", file=sys.stderr)
         return None
 
     try:
@@ -123,7 +127,6 @@ def generate_single_feature_row_static(
         category_mappings: Dict[str, Any]
 ) -> Optional[pd.Series]:
     """为单个未来日期生成当前时间步的静态特征 (时序 + OHE)。"""
-    # ... (保持不变) ...
     # 时间特征
     row_data = {
         'day_of_year': date.dayofyear,
@@ -166,7 +169,6 @@ def create_lstm_input_for_future_date(
         price_scaler: Any
 ) -> Optional[np.ndarray]:
     """为未来的单个时间步生成一个 LOOK_BACK 长度的 LSTM 输入矩阵。"""
-    # ... (此函数保持不变，用于预测模式) ...
 
     # 1. 构造当前时间步的静态特征 (时序 + OHE)
     static_features = generate_single_feature_row_static(
@@ -204,6 +206,9 @@ def create_lstm_input_for_future_date(
 
     current_input_row = current_input_row.fillna(0.0)
 
+
+
+
     # 4. 构造 LOOK_BACK 序列 X
     X_matrix_dynamic = np.zeros((LOOK_BACK, len(feature_cols)))
 
@@ -238,7 +243,7 @@ def create_lstm_input_for_future_date(
 
 
 # ----------------------------------------------------
-# 4. 主逻辑函数 (修改以支持三种模式：PREDICT, QUERY_META, VALIDATE)
+# 4. 主逻辑函数
 # ----------------------------------------------------
 
 def main():
@@ -258,9 +263,13 @@ def main():
     args = parser.parse_args()
 
     # 1. 加载数据
+    # 使用 os.path.join 确保跨平台兼容性
     data_path = os.path.join(DATA_DIR, PICKLE_FILE_NAME)
+
+    # 尝试加载数据
     loaded_data = load_lstm_data(data_path)
 
+    # 确保加载成功且包含 'data' 键
     if loaded_data is None or 'data' not in loaded_data:
         sys.exit(1)
 
@@ -279,8 +288,6 @@ def main():
 
         target_spec = args.spec
         target_pcat = args.pcat
-
-        # ... (后续预测逻辑：筛选历史数据，自回归循环，输出CSV格式结果) ...
 
         # 筛选历史数据
         spec_col_name = f"specInfo_{target_spec}"
@@ -359,15 +366,16 @@ def main():
 
 
     elif args.mode == 'QUERY_META':
-        # --- 模式 2: 查询特定产品元数据 (新增的模式) ---
+        # --- 模式 2: 查询特定产品元数据 ---
         target_prod_name = args.product
         if not target_prod_name:
             print("错误：在 QUERY_META 模式下，必须提供 --product 参数。", file=sys.stderr)
             sys.exit(1)
 
-        # 1. 提取所有产品元数据（第一次会加载PKL文件）
+        # 1. 提取所有产品元数据
         all_products_meta = {}
-        for prod_name, prod_data in lstm_data_collection.get('data', {}).items():
+        # lstm_data_collection 已经是 data 字典本身
+        for prod_name, prod_data in lstm_data_collection.items():
             mappings = prod_data.get('category_mappings')
             if mappings and isinstance(mappings, dict):
                 all_products_meta[prod_name.strip()] = {
@@ -388,11 +396,12 @@ def main():
 
 
     elif args.mode == 'VALIDATE_ALL':
-        # --- 模式 3: 校验所有产品元数据 (可选，用于数据健康检查) ---
+        # --- 模式 3: 校验所有产品元数据 ---
         all_specs = set()
         all_pcats = set()
 
-        for prod_data in lstm_data_collection.get('data', {}).values():
+        # lstm_data_collection 已经是 data 字典本身
+        for prod_data in lstm_data_collection.values():
             if 'category_mappings' in prod_data:
                 mappings = prod_data['category_mappings']
                 all_specs.update(mappings.get('specInfo', []))
