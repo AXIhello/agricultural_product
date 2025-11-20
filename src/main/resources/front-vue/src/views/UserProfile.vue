@@ -3,289 +3,277 @@
     <HeaderComponent />
 
     <section class="content">
-      <div style="display: flex; gap: 50rem">
-        <div class="info">
-          <p><label>用户名： </label>{{ userInfo.userName }}</p>
-          <p><label>邮箱： </label>{{ userInfo.email }}</p>
-          <p><label>身份： </label>{{ role }}</p>
-        </div>
 
+      <!-- 顶部用户信息 + 退出 -->
+      <div class="top-info-bar">
+        <div class="info">
+          <p><label>用户名：</label>{{ userInfo.userName }}</p>
+          <p><label>邮箱：</label>{{ userInfo.email }}</p>
+          <p><label>身份：</label>{{ role }}</p>
+        </div>
         <div>
           <button @click="exit()">退出登录</button>
         </div>
       </div>
 
-      <div v-if="role === 'buyer'" class="buyer-view-container">
-        <nav class="buyer-nav">
+      <!-- 统一顶部导航 -->
+      <nav class="main-nav">
+        <!-- 买家 -->
+        <template v-if="role === 'buyer'">
           <button @click="switchView('address')" :class="{ active: currentView === 'address' }">我的地址</button>
-          <button @click="switchView('addAddress')" :class="{ active: currentView === 'addAddress' }">新增地址</button>
-        </nav>
+        </template>
 
-        <div class="view-content-wrapper">
-          <!-- 地址列表 -->
-          <div v-if="currentView === 'address'">
-            <div v-if="addresses.length" class="address-list">
-              <div
-                  v-for="addr in addresses"
-                  :key="addr.addressId"
-                  class="address-card"
-              >
-                <p><strong>收货人：</strong>{{ addr.recipientName }}</p>
-                <p><strong>电话：</strong>{{ addr.phoneNumber }}</p>
-                <p>
-                  <strong>地址：</strong>
-                  {{ addr.province }}{{ addr.city }}{{ addr.district }}{{ addr.streetAddress }}
-                </p>
-                <p><strong>邮编：</strong>{{ addr.postalCode }}</p>
-                <p v-if="addr.isDefault">🌟 默认地址</p>
-
-                <div class="card-actions">
-                  <button class="set-default-btn" @click="setDefault(addr.addressId)">设为默认</button>
-                  <button class="delete-btn" @click="deleteAddress(addr.addressId)">删除</button>
-                </div>
-              </div>
-            </div>
-            <p v-else class="empty-state">暂无地址，请添加新的地址。</p>
-          </div>
-
-          <!-- 新增地址 -->
-          <div v-else-if="currentView === 'addAddress'">
-            <div class="add-address-form">
-              <div class="form-group">
-                <label>收货人：</label>
-                <input v-model="newAddress.recipientName" placeholder="请输入姓名" />
-              </div>
-              <div class="form-group">
-                <label>电话：</label>
-                <input v-model="newAddress.phoneNumber" placeholder="请输入手机号" />
-              </div>
-              <div class="form-group">
-                <label>省份：</label>
-                <input v-model="newAddress.province" placeholder="请输入省份" />
-              </div>
-              <div class="form-group">
-                <label>城市：</label>
-                <input v-model="newAddress.city" placeholder="请输入城市" />
-              </div>
-              <div class="form-group">
-                <label>区县：</label>
-                <input v-model="newAddress.district" placeholder="请输入区县" />
-              </div>
-              <div class="form-group">
-                <label>街道详细地址：</label>
-                <textarea v-model="newAddress.streetAddress" placeholder="请输入详细地址"></textarea>
-              </div>
-              <div class="form-group">
-                <label>邮编：</label>
-                <input v-model="newAddress.postalCode" placeholder="请输入邮政编码" />
-              </div>
-              <button class="save-btn" @click="addAddress">保存地址</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="role === 'farmer'" class="farmer-view-container">
-        
-        <nav class="farmer-nav">
+        <!-- 农户 -->
+        <template v-if="role === 'farmer'">
           <button @click="switchView('address')" :class="{ active: currentView === 'address' }">我的地址</button>
-          <button @click="switchView('addAddress')" :class="{ active: currentView === 'addAddress' }">新增地址</button>
           <button @click="switchView('appointments')" :class="{ active: currentView === 'appointments' }">我的预约</button>
-        </nav>
+        </template>
 
-        <div class="view-content-wrapper">
-          <!-- 地址列表 -->
-          <div v-if="currentView === 'address'">
-            <div v-if="addresses.length" class="address-list">
-              <div
-                  v-for="addr in addresses"
-                  :key="addr.addressId"
-                  class="address-card"
-              >
-                <p><strong>发货人：</strong>{{ addr.recipientName }}</p>
-                <p><strong>电话：</strong>{{ addr.phoneNumber }}</p>
-                <p>
-                  <strong>地址：</strong>
-                  {{ addr.province }}{{ addr.city }}{{ addr.district }}{{ addr.streetAddress }}
-                </p>
-                <p><strong>邮编：</strong>{{ addr.postalCode }}</p>
-                <p v-if="addr.isDefault">🌟 默认地址</p>
-
-                <div class="card-actions">
-                  <button class="set-default-btn" @click="setDefault(addr.addressId)">设为默认</button>
-                  <button class="delete-btn" @click="deleteAddress(addr.addressId)">删除</button>
-                </div>
-              </div>
-            </div>
-            <p v-else class="empty-state">暂无地址，请添加新的地址。</p>
-          </div>
-
-          <!-- 新增地址 -->
-          <div v-else-if="currentView === 'addAddress'">
-            <div class="add-address-form">
-              <div class="form-group">
-                <label>发货人：</label>
-                <input v-model="newAddress.recipientName" placeholder="请输入姓名" />
-              </div>
-              <div class="form-group">
-                <label>电话：</label>
-                <input v-model="newAddress.phoneNumber" placeholder="请输入手机号" />
-              </div>
-              <div class="form-group">
-                <label>省份：</label>
-                <input v-model="newAddress.province" placeholder="请输入省份" />
-              </div>
-              <div class="form-group">
-                <label>城市：</label>
-                <input v-model="newAddress.city" placeholder="请输入城市" />
-              </div>
-              <div class="form-group">
-                <label>区县：</label>
-                <input v-model="newAddress.district" placeholder="请输入区县" />
-              </div>
-              <div class="form-group">
-                <label>街道详细地址：</label>
-                <textarea v-model="newAddress.streetAddress" placeholder="请输入详细地址"></textarea>
-              </div>
-              <div class="form-group">
-                <label>邮编：</label>
-                <input v-model="newAddress.postalCode" placeholder="请输入邮政编码" />
-              </div>
-              <button class="save-btn" @click="addAddress">保存地址</button>
-            </div>
-          </div>
-
-          <!-- 我的预约 -->
-          <div v-else-if="currentView === 'appointments'" class="appointments-view">
-            <div v-if="isLoadingAppointments" class="loading-state">正在加载预约记录...</div>
-            
-            <div v-else-if="appointments.length" class="appointments-list">
-              <div v-for="appt in appointments" :key="appt.id" class="appointment-card" :class="{ 'is-cancelled': appt.status === 'cancelled' }">
-                <div class="card-header">
-                  <h4>专家：{{ appt.expertName }}</h4>
-                  <span :class="['status-badge', translateStatus(appt.status)]">{{ appt.status }}</span>
-                </div>
-                <div v-if="appt.status === 'cancelled'" class="cancelled-overlay">
-                  已取消
-                </div>
-                <div class="card-body">
-                  <p><strong>预约日期：</strong>{{ appt.date }}</p>
-                  <p><strong>预约时间：</strong>{{ appt.timeSlot }}</p>
-                </div>
-                <div class="card-actions">
-                  <!-- 只有状态为'已预约'时才显示取消按钮 -->
-                  <button v-if="appt.status === 'scheduled'" class="delete-btn" @click="cancelAppointment(appt.id)">取消预约</button>
-                </div>
-              </div>
-            </div>
-         </div>
-        </div>
-      </div>
-
-      <div v-if="role === 'expert'" class="expert-view-container">
-      <!-- NEW: Expert Navigation Tabs -->
-      <nav class="expert-nav">
-        <button @click="switchExpertView('profile')" :class="{ active: currentExpertView === 'profile' }">个人档案</button>
-        <button @click="switchExpertView('availability')" :class="{ active: currentExpertView === 'availability' }">可预约时间</button>
-        <button @click="switchExpertView('schedule')" :class="{ active: currentExpertView === 'schedule' }">我的日程</button>
+        <!-- 专家 -->
+        <template v-if="role === 'expert'">
+          <button @click="switchView('profile')" :class="{ active: currentView === 'profile' }">个人档案</button>
+          <button @click="switchView('availability')" :class="{ active: currentView === 'availability' }">可预约时间</button>
+          <button @click="switchView('schedule')" :class="{ active: currentView === 'schedule' }">我的日程</button>
+        </template>
       </nav>
 
-      <div v-if="currentExpertView === 'profile'" class="expert-profile-container">
-        <h3>我的个人档案</h3>
+      <!-- 内容区域 -->
+      <div class="view-content-wrapper">
 
-        <!-- 档案展示视图 -->
-        <div v-if="!isEditing && expertProfile" class="profile-card">
-          <div class="profile-details">
-             <img :src="expertProfile.photoUrl || defaultAvatar" alt="Expert Photo" class="profile-photo">
-            <div class="profile-info-text">
-              <p><strong>{{ expertName|| '专家姓名'}}</strong></p>
-              <p><strong>专业领域：</strong>{{ expertProfile.specialization }}</p>
-              <p><strong>咨询费：</strong>¥{{ expertProfile.consultationFee }} / 次</p>
-              <p><strong>简介：</strong></p>
-              <p class="bio">{{ expertProfile.bio }}</p>
+        <!-- ======================== 买家/农户：我的地址 ======================== -->
+        <div v-if="currentView === 'address'" class="address-view">
+
+          <!-- 地址列表 -->
+          <div v-if="addresses.length" class="address-list">
+            <div
+                v-for="addr in addresses"
+                :key="addr.addressId"
+                class="address-card"
+            >
+              <p v-if="addr.isDefault">🌟 默认地址</p>
+              <p><strong>{{ role === 'buyer' ? '收货人' : '发货人' }}：</strong>{{ addr.recipientName }}</p>
+              <p><strong>电话：</strong>{{ addr.phoneNumber }}</p>
+              <p><strong>地址：</strong>{{ addr.province }}{{ addr.city }}{{ addr.district }}{{ addr.streetAddress }}</p>
+              <p><strong>邮编：</strong>{{ addr.postalCode }}</p>
+
+              <div class="card-actions">
+                <button class="set-default-btn" @click="setDefault(addr.addressId)">设为默认</button>
+                <button class="delete-btn" @click="deleteAddress(addr.addressId)">删除</button>
+              </div>
             </div>
           </div>
-          <div class="profile-actions">
-            <button @click="enterEditMode">更新档案</button>
-            <button @click="deleteProfile" class="delete-btn">删除档案</button>
+
+          <p v-else class="empty-state">暂无地址，请添加新的地址。</p>
+
+          <!-- 新增地址按钮（弹窗） -->
+          <button class="add-btn" @click="showAddAddressPopup = true">＋ 新增地址</button>
+
+          <!-- ========== 新增地址弹窗 ========== -->
+          <!-- 新增地址弹窗 -->
+          <div v-if="showAddAddressPopup" class="modal-overlay">
+            <div class="modal-container">
+
+              <!-- 右上角关闭按钮 -->
+              <button class="close-btn" @click="showAddAddressPopup = false">×</button>
+
+              <h2 class="modal-title">新增地址</h2>
+
+              <div class="modal-body">
+
+                <!-- 姓名 -->
+                <div class="modal-form-group row-layout">
+                  <label>姓名：</label>
+                  <input v-model="newAddress.recipientName" type="text" placeholder="请输入姓名" />
+                </div>
+
+                <!-- 电话 -->
+                <div class="modal-form-group row-layout">
+                  <label>电话：</label>
+                  <input v-model="newAddress.phoneNumber" type="text" placeholder="请输入联系电话" />
+                </div>
+
+                <!-- 省份 -->
+                <div class="modal-form-group row-layout">
+                  <label>省份：</label>
+                  <input v-model="newAddress.province" type="text" placeholder="例如：浙江省" />
+                </div>
+
+                <!-- 城市 -->
+                <div class="modal-form-group row-layout">
+                  <label>城市：</label>
+                  <input v-model="newAddress.city" type="text" placeholder="请输入城市" />
+                </div>
+
+                <!-- 区县 -->
+                <div class="modal-form-group row-layout">
+                  <label>区县：</label>
+                  <input v-model="newAddress.district" type="text" placeholder="请输入区/县" />
+                </div>
+
+                <!-- 详细地址 -->
+                <div class="modal-form-group">
+                  <label>详细：</label>
+                  <textarea
+                      v-model="newAddress.streetAddress"
+                      placeholder="如：xx小区 xx号楼 xx单元"
+                      rows="2"
+                  ></textarea>
+                </div>
+
+                <!-- 邮编 -->
+                <div class="modal-form-group row-layout">
+                  <label>邮编：</label>
+                  <input v-model="newAddress.postalCode" type="text" placeholder="邮政编码(选填)" />
+                </div>
+
+              </div>
+
+              <!-- 底部按钮 -->
+              <div class="modal-footer">
+                <button class="cancel-btn" @click="showAddAddressPopup = false">取消</button>
+                <button class="save-btn" @click="addAddress">保存</button>
+              </div>
+
+            </div>
+          </div>
+
+
+        </div>
+
+        <!-- ======================== 农户：我的预约 ======================== -->
+        <div v-if="currentView === 'appointments'" class="appointments-view">
+          <div v-if="isLoadingAppointments" class="loading-state">正在加载预约记录...</div>
+
+          <div v-else-if="appointments.length" class="appointments-list">
+            <div v-for="appt in appointments" :key="appt.id" class="appointment-card" :class="{ 'is-cancelled': appt.status === 'cancelled' }">
+
+              <div class="card-header">
+                <h4>专家：{{ appt.expertName }}</h4>
+                <span :class="['status-badge', translateStatus(appt.status)]">{{ appt.status }}</span>
+              </div>
+
+              <div v-if="appt.status === 'cancelled'" class="cancelled-overlay">
+                已取消
+              </div>
+
+              <div class="card-body">
+                <p><strong>预约日期：</strong>{{ appt.date }}</p>
+                <p><strong>预约时间：</strong>{{ appt.timeSlot }}</p>
+              </div>
+
+              <div class="card-actions">
+                <button v-if="appt.status === 'scheduled'" class="delete-btn" @click="cancelAppointment(appt.id)">
+                  取消预约
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          <p v-else class="empty-state">暂无预约记录。</p>
+        </div>
+
+        <!-- ======================== 专家：个人档案 ======================== -->
+        <div v-if="currentView === 'profile'" class="expert-profile-container">
+          <h3>我的个人档案</h3>
+
+          <!-- 已创建档案 -->
+          <div v-if="!isEditing && expertProfile" class="profile-card">
+            <div class="profile-details">
+              <img :src="expertProfile.photoUrl || defaultAvatar" class="profile-photo" />
+
+              <div class="profile-info-text">
+                <p><strong>{{ expertName || '专家姓名' }}</strong></p>
+                <p><strong>专业领域：</strong>{{ expertProfile.specialization }}</p>
+                <p><strong>咨询费：</strong>¥{{ expertProfile.consultationFee }} / 次</p>
+                <p><strong>简介：</strong></p>
+                <p class="bio">{{ expertProfile.bio }}</p>
+              </div>
+            </div>
+
+            <div class="profile-actions">
+              <button @click="enterEditMode">更新档案</button>
+              <button class="delete-btn" @click="deleteProfile">删除档案</button>
+            </div>
+          </div>
+
+          <!-- 创建/编辑档案 -->
+          <div v-if="isEditing" class="profile-form">
+            <h4>{{ expertProfile ? '更新档案' : '创建档案' }}</h4>
+
+            <div class="form-group">
+              <label>专业领域：</label>
+              <input v-model="profileForm.specialization" />
+            </div>
+
+            <div class="form-group">
+              <label>咨询费(元/次)：</label>
+              <input v-model="profileForm.consultationFee" type="number" />
+            </div>
+
+            <div class="form-group">
+              <label>简介：</label>
+              <textarea v-model="profileForm.bio" rows="4"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>上传头像：</label>
+              <input type="file" @change="handleFileChange" />
+            </div>
+
+            <div class="form-actions">
+              <button class="save-btn" @click="saveProfile">保存</button>
+              <button @click="cancelEdit">取消</button>
+            </div>
+          </div>
+
+          <!-- 未创建档案 -->
+          <div v-if="!isEditing && !expertProfile" class="profile-prompt">
+            <p>您还没有创建专家档案。</p>
+            <button @click="enterEditMode">立即创建档案</button>
           </div>
         </div>
 
-        <!-- 创建/编辑表单视图 -->
-        <div v-if="isEditing" class="profile-form">
-          <h4>{{ expertProfile ? '更新' : '创建' }}您的专家档案</h4>
-          <div class="form-group">
-            <label>专业领域：</label>
-            <input v-model="profileForm.specialization" placeholder="例如：水稻种植、病虫害防治" />
-          </div>
-          <div class="form-group">
-            <label>咨询费 (元/次)：</label>
-            <input type="number" v-model="profileForm.consultationFee" placeholder="例如：50" />
-          </div>
-          <div class="form-group">
-            <label>简介：</label>
-            <textarea v-model="profileForm.bio" placeholder="介绍您的专业背景和经验" rows="4"></textarea>
-          </div>
-          <div class="form-group">
-            <label>更新照片：</label>
-            <input type="file" @change="handleFileChange" accept="image/*" />
-          </div>
-          <div class="form-actions">
-            <button @click="saveProfile" class="save-btn">保存</button>
-            <button @click="cancelEdit">取消</button>
-          </div>
+        <!-- ======================== 专家：可预约时间 ======================== -->
+        <div v-if="currentView === 'availability'">
+          <ExpertAvailability />
         </div>
 
-        <!-- 提示创建档案 -->
-        <div v-if="!isEditing && !expertProfile" class="profile-prompt">
-          <p>您还没有创建专家档案，这会影响农户找到您并向您咨询。</p>
-          <button @click="enterEditMode">立即创建档案</button>
-        </div>
+        <!-- ======================== 专家：我的日程 ======================== -->
+        <div v-if="currentView === 'schedule'" class="schedule-view">
+          <h3>查看日程安排</h3>
 
-      </div>
-
-      <div v-if="currentExpertView === 'availability'">
-        <ExpertAvailability />
-      </div>
-
-      <div v-if="currentExpertView === 'schedule'" class="schedule-view">
-      <h3>查看日程安排</h3>
-      <div class="date-selector">
-        <label for="schedule-date">选择日期：</label>
-        <input type="date" id="schedule-date" v-model="selectedDate" @change="fetchDailySchedule">
-      </div>
-
-      <div v-if="isLoadingSchedule" class="loading-state">正在加载日程...</div>
-      
-      <div v-else-if="dailyAppointments.length > 0" class="schedule-list">
-        <div v-for="appt in dailyAppointments" :key="appt.consultationId" class="schedule-item">
-          <div class="time-slot">{{ appt.timeSlot }}</div>
-          <div class="details">
-            <p><strong>农户：</strong>{{ appt.farmerName || `ID: ${appt.farmerId}` }}</p>
+          <div class="date-selector">
+            <label>选择日期：</label>
+            <input type="date" v-model="selectedDate" @change="fetchDailySchedule" />
           </div>
-          <div class="status">
-            <span :class="['status-badge', getStatusClass(appt.status)]">{{ appt.displayStatus }}</span>
+
+          <div v-if="isLoadingSchedule" class="loading-state">正在加载日程...</div>
+
+          <div v-else-if="dailyAppointments.length" class="schedule-list">
+            <div v-for="appt in dailyAppointments" :key="appt.consultationId" class="schedule-item">
+              <div class="time-slot">{{ appt.timeSlot }}</div>
+              <div class="details">
+                <p><strong>农户：</strong>{{ appt.farmerName || `ID:${appt.farmerId}` }}</p>
+              </div>
+              <div class="status">
+                <span :class="['status-badge', getStatusClass(appt.status)]">{{ appt.displayStatus }}</span>
+              </div>
+            </div>
           </div>
+
+          <p v-else class="empty-state">该日期没有预约安排。</p>
         </div>
       </div>
-
-      <p v-else class="empty-state">该日期没有预约安排。</p>
-
-      </div>
-
-    </div>
-
-
 
     </section>
   </div>
-
 </template>
+
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import axios from '../utils/axios'
-import router from "@/router/index.js";
 import HeaderComponent from "@/components/HeaderComponent.vue";
 import ExpertAvailability from '../components/ExpertAvailability.vue';
 import { useAuthStore } from '@/stores/authStore';
@@ -300,6 +288,11 @@ const hasInitialLoadFinished = ref(false)
 const currentView = ref('address')
 const addresses = ref([])
 
+const showAddAddressPopup = ref(false)
+// 手动关闭弹窗方法（用于右上角 × 按钮）
+function closeAddAddressPopup() {
+  showAddAddressPopup.value = false
+}
 // 新增地址表单字段
 const newAddress = ref({
   recipientName: '',
@@ -357,10 +350,22 @@ async function loadAddresses() {
 
 // 添加地址
 async function addAddress() {
+  // 非空检查
+  const { recipientName, phoneNumber, province, city, district, streetAddress } = newAddress.value;
+
+  if (!recipientName || !phoneNumber || !province || !city || !district || !streetAddress) {
+    alert('请填写完整的必填字段（姓名、电话、地址）');
+    return;
+  }
+
   try {
-    const res = await axios.post('/address/add', newAddress.value)
-    alert('新增地址成功！')
-    addresses.value.push(res.data)
+    const res = await axios.post('/address/add', newAddress.value);
+    alert('新增地址成功！');
+
+    // 添加到地址列表
+    addresses.value.push(res.data);
+
+    // 重置表单
     newAddress.value = {
       recipientName: '',
       phoneNumber: '',
@@ -369,10 +374,12 @@ async function addAddress() {
       district: '',
       streetAddress: '',
       postalCode: ''
-    }
-    currentView.value = 'address'
+    };
+
+    currentView.value = 'address'; // 回到地址列表
+    showAddAddressPopup.value = false; // 关闭弹窗
   } catch (err) {
-    alert('添加失败')
+    alert('添加失败');
   }
 }
 
@@ -487,7 +494,7 @@ async function saveProfile() {
     // 使用一个接口同时处理创建和更新
     await axios.post('/expert/profile', formData, {
       headers: {
-        'Content-Type': 'multipart/form-data' // 文件上传必须的请求头
+        'Content-Type': 'multipart/form-data' // 文件上传请求头
       }
     });
     alert('档案保存成功！');
@@ -698,6 +705,28 @@ function exit(){
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
+.main-nav {
+  display: flex;
+  border-bottom: 2px solid #e0e0e0;
+  margin-bottom: 25px;
+}
+.main-nav button {
+  padding: 10px 20px;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #555;
+  transition: color 0.3s, border-bottom-color 0.3s;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+}
+.main-nav button:hover { color: #2D7D4F; }
+.main-nav button.active {
+  color: #2D7D4F;
+  border-bottom-color: #2D7D4F;
+}
 nav ul {
   list-style: none;
   display: flex;
@@ -754,14 +783,18 @@ nav a:hover {
 }
 
 .address-card {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
   border: 1px solid #e9e9e9;
   border-radius: 8px;
-  padding: 15px;
   margin-bottom: 10px;
   background: #fafafa;
+  gap: 30px;
 }
 
 .card-actions {
+  margin-left: auto;
   margin-top: 10px;
 }
 
@@ -1033,6 +1066,151 @@ nav a:hover {
 
 .schedule-item .status {
   margin-left: 1rem;
+}
+
+</style>
+
+<style scoped>
+/* ================= 弹窗遮罩 ================= */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5); /* 半透明遮罩 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* ================= 弹窗容器 ================= */
+.modal-container {
+  background-color: #fff;
+  width: 500px;
+  max-width: 90%;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  position: relative;
+}
+
+/* ================= 弹窗标题 ================= */
+.modal-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+/* ================= 右上角关闭按钮 ================= */
+.close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  border: none;
+  background: transparent;
+  font-size: 22px;
+  cursor: pointer;
+  color: #888;
+  transition: color 0.2s;
+}
+
+.close-btn:hover {
+  color: #333;
+}
+
+/* 标题 */
+.modal-title {
+  text-align: center;
+  font-size: 20px;
+  margin-bottom: 15px;
+  color: #2a7f2a;
+}
+
+/* 表单部分 */
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.modal-form-group {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: row;
+}
+
+.modal-form-group label {
+  width:80px;
+  display: inline-block;
+  text-align: justify;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+.modal-form-group input,
+.modal-form-group textarea,
+.modal-form-group select {
+  flex: 1;
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+}
+
+
+
+/* 行布局 */
+.row-layout {
+  display: flex;
+  align-items: center;
+}
+
+/* ================= 底部按钮 ================= */
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 15px;
+  gap: 10px;
+}
+
+.save-btn {
+  background-color: #4caf50;
+  color: #fff;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.save-btn:hover {
+  background-color: #45a049;
+}
+
+.cancel-btn {
+  background-color: #f0f0f0;
+  color: #333;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.cancel-btn:hover {
+  background-color: #e0e0e0;
+}
+
+/* ================= 滚动条美化（可选） ================= */
+.modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background-color: rgba(0,0,0,0.2);
+  border-radius: 3px;
 }
 
 </style>

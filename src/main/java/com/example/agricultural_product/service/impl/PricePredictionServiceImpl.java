@@ -35,18 +35,18 @@ public class PricePredictionServiceImpl implements PricePredictionService {
     @Autowired
     private ProductMapper productMapper;
 
-    @Value("${python.script.path:src/main/python/LSTM50/prediction_now.py}")
+    @Value("${python.script.path:D:/aprojects/agri/agricultural_product/src/main/python/LSTM50/prediction_now.py}")
     private String pythonScriptPath;
 
     // 尽管没有在代码中使用，但保留配置，避免报错
-    @Value("${python.data.path:src/main/python/LSTM50/data50/lstm_data_collection.pkl}")
+    @Value("${python.data.path:D:/aprojects/agri/agricultural_product/src/main/python/LSTM50/data50/lstm_data_collection.pkl}")
     private String lstmDataPath;
 
     // 【JSON 元数据路径】
-    @Value("${python.metadata.path:src/main/python/LSTM50/data50/lstm_metadata_only.json}")
+    @Value("${python.metadata.path:D:/aprojects/agri/agricultural_product/src/main/python/LSTM50/data50/lstm_metadata_only.json}")
     private String jsonMetadataPath;
 
-    @Value("${python.executable.path:python}")
+    @Value("${python.executable.path:D:/111111111/anaconda3/envs/agri_env/Scripts/python.exe}")
     private String pythonExecutable;
 
     private static final String LABEL_PRE_PREDICT = "预测";
@@ -414,8 +414,25 @@ public class PricePredictionServiceImpl implements PricePredictionService {
             Assert.isTrue(!endDate.isBefore(LocalDate.now()), "预测截止日期不能早于当前日期");
 
             File scriptFile = new File(pythonScriptPath);
-            Assert.isTrue(scriptFile.exists() && scriptFile.canRead(), "Python预测脚本不存在或无读取权限：" + pythonScriptPath);
+
+            // 增强版断言：输出更详细的信息
+            Assert.isTrue(
+                    scriptFile.exists() && scriptFile.canRead(),
+                    "Python预测脚本检查失败："
+                            + "\n  脚本路径: " + pythonScriptPath
+                            + "\n  是否存在: " + scriptFile.exists()
+                            + "\n  是否可读: " + scriptFile.canRead()
+                            + "\n  文件大小: " + (scriptFile.exists() ? scriptFile.length() + " bytes" : "N/A")
+            );
+
+            // 将检测信息输出到 console（可选，但方便排查）
+            System.out.println("预测脚本检测正常：");
+            System.out.println("路径：" + pythonScriptPath);
+            System.out.println("存在：" + scriptFile.exists());
+            System.out.println("可读：" + scriptFile.canRead());
+            System.out.println("大小：" + scriptFile.length() + " bytes");
         }
+
     }
 
     private void closeResource(Closeable resource) {

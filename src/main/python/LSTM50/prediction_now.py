@@ -12,20 +12,17 @@ from typing import Any, Dict, Optional, List
 import warnings
 import tensorflow as tf
 import keras
-import json
-import pathlib
+import json  # <-- 新增 JSON 库
 
 # 忽略 Pandas 性能警告等不影响逻辑的警告
 warnings.filterwarnings('ignore')
 
 # ----------------------------------------------------
-# 2. 配置和常量定义 (重点修改路径)
+# 2. 配置和常量定义 (保持不变)
 # ----------------------------------------------------
 # 数据和模型结果的路径（根据实际项目结构调整）
-# 假设 prediction_now.py (当前脚本) 位于 LSTM50 目录下，
-# data50 和 product_allPredictions 是其同级目录。
-DATA_DIR = 'data50'
-MODEL_RESULTS_DIR = 'product_allPredictions'
+DATA_DIR = r'D:\aprojects\agri\agricultural_product\src\main\python\LSTM50\data50'
+MODEL_RESULTS_DIR = r'D:\aprojects\agri\agricultural_product\src\main\python\LSTM50\product_allPredictions'
 
 # --- 文件名 ---
 PICKLE_FILE_NAME = 'lstm_data_collection.pkl'

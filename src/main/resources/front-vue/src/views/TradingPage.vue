@@ -81,22 +81,37 @@
         </div>
 
         <!-- 价格预测 -->
-        <div v-if="currentView === 'predict'" class="prediction-page">
-          <!-- 产品列表 -->
-          <div class="product-list">
-            <div v-for="product in products" :key="product.productId" class="product-card">
-              <img :src="product.imagePath" alt="" class="product-image" />
-              <h3>{{ product.productName }}</h3>
-              <p>规格: {{ product.specInfo }}</p>
-              <p>当前价格: ¥{{ product.price }}</p>
-              <button @click="startPrediction(product)" :disabled="loading">开始预测</button>
+        <div v-if="currentView === 'predict'" class="prediction-wrapper">
+
+          <!-- 左侧：产品横向列表 -->
+          <div class="prediction-left">
+            <div class="product-card-horizontal"
+                 v-for="product in products"
+                 :key="product.productId">
+
+              <img :src="product.imageUrl" class="h-img">
+
+              <div class="h-info">
+                <h3>{{ product.productName }}</h3>
+                <p>规格: {{ product.specInfo }}</p>
+                <p>当前价格: ¥{{ product.price }}</p>
+              </div>
+
+              <button class="h-btn" @click="startPrediction(product)" :disabled="loading">
+                开始预测
+              </button>
+
             </div>
           </div>
 
-          <!-- 预测折线图 -->
-          <div class="prediction-chart">
-            <div v-if="loading">预测中，请稍候...</div>
-            <div ref="chartRef" style="width:100%;height:400px;"></div>
+          <!-- 右侧：预测结果单独卡片 -->
+          <div class="prediction-right">
+            <h2 class="predict-title">价格预测</h2>
+
+            <div class="chart-box">
+              <div v-if="loading">预测中，请稍候...</div>
+              <div ref="chartRef" style="width:100%;height:350px;"></div>
+            </div>
           </div>
         </div>
 
@@ -269,7 +284,6 @@
 
           </div>
         </div>
-
 
 
         <!-- 购物车（仅买家） -->
@@ -663,7 +677,6 @@ async function loadProducts() {
               // 如果图片加载失败，使用默认占位图
               imageUrl = new URL('../assets/img.png', import.meta.url).href
             }
-            console.log('全部产品：',imageUrl)
             return { ...product, imageUrl }
           } catch (err) {
             console.warn('产品加载失败:', product.productId, err)
@@ -671,6 +684,9 @@ async function loadProducts() {
           }
         })
     )
+    if (products.value.length > 0) {
+      await startPrediction(products.value[0])
+    }
   } catch (err) {
     console.error('加载产品失败', err)
   }
@@ -760,6 +776,8 @@ async function goToChat(receiverId) {
 
 
 // ====== 预测逻辑 ======
+
+//启动预测任务
 async function startPrediction(product) {
   try {
     const requestData = {
@@ -775,12 +793,17 @@ async function startPrediction(product) {
       status: product.status,
     }
 
-    const res = await axios.post('/predictions', requestData)
+    const res = await axios.post('/predictions', requestData, {
+      timeout: 300000 // 300秒
+    }).catch(err => { console.error(err) })
+
 
     if (res.status === 202 || res.data.status === 'RUNNING') {
       // 返回 taskId
       product.taskId = res.data.taskId
       console.log(`预测任务已启动，taskId=${product.taskId}`)
+      await pollPredictionStatus(product)
+
     } else if (res.data.status === 'SUCCESS') {
       console.log('CRUD操作成功（非预测任务）')
     }
@@ -792,9 +815,7 @@ async function startPrediction(product) {
 const chartRef = ref(null);
 const chartData = ref([]);
 
-/**
- * 根据 taskId 轮询预测结果
- */
+//根据 taskId 轮询预测结果
 async function pollPredictionStatus(product) {
   if (!product.taskId) {
     console.warn("没有 taskId，无法轮询");
@@ -806,7 +827,7 @@ async function pollPredictionStatus(product) {
 
   try {
     while (!completed) {
-      const res = await axios.get(`/api/predictions/status/${product.taskId}`);
+      const res = await axios.get(`/predictions/status/${product.taskId}`);
       const status = res.data.status;
 
       if (status === "COMPLETED") {
@@ -821,7 +842,7 @@ async function pollPredictionStatus(product) {
         completed = true;
       } else {
         // RUNNING 或 202
-        await new Promise(r => setTimeout(r, 1000));
+        await new Promise(r => setTimeout(r, 10000));
       }
     }
   } catch (err) {
@@ -835,50 +856,76 @@ function drawChart(productName) {
   if (!chartRef.value || !chartData.value.length) return;
 
   const myChart = echarts.init(chartRef.value);
-  const dates = chartData.value.map(d => d.date);
-  const prices = chartData.value.map(d => d.price);
+
+  // 只保留最近 10 条
+  const recentData = chartData.value.slice(-10);
+  const dates = recentData.map(d => d.date);
+  const prices = recentData.map(d => d.price);
 
   // 计算趋势
   const trendSymbols = prices.map((price, idx) => {
-    if (idx === 0) return ""; // 第一个点没有趋势
+    if (idx === 0) return "—";
     const diff = price - prices[idx - 1];
-    if (diff > 0) return "▲"; // 红色向上
-    if (diff < 0) return "▼"; // 绿色向下
-    return "—"; // 灰色横线
+    if (diff > 0) return "{red|▲}";  // 红色
+    if (diff < 0) return "{green|▼}"; // 绿色
+    return "{gray|—}";                // 灰色
   });
 
   myChart.setOption({
     title: { text: productName, left: "left" },
+
     tooltip: {
       trigger: "axis",
       formatter: params => {
-        const p = params[0];
-        const trend = trendSymbols[p.dataIndex];
-        return `${p.axisValue}<br/>价格: ¥${p.data} ${trend}`;
+        const idx = params[0].dataIndex;
+        return `${dates[idx]}<br/>价格: ¥${prices[idx]} ${trendSymbols[idx].replace(/\{.*?\|/, "").replace("}", "")}`;
       },
     },
+
     xAxis: { type: "category", data: dates },
-    yAxis: { type: "value", axisLabel: { formatter: "¥{value}" } },
+
+    yAxis: {
+      type: "value",
+      axisLabel: { formatter: "¥{value}" },
+      min: v => Math.floor(v.min),
+      max: v => Math.ceil(v.max),
+    },
+
     series: [
       {
         data: prices,
         type: "line",
         smooth: true,
+
         label: {
           show: true,
           position: "top",
-          formatter: (params) => `${params.data} ${trendSymbols[params.dataIndex]}`,
-          color: function(params) {
-            const trend = trendSymbols[params.dataIndex];
-            if (trend === "▲") return "red";
-            if (trend === "▼") return "green";
-            return "gray";
+
+          formatter: params =>
+              `${params.data} ${trendSymbols[params.dataIndex]}`,
+
+          // 使用 rich 才能让不同符号不同颜色！
+          rich: {
+            red: { color: "red", fontWeight: "bold" },
+            green: { color: "green", fontWeight: "bold" },
+            gray: { color: "gray" }
           }
         },
+
+        // 线条颜色按趋势变化（可选）
+        itemStyle: {
+          color: function (params) {
+            const sym = trendSymbols[params.dataIndex];
+            if (sym.includes("red")) return "red";
+            if (sym.includes("green")) return "green";
+            return "gray";
+          }
+        }
       },
     ],
   });
 }
+
 
 /**
  * 清空图表
@@ -1375,21 +1422,25 @@ nav a:hover {
 /* 图片部分 */
 .product-image {
   position: relative;
-  padding-top: 10px;
-  width: 100%;
+  width: 100%;          /* 容器宽度可固定或百分比 */
+  max-width: 400px;     /* 可选最大宽度 */
+  height: 120px;        /* 固定高度 */
   background: #f5f5f5;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  border-radius: 12px;
 }
 
 .product-image img {
-  border-top-left-radius: 12px;
-  border-top-right-radius: 12px;
   width: 100%;
-  object-fit: cover;
+  height: 100%;
+  object-fit: cover;    /* 图片裁剪填充容器 */
+  object-position: center; /* 居中裁剪 */
+  border-radius: 12px;  /* 可选，让图片圆角和容器一致 */
 }
+
 /* 在图片下方叠加一个渐变层 */
 .product-image::after {
   content: "";
@@ -2359,4 +2410,115 @@ padding: 8px 20px;
 border-radius: 5px;
 color: #fff;
 }
+</style>
+
+/* ======= 行情大厅 ======= */
+<style scoped>
+.prediction-wrapper {
+  display: flex;
+  gap: 20px;
+  padding: 15px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 左侧宽度占比大 */
+.prediction-left {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 右侧独立预测栏 */
+.prediction-right {
+  flex: 2;
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+  height: fit-content;
+  position: sticky;
+  top: 10px;
+}
+
+/* 标题 */
+.predict-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+/* 图表区域 */
+.chart-box {
+  width: 100%;
+  height: auto;
+}
+
+
+/* ======= 横向产品卡片 ======= */
+.product-card-horizontal {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  transition: 0.2s;
+}
+
+.product-card-horizontal:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 16px rgba(0,0,0,0.15);
+}
+
+/* 商品图 */
+.h-img {
+  width: 120px;
+  height: 120px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: #f5f5f5;
+}
+
+/* 信息部分 */
+.h-info {
+  flex: 1;
+}
+
+.h-info h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 4px 0;
+}
+
+.h-info p {
+  font-size: 14px;
+  color: #666;
+  margin: 2px 0;
+}
+
+/* 按钮（与你现在的绿色按钮风格一致） */
+.h-btn {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: 0.2s;
+  width: 100px;
+}
+
+.h-btn:hover {
+  background-color: #43a047;
+}
+
+.h-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
 </style>

@@ -65,7 +65,7 @@ export default {
   padding: 0 20px;
   height: 60px;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 500;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   font-family: 'PingFang SC', 'Heiti SC', 'Microsoft YaHei', sans-serif;
@@ -79,7 +79,7 @@ nav ul {
 }
 
 nav li {
-  margin-right: 50px;
+  margin-right: 30px;
 }
 
 nav a {
