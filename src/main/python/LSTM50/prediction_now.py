@@ -21,9 +21,11 @@ warnings.filterwarnings('ignore')
 # 2. 配置和常量定义 (保持不变)
 # ----------------------------------------------------
 # 数据和模型结果的路径（根据实际项目结构调整）
-DATA_DIR = r'D:\aprojects\agri\agricultural_product\src\main\python\LSTM50\data50'
-MODEL_RESULTS_DIR = r'D:\aprojects\agri\agricultural_product\src\main\python\LSTM50\product_allPredictions'
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# 数据和模型结果的相对路径（相对于 LSTM50 目录）
+DATA_DIR = os.path.join(BASE_DIR, 'data50')
+MODEL_RESULTS_DIR = os.path.join(BASE_DIR, 'product_allPredictions')
 # --- 文件名 ---
 PICKLE_FILE_NAME = 'lstm_data_collection.pkl'
 

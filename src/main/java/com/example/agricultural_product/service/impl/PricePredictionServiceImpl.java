@@ -46,7 +46,7 @@ public class PricePredictionServiceImpl implements PricePredictionService {
     @Value("${python.metadata.path:D:/aprojects/agri/agricultural_product/src/main/python/LSTM50/data50/lstm_metadata_only.json}")
     private String jsonMetadataPath;
 
-    @Value("${python.executable.path:D:/111111111/anaconda3/envs/agri_env/Scripts/python.exe}")
+    @Value("${python.executable.path}")
     private String pythonExecutable;
 
     private static final String LABEL_PRE_PREDICT = "预测";
