@@ -32,4 +32,12 @@ public interface ExpertProfileService {
      * @return 包含所有专家信息的DTO列表
      */
     List<ExpertInfoDTO> getAllExperts();
+
+    /**
+     * 更新专家照片URL
+     * @param expertId 专家ID
+     * @param newPhotoUrl 新的照片URL路径
+     * @return 是否更新成功
+     */
+    boolean updatePhotoUrl(Long expertId, String newPhotoUrl);
 }

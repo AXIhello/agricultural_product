@@ -99,5 +99,22 @@ public class ExpertProfileServiceImpl implements ExpertProfileService {
 
         return experts;
     }
+
+    @Override
+    @Transactional
+    public boolean updatePhotoUrl(Long expertId, String newPhotoUrl) {
+        if (expertId == null) {
+            return false;
+        }
+        
+        ExpertProfile profile = expertProfileMapper.selectById(expertId);
+        if (profile == null) {
+            return false;
+        }
+        
+        profile.setPhotoUrl(newPhotoUrl);
+        profile.setUpdateTime(LocalDateTime.now());
+        return expertProfileMapper.updateById(profile) > 0;
+    }
     
 }
