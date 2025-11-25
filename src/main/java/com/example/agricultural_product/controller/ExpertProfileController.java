@@ -10,24 +10,41 @@ import jakarta.servlet.http.HttpServletRequest;
 
 // import org.junit.runner.Result;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.math.BigDecimal; 
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/expert/profile")
 public class ExpertProfileController {
+
+    private static final Logger log = LoggerFactory.getLogger(ExpertProfileController.class);
 
     @Autowired
     private ExpertProfileService expertProfileService;
 
     @Autowired
     private FileStorageService fileStorageService;
+
+    @Value("${app.upload-dir:uploads}")
+    private String uploadDir;
 
 
     // JWT 鉴权方法
@@ -80,10 +97,17 @@ public class ExpertProfileController {
         // 处理文件上传
         if (photo != null && !photo.isEmpty()) {
             try {
-                String photoUrl = fileStorageService.storeFile(photo); // 调用文件存储服务
-                profile.setPhotoUrl(photoUrl);
+                Path dir = Paths.get(uploadDir, "expert-photos").toAbsolutePath().normalize();
+                Files.createDirectories(dir);
+                String original = photo.getOriginalFilename();
+                String ext = (original != null && original.lastIndexOf('.') >= 0) ? original.substring(original.lastIndexOf('.')) : "";
+                String filename = UUID.randomUUID().toString().replace("-", "") + ext;
+                Path target = dir.resolve(filename);
+                Files.copy(photo.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+                profile.setPhotoUrl("expert-photos/" + filename);
             } catch (Exception e) {
-                 return ResponseEntity.status(500).body(Map.of("success", false, "message", "文件上传失败: " + e.getMessage()));
+                log.error("专家照片上传失败", e);
+                return ResponseEntity.status(500).body(Map.of("success", false, "message", "文件上传失败: " + e.getMessage()));
             }
         }
 
@@ -176,5 +200,89 @@ public class ExpertProfileController {
     public Result<List<ExpertInfoDTO>> listExperts() {
         List<ExpertInfoDTO> experts = expertProfileService.getAllExperts();
         return Result.success(experts); // 假设你有一个统一的 Result 封装类
+    }
+
+    /**
+     * 获取专家照片（二进制返回）
+     * GET /api/expert/profile/{expertId}/photo
+     */
+    @GetMapping("/{expertId}/photo")
+    public ResponseEntity<?> getExpertPhoto(@PathVariable Long expertId) {
+        ExpertProfile profile = expertProfileService.getProfile(expertId);
+        if (profile == null || profile.getPhotoUrl() == null || profile.getPhotoUrl().trim().isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        try {
+            String photoUrl = profile.getPhotoUrl();
+            Path filePath;
+            if (photoUrl.startsWith("/files/")) {
+                String relative = photoUrl.substring("/files/".length());
+                filePath = Paths.get(uploadDir).resolve(relative).normalize().toAbsolutePath();
+            } else {
+                filePath = Paths.get(uploadDir).resolve(photoUrl).normalize().toAbsolutePath();
+            }
+            if (!Files.exists(filePath) || !Files.isRegularFile(filePath)) {
+                return ResponseEntity.notFound().build();
+            }
+            byte[] bytes = Files.readAllBytes(filePath);
+            String contentType = Files.probeContentType(filePath);
+            if (contentType == null) contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CACHE_CONTROL, "max-age=86400, public")
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .body(new ByteArrayResource(bytes));
+        } catch (IOException io) {
+            log.error("读取专家照片失败", io);
+            return ResponseEntity.internalServerError().body("Failed to read photo");
+        }
+    }
+
+    /**
+     * 单独更新专家照片
+     * PATCH /api/expert/profile/photo
+     */
+    @PatchMapping(value = "/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, Object>> updatePhoto(
+            HttpServletRequest request,
+            @RequestPart("photo") MultipartFile photo) {
+        
+        if (!checkToken(request)) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "未授权"));
+        }
+
+        Long expertId = getUserIdFromToken(request);
+        if (expertId == null) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "无法获取用户ID"));
+        }
+
+        if (photo == null || photo.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "照片文件不能为空"));
+        }
+
+        String newPhotoUrl = null;
+        try {
+            Path dir = Paths.get(uploadDir, "expert-photos").toAbsolutePath().normalize();
+            Files.createDirectories(dir);
+            String original = photo.getOriginalFilename();
+            String ext = (original != null && original.lastIndexOf('.') >= 0) ? original.substring(original.lastIndexOf('.')) : "";
+            String filename = UUID.randomUUID().toString().replace("-", "") + ext;
+            Path target = dir.resolve(filename);
+            Files.copy(photo.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+            newPhotoUrl = "expert-photos/" + filename;
+        } catch (Exception e) {
+            log.error("更新专家照片上传失败", e);
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", "文件上传失败: " + e.getMessage()));
+        }
+
+        boolean success = expertProfileService.updatePhotoUrl(expertId, newPhotoUrl);
+        if (!success) {
+            return ResponseEntity.status(403).body(Map.of("success", false, "message", "更新照片失败，请确认专家档案已创建"));
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", true);
+        result.put("message", "照片更新成功");
+        result.put("photoUrl", newPhotoUrl);
+        return ResponseEntity.ok(result);
     }
 }
