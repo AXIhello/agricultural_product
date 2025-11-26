@@ -32,6 +32,7 @@
         <!-- 专家 -->
         <template v-if="role === 'expert'">
           <button @click="switchView('profile')" :class="{ active: currentView === 'profile' }">个人档案</button>
+          <button @click="switchView('knowledgeManage')" :class="{ active: currentView === 'knowledgeManage' }">知识管理</button>
           <button @click="switchView('availability')" :class="{ active: currentView === 'availability' }">可预约时间</button>
           <button @click="switchView('schedule')" :class="{ active: currentView === 'schedule' }">我的日程</button>
         </template>
@@ -175,8 +176,6 @@
 
         <!-- ======================== 专家：个人档案 ======================== -->
         <div v-if="currentView === 'profile'" class="expert-profile-container">
-          <h3>我的个人档案</h3>
-
           <!-- 已创建档案 -->
           <div v-if="!isEditing && expertProfile" class="profile-card">
             <div class="profile-details">
@@ -234,6 +233,63 @@
           </div>
         </div>
 
+        <!-- ======================== 专家：知识管理 ======================== -->
+        <div v-if="currentView === 'knowledgeManage'" class="knowledge-manage-container">
+
+          <!-- 知识列表视图 -->
+          <div v-if="!isEditingKnowledge">
+            <div v-if="!knowledgeList.length" class="empty">
+              暂无已发布的知识~
+            </div>
+
+            <div
+                class="knowledge-card"
+                v-for="item in knowledgeList"
+                :key="item.knowledgeId"
+            >
+              <div class="knowledge-content">
+                <h4>{{ item.title }}</h4>
+                <p class="summary">{{ summary(item.content) }}</p>
+
+                <div class="bottom">
+                  <span class="time">{{ formatTime(item.createTime) }}</span>
+                  <div class="action-buttons">
+                    <button @click="editKnowledge(item)">编辑</button>
+                    <button class="delete-btn" @click="deleteKnowledge(item.knowledgeId)">删除</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 发布新知识按钮 -->
+            <div class="new-knowledge-btn">
+              <button @click="openKnowledgeEditor">发布新知识</button>
+            </div>
+          </div>
+
+
+          <!-- 创建/编辑知识表单 -->
+          <div v-if="isEditingKnowledge" class="knowledge-form">
+            <h4>{{ editingKnowledgeId ? '编辑知识' : '发布新知识' }}</h4>
+
+            <div class="form-group">
+              <label>标题：</label>
+              <input v-model="knowledgeForm.title" placeholder="请输入标题" />
+            </div>
+
+            <div class="form-group">
+              <label>内容：</label>
+              <textarea v-model="knowledgeForm.content" rows="6" placeholder="请输入内容"></textarea>
+            </div>
+
+            <div class="form-actions">
+              <button class="save-btn" @click="saveKnowledge">保存</button>
+              <button @click="cancelKnowledgeEdit">取消</button>
+            </div>
+          </div>
+        </div>
+
+
         <!-- ======================== 专家：可预约时间 ======================== -->
         <div v-if="currentView === 'availability'">
           <ExpertAvailability />
@@ -285,7 +341,7 @@ const authStore = useAuthStore();// 使用 Pinia 的认证存储
 const { userInfo, role } = storeToRefs(authStore);//从 store 中解构出响应式的数据
 
 const hasInitialLoadFinished = ref(false)
-const currentView = ref('address')
+const currentView = ref('');
 const addresses = ref([])
 
 const showAddAddressPopup = ref(false)
@@ -416,31 +472,39 @@ async function switchExpertView(view) {
 }
 
 // === 专家档案方法 ===
-//获取专家档案
+// 获取专家档案
 async function fetchExpertProfile() {
   try {
-    const res = await axios.get('/expert/profile'); // API: 获取当前专家档案
-    
-    // 首先判断响应体和 success 标志是否存在且为 true
-    if (res.data && res.data.success) {
-      // 正确：从响应的 data 属性中，取出里面的 data 对象（个人档案数据）
-      expertProfile.value = res.data.data;
-    } else {
-      // 处理后端返回 success: false 的情况
-      console.error('获取档案失败，服务器返回的业务状态为失败:', res.data.message || '未知错误');
-      alert('获取档案数据失败。');
-    }
-    
-  } catch (error) {
-    if (error.response && error.response.status === 404) {
-      expertProfile.value = null; // 档案不存在是正常情况
+    const res = await axios.get('/expert/profile');
+    const profile = res.data.data;
+
+    if (!profile) {
+      expertProfile.value = null;
       console.log('当前专家还未创建档案。');
-    } else {
-      console.error('获取专家档案失败', error);
-      alert('获取专家档案失败，请稍后重试。');
+      return;
     }
+
+    try {
+      const imageRes = await axios.get(`/expert/profile/${profile.expertId}/photo`, {
+        responseType: 'blob'
+      });
+      if (imageRes.data.size > 0) {
+        profile.photoUrl = URL.createObjectURL(imageRes.data);
+      } else {
+        throw new Error('空图片');
+      }
+    } catch {
+      profile.photoUrl = defaultAvatar;
+    }
+
+    expertProfile.value = profile;
+
+  } catch (error) {
+    console.error('获取专家档案失败:', error);
+    alert('获取专家档案失败，请稍后重试。');
   }
 }
+
 
 //加载专家名字
 async function loadExpertName() {
@@ -520,6 +584,92 @@ async function deleteProfile() {
     console.error('删除专家档案失败', error);
     alert('删除失败，请稍后重试。');
   }
+}
+
+// === 专家知识管理相关状态 ===
+const knowledgeList = ref([])
+const isEditingKnowledge = ref(false)
+const editingKnowledgeId = ref(null)
+
+const knowledgeForm = ref({
+  title: '',
+  content: ''
+})
+
+/** 获取当前专家发布的知识 */
+async function fetchExpertKnowledge() {
+  try {
+    const res = await axios.get(`/knowledge/expert/${userInfo.value.userId}`)
+    const data = res.data
+    knowledgeList.value = data.records || []
+  } catch (e) {
+    console.error('加载知识失败', e)
+  }
+}
+
+/** 打开发布页 */
+function openKnowledgeEditor() {
+  editingKnowledgeId.value = null
+  knowledgeForm.value = { title: '', content: '' }
+  isEditingKnowledge.value = true
+}
+
+/** 保存知识 */
+async function saveKnowledge() {
+  try {
+    if (!knowledgeForm.value.title || !knowledgeForm.value.content) {
+      return alert('标题和内容不能为空!')
+    }
+
+    if (editingKnowledgeId.value) {
+      // 编辑
+      await axios.put(`/knowledge/${editingKnowledgeId.value}`, knowledgeForm.value)
+    } else {
+      // 发布
+      await axios.post('/knowledge/publish', knowledgeForm.value)
+    }
+
+    isEditingKnowledge.value = false
+    fetchExpertKnowledge() // 刷新列表
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+/** 编辑知识 */
+function editKnowledge(item) {
+  editingKnowledgeId.value = item.knowledgeId
+  knowledgeForm.value = {
+    title: item.title,
+    content: item.content
+  }
+  isEditingKnowledge.value = true
+}
+
+/** 删除知识 */
+async function deleteKnowledge(id) {
+  if (!confirm("确定删除该知识？")) return
+
+  try {
+    await axios.delete(`/knowledge/${id}`)
+    fetchExpertKnowledge()
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+/** 取消编辑 */
+function cancelKnowledgeEdit() {
+  isEditingKnowledge.value = false
+}
+
+/** 内容摘要 */
+function summary(text) {
+  return text?.length > 60 ? text.slice(0, 60) + "..." : text
+}
+
+function formatTime(time) {
+  return time ? time.replace('T', ' ') : ''
 }
 
 //====我的专家预约相关方法====
@@ -658,7 +808,15 @@ async function fetchDailySchedule() {
 
 
 onMounted(() => {
-  console.log("组件已挂载，等待角色信息...");
+  if (role.value === 'farmer' || role.value === 'buyer') {
+    currentView.value = 'address';
+  } else if (role.value === 'expert') {
+    currentView.value = 'profile';
+  } else {
+    currentView.value = '';
+  }
+
+  hasInitialLoadFinished.value = true;
 });
 
 watch(role, (newRole, oldRole) => {
@@ -677,6 +835,7 @@ async function loadDataForRole(currentRole) {
       console.log("角色确认为专家，开始加载个人档案...");
       await fetchExpertProfile();
       await loadExpertName();
+      await fetchExpertKnowledge();
     } else if (currentRole === 'buyer' || currentRole === 'farmer') {
       console.log("角色确认为买家/农户，开始加载地址...");
       await loadAddresses();
@@ -726,6 +885,11 @@ function exit(){
 .main-nav button.active {
   color: #2D7D4F;
   border-bottom-color: #2D7D4F;
+}
+
+.top-info-bar{
+  display: flex;
+  justify-content: space-between;
 }
 nav ul {
   list-style: none;
@@ -1161,8 +1325,6 @@ nav a:hover {
   outline: none;
 }
 
-
-
 /* 行布局 */
 .row-layout {
   display: flex;
@@ -1211,6 +1373,62 @@ nav a:hover {
 .modal-body::-webkit-scrollbar-thumb {
   background-color: rgba(0,0,0,0.2);
   border-radius: 3px;
+}
+
+/* ================= 知识管理 ================= */
+
+.knowledge-manage-container {
+  padding: 16px;
+}
+
+.knowledge-card {
+  background: #f8f8f8;
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 12px;
+  border: 1px solid #ddd;
+}
+
+.knowledge-card:hover {
+  background: #f2f7ff;
+}
+
+.bottom {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.time {
+  font-size: 12px;
+  color: #777;
+}
+
+.delete-btn {
+  background: #ff4d4f;
+  color: white;
+}
+
+.new-knowledge-btn {
+  text-align: center;
+  margin-top: 16px;
+}
+
+.knowledge-form {
+  background: #fff;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 6px;
 }
 
 </style>

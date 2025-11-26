@@ -62,21 +62,6 @@ import HeaderComponent from '../components/HeaderComponent.vue';
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.header {
-  width: 100%;
-  background: #2D7D4F; /* 深绿色背景色 */
-  color: white;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 20px;
-  height: 60px;
-  font-size: 15px;
-  font-weight: 600;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
 nav ul {
   list-style: none;
   display: flex;

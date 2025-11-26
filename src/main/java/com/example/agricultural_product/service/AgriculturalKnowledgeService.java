@@ -20,6 +20,12 @@ public interface AgriculturalKnowledgeService {
     boolean deleteKnowledge(Long expertId, Integer knowledgeId);
 
     /**
+     * 获取所有农业知识
+     */
+    Page<AgriculturalKnowledge> getAllKnowledge(Integer pageNum, Integer pageSize);
+
+
+    /**
      * 获取专家发布的知识列表
      */
     Page<AgriculturalKnowledge> getExpertKnowledgeList(Long expertId, Integer pageNum, Integer pageSize);

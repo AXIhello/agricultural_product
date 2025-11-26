@@ -684,9 +684,9 @@ async function loadProducts() {
           }
         })
     )
-    if (products.value.length > 0) {
-      await startPrediction(products.value[0])
-    }
+    // if (products.value.length > 0) {
+    //   await startPrediction(products.value[0])
+    // }
   } catch (err) {
     console.error('加载产品失败', err)
   }

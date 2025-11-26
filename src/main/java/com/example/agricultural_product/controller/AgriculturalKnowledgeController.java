@@ -99,6 +99,18 @@ public class AgriculturalKnowledgeController {
     }
 
     /**
+     * 获取全部农业知识列表
+     */
+    @GetMapping("/list")
+    public ResponseEntity<Page<AgriculturalKnowledge>> getAllKnowledge(
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+
+        return ResponseEntity.ok(knowledgeService.getAllKnowledge(pageNum, pageSize));
+    }
+
+
+    /**
      * 获取专家发布的知识列表
      */
     @GetMapping("/expert/{expertId}")
@@ -113,7 +125,7 @@ public class AgriculturalKnowledgeController {
     /**
      * 获取知识详情
      */
-    @GetMapping("/{knowledgeId}")
+    @GetMapping("/detail/{knowledgeId}")
     public ResponseEntity<AgriculturalKnowledge> getKnowledgeDetail(@PathVariable Integer knowledgeId) {
         return ResponseEntity.ok(knowledgeService.getKnowledgeDetail(knowledgeId));
     }

@@ -196,10 +196,21 @@ public class ExpertProfileController {
      * 列出所有专家的基本信息（公开访问）
      * GET /api/expert/profile/list
      */
-    @GetMapping("/list") 
-    public Result<List<ExpertInfoDTO>> listExperts() {
-        List<ExpertInfoDTO> experts = expertProfileService.getAllExperts();
-        return Result.success(experts); // 假设你有一个统一的 Result 封装类
+    @GetMapping("/list")
+    public ResponseEntity<Map<String, Object>> listExperts() {
+        try {
+            List<ExpertInfoDTO> experts = expertProfileService.getAllExperts();
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("data", experts);
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of(
+                    "success", false,
+                    "message", "获取专家列表失败: " + e.getMessage()
+            ));
+        }
     }
 
     /**
@@ -215,8 +226,8 @@ public class ExpertProfileController {
         try {
             String photoUrl = profile.getPhotoUrl();
             Path filePath;
-            if (photoUrl.startsWith("/files/")) {
-                String relative = photoUrl.substring("/files/".length());
+            if (photoUrl.startsWith("/uploads/")) {
+                String relative = photoUrl.substring("/uploads/".length());
                 filePath = Paths.get(uploadDir).resolve(relative).normalize().toAbsolutePath();
             } else {
                 filePath = Paths.get(uploadDir).resolve(photoUrl).normalize().toAbsolutePath();

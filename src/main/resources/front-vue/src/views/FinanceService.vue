@@ -9,7 +9,6 @@
         <button @click="switchView('products')" :class="{ active: currentView === 'products' }">
           所有融资产品
         </button>
-
         <button @click="switchView('applications')" :class="{ active: currentView === 'applications' }">
           所有融资申请
         </button>
@@ -106,7 +105,11 @@
         <!-- 弹窗：查看产品详情 -->
         <div v-if="showProductDetail" class="modal-overlay" @click.self="closeProductDetail">
           <div class="modal-content product-detail-modal">
-            <h3 class="modal-title">产品编号 #{{ currentProduct.productId }}</h3>
+            <div class="modal-title-div">
+              <h3 class="modal-title">产品编号 #{{ currentProduct.productId }}</h3>
+              <button @click="closeProductDetail" class="modal-close-btn">关闭</button>
+            </div>
+
 
             <!-- 产品信息 -->
             <div class="product-info">
@@ -152,12 +155,10 @@
 
                 <div class="form-actions">
                   <button type="submit" class="submit-btn">提交申请</button>
-                  <button type="button" class="cancel-btn" @click="switchView('list')">返回</button>
                 </div>
               </form>
             </div>
 
-            <button @click="closeProductDetail" class="cancel-btn modal-close-btn">关闭</button>
           </div>
         </div>
 
@@ -226,11 +227,10 @@
                   <div class="form-row"><label>时间：</label><span>{{ r.offerTime }}</span></div>
                   <div class="form-row"><label>状态：</label><span>{{ r.offerStatus }}</span></div>
 
-                  <div v-if="role === 'farmer' && r.offerStatus === 'pending'" class="action-buttons">
+                  <div v-if="role === 'farmer' && r.offerStatus === 'pending'" class="bank-action-buttons">
                     <button @click="acceptOffer(r.offerId)" class="accept-btn">接受</button>
                     <button @click="rejectOffer(r.offerId)" class="reject-btn">拒绝</button>
                   </div>
-
                   <hr />
                 </div>
               </div>
@@ -401,7 +401,6 @@ const submitNewApplication = async () => {
 
 const showCreateProduct = ref(false)
 
-
 // 银行发布新产品
 const submitNewProduct = async () => {
   try {
@@ -450,6 +449,16 @@ const acceptOffer = async (offerId) => {
     await axios.post('/financing/offer/accept', null, { params: { offerId } })
     alert('已接受银行方案')
     await loadApplications()
+
+    //  自动更新弹窗数据
+    if (showDetail.value && currentApp.value?.appId) {
+      const updated = applications.value.find(a => a.appId === currentApp.value.appId)
+      if (updated) {
+        currentApp.value = { ...updated }
+        currentApp.value.reply = updated.reply || []
+      }
+    }
+
   } catch (err) {
     console.error('接受失败', err)
   }
@@ -461,6 +470,12 @@ const rejectOffer = async (offerId) => {
     await axios.post('/financing/offer/reject', null, { params: { offerId } })
     alert('已拒绝银行方案')
     await loadApplications()
+    //  自动更新弹窗数据
+    const updated = applications.value.find(a => a.appId === currentApp.value.appId)
+    if (updated) {
+      openApplicationDetail(updated)
+    }
+
   } catch (err) {
     console.error('拒绝失败', err)
   }
@@ -580,11 +595,6 @@ watch(currentView, val => {
 
 .form-actions button {
   flex: 1;
-}
-
-.modal-close-btn {
-  display: block;
-  margin: 20px auto 0 auto;
 }
 
 </style>
@@ -828,11 +838,6 @@ textarea {
   gap: 8px;
 }
 
-/* 审批按钮 */
-.accept-btn {
-  margin: 1rem;
-}
-
 /* 没有数据 */
 .empty-state {
   text-align: center;
@@ -907,8 +912,7 @@ textarea {
   margin-top: 20px;
 }
 
-/* 
-   通用弹窗*/
+/*通用弹窗*/
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -950,6 +954,25 @@ textarea {
   justify-content: center;
   align-items: center;
   z-index: 999;
+}
+
+.modal-title-div {
+  position: relative;
+  text-align: center;      /* 让标题居中 */
+  padding: 10px 40px;      /* 给右侧留空间放按钮 */
+}
+
+.modal-title-div h3 {
+  margin: 0;
+}
+
+.modal-close-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);  /* 垂直居中对齐 */
+  cursor: pointer;
+  font-size: 14px;
 }
 
 .modal-content {
@@ -1032,16 +1055,25 @@ textarea {
   margin: 4px 0;
 }
 
-/* 
-   农户 - 接受/拒绝按钮*/
+.bank-action-buttons {
+  display: flex;
+  justify-content: center; /* 两个按钮左右均匀分布 */
+  gap: 50px;                       /* 按钮间距 */
+  width: 100%;                     /* 自动拉满容器 */
+}
+
+.accept-btn,
+.reject-btn {
+  width: 80px;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  text-align: center;
+}
+
 .accept-btn {
   background-color: #52c41a;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-right: 6px;
 }
 .accept-btn:hover {
   background-color: #4CAF50;
@@ -1049,18 +1081,12 @@ textarea {
 
 .reject-btn {
   background-color: #d9534f;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
 }
 .reject-btn:hover {
   background-color: #c9302c;
 }
 
-/* 
-   银行回复表单*/
+/* 银行回复表单*/
 .reply-form {
   margin-top: 15px;
   padding: 12px;

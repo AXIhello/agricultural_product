@@ -65,6 +65,13 @@ public class AgriculturalKnowledgeServiceImpl implements AgriculturalKnowledgeSe
     }
 
     @Override
+    public Page<AgriculturalKnowledge> getAllKnowledge(Integer pageNum, Integer pageSize) {
+        Page<AgriculturalKnowledge> page = new Page<>(pageNum, pageSize);
+        return knowledgeMapper.selectPage(page, null);
+    }
+
+
+    @Override
     public Page<AgriculturalKnowledge> getExpertKnowledgeList(Long expertId, Integer pageNum, Integer pageSize) {
         Page<AgriculturalKnowledge> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<AgriculturalKnowledge> wrapper = new LambdaQueryWrapper<>();

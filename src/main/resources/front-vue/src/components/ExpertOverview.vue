@@ -1,6 +1,6 @@
 <template>
   <div class="expert-overview-container">
-    <div v-if="!experts.length">正在加载专家列表...</div>
+    <div v-if="!experts.length">当前暂无专家！</div>
 
     <div 
       class="expert" 
@@ -31,17 +31,19 @@ onMounted(() => {
 
 async function fetchExperts() {
   try {
-    
     const response = await axios.get('/expert/profile/list');
-    
-    
-    if (response.data && response.data.success) {
-      experts.value = response.data.data;
+
+    // 按你的后端格式结构解析
+    if (response.data?.success) {
+      experts.value = response.data.data || [];
+    } else {
+      console.error('后端返回失败:', response.data?.message);
     }
   } catch (error) {
     console.error('加载专家列表失败:', error);
   }
 }
+
 
 // 辅助函数，用于处理图片URL
 // 如果你的 photo_url 已经是完整的URL，则不需要这个函数
