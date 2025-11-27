@@ -1,25 +1,21 @@
 <template>
   <div class="chat-container">
-    
-    <!-- 聊天窗口 -->
     <div class="chat-window">
       <div class="chat-header">
         <h3>正在与 用户 {{ receiverId }} 聊天</h3>
-        <div>
-          <button @click="goBack()">返回</button>
-        </div>
+        <button @click="goBack()" class="back-btn">返回</button>
       </div>
-
 
       <div class="messages" ref="messageContainer">
         <div v-if="isLoading" class="loading-state">正在加载消息...</div>
         <div v-else-if="messages.length === 0" class="empty-state">还没有消息，开始聊天吧！</div>
 
         <div v-else v-for="message in messages" :key="message.messageId"
-              :class="['message-item', message.senderId === currentUser?.userId ? 'sent' : 'received']">
+             :class="['message-item', message.senderId === currentUser?.userId ? 'sent' : 'received']">
           <div class="message-bubble">
             <p class="message-content">{{ message.content }}</p>
             <span class="message-time">{{ formatMessageTime(message.sendTime) }}</span>
+            <div class="bubble-tail"></div>
           </div>
         </div>
       </div>
@@ -42,85 +38,262 @@
   </div>
 </template>
 
+<style scoped>
+/* ================== 容器 ================== */
+.chat-container {
+  display: flex;
+  height: calc(100vh - 100px);
+  width: 100%;
+  background: linear-gradient(to bottom, #e6f0e6, #f5f5f5);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.12);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* ================== 聊天窗口 ================== */
+.chat-window {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ------------------ 头部 ------------------ */
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: #ffffff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.chat-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  color: #2D7D4F;
+  font-weight: bold;
+  cursor: pointer;
+}
+.back-btn:hover { color: #1f5233; }
+
+/* ------------------ 消息区 ------------------ */
+.messages {
+  flex-grow: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scroll-behavior: smooth;
+}
+
+.messages::-webkit-scrollbar {
+  width: 6px;
+}
+.messages::-webkit-scrollbar-thumb {
+  background-color: rgba(45, 125, 79, 0.3);
+  border-radius: 3px;
+}
+.messages::-webkit-scrollbar-track { background: transparent; }
+
+.message-item {
+  display: flex;
+  max-width: 75%;
+  position: relative;
+  animation: slideUp 0.25s ease-out;
+}
+
+@keyframes slideUp { from { opacity:0; transform: translateY(8px);} to {opacity:1; transform: translateY(0);} }
+
+/* ------------------ 气泡 ------------------ */
+.message-bubble {
+  position: relative;
+  padding: 14px 18px;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  word-wrap: break-word;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.message-time {
+  display: block;
+  font-size: 0.68rem;
+  color: #888;
+  margin-top: 4px;
+  text-align: right;
+  opacity: 0.8;
+}
+
+/* 气泡尾巴 */
+.bubble-tail {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  bottom: 0;
+  background: inherit;
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+
+/* 自己发送 */
+.message-item.sent {
+  align-self: flex-end;
+}
+.message-item.sent .message-bubble {
+  background: linear-gradient(145deg, #D4F8C6, #B8E6A0);
+  border-bottom-right-radius: 4px;
+}
+.message-item.sent .bubble-tail {
+  right: -6px;
+  transform: rotate(90deg);
+}
+.message-item.sent .message-time { color: #4f7a43; }
+
+/* 接收消息 */
+.message-item.received {
+  align-self: flex-start;
+}
+.message-item.received .message-bubble {
+  background: #ffffff;
+  border-bottom-left-radius: 4px;
+}
+.message-item.received .bubble-tail {
+  left: -6px;
+  transform: rotate(-90deg);
+}
+
+/* ------------------ 输入区 ------------------ */
+.chat-input-area {
+  padding: 16px 24px;
+  border-top: 1px solid #e0e0e0;
+  background-color: #f9f9f9;
+}
+
+.message-form {
+  display: flex;
+  gap: 12px;
+}
+
+.message-input {
+  flex-grow: 1;
+  padding: 14px 18px;
+  border: 1px solid #ccc;
+  border-radius: 24px;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.2s;
+}
+.message-input:focus {
+  border-color: #2D7D4F;
+  box-shadow: 0 0 12px rgba(45,125,79,0.25);
+}
+
+.send-button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 24px;
+  background: linear-gradient(135deg,#2D7D4F,#1F5233);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.send-button:hover {
+  background: linear-gradient(135deg,#3da86c,#2d7d4f);
+  box-shadow: 0 4px 14px rgba(45,125,79,0.3);
+}
+.send-button:disabled {
+  background: #a5d6a7;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+</style>
+
+
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import axios from '../utils/axios'; 
+import axios from '../utils/axios';
 import { useAuthStore } from '@/stores/authStore';
 import { storeToRefs } from 'pinia';
 import router from "@/router/index.js";
 
 // --- Reactive State ---
 const route = useRoute();
-const receiverId = ref(null); // 聊天对象的ID
-const currentSession = ref(null); // 当前会话对象
-const messages = ref([]); // 消息列表
-const newMessageContent = ref(''); // 输入框内容
-const isLoading = ref(true); // 加载状态
-const messageContainer = ref(null); // DOM引用，用于滚动
+const receiverId = ref(null);        // 聊天对象ID
+const currentSession = ref(null);    // 当前会话
+const messages = ref([]);            // 消息列表
+const newMessageContent = ref('');   // 输入框内容
+const isLoading = ref(true);         // 加载状态
+const messageContainer = ref(null);  // DOM引用，用于滚动
 
 // --- SSE 连接对象 ---
 let eventSource = null;
 
 const authStore = useAuthStore();
-const { userInfo: currentUser, isLoggedIn, token } = storeToRefs(authStore);// currentUser 就是 userInfo 的别名，isLoggedIn 和 token 也是响应式的
+const { userInfo: currentUser, isLoggedIn, token } = storeToRefs(authStore);
 
 // --- Lifecycle Hooks ---
 onMounted(() => {
-  
   if (!isLoggedIn.value) {
     alert('请先登录后再进行聊天！');
     router.push('/login');
-    return; 
+    return;
   }
 
-  // 从路由参数初始化聊天
+  // 初始化聊天
   receiverId.value = parseInt(route.params.receiverId, 10);
   if (receiverId.value) {
     initializeChat(receiverId.value);
-    setupSseConnection(); // 建立实时连接
+    setupSseConnection();
   }
 });
 
 onUnmounted(() => {
-  // 组件销毁时，关闭SSE连接以防内存泄漏
   if (eventSource) {
     eventSource.close();
     console.log('SSE connection closed.');
   }
 });
 
-// 监听路由变化，以便在同一个页面切换聊天对象时能重新加载
+// 监听路由变化，切换聊天对象
 watch(
-  () => route.params.receiverId,
-  (newId) => {
-    if (newId && parseInt(newId, 10) !== receiverId.value) {
-      receiverId.value = parseInt(newId, 10);
-      messages.value = []; // 清空旧消息
-      currentSession.value = null;
-      initializeChat(receiverId.value);
+    () => route.params.receiverId,
+    (newId) => {
+      if (newId && parseInt(newId, 10) !== receiverId.value) {
+        receiverId.value = parseInt(newId, 10);
+        messages.value = [];
+        currentSession.value = null;
+        initializeChat(receiverId.value);
+      }
     }
-  }
 );
 
-
-// --- Methods ---
+// ------------------- Methods -------------------
 
 /**
- * 初始化聊天，包括获取会话和历史消息
- * @param {number} peerId - 对方用户的ID
+ * 初始化聊天
  */
 async function initializeChat(peerId) {
   isLoading.value = true;
   try {
-    // API: POST /api/chat/session/{peerId} -> 获取或创建会话
     const sessionRes = await axios.post(`/chat/session/${peerId}`);
     currentSession.value = sessionRes.data;
 
     if (currentSession.value && currentSession.value.sessionId) {
-      // API: GET /api/chat/messages/{sessionId} -> 加载历史消息
       const messagesRes = await axios.get(`/chat/messages/${currentSession.value.sessionId}`);
-      messages.value = messagesRes.data;
+
+      // 按时间升序（早 -> 晚）
+      messages.value = messagesRes.data.sort((a, b) => new Date(a.sendTime) - new Date(b.sendTime));
     }
   } catch (error) {
     console.error('初始化聊天失败:', error);
@@ -132,7 +305,7 @@ async function initializeChat(peerId) {
 }
 
 /**
- * 发送新消息
+ * 发送消息
  */
 async function sendMessage() {
   if (!newMessageContent.value.trim() || !currentSession.value) return;
@@ -144,13 +317,9 @@ async function sendMessage() {
   };
 
   try {
-    // API: POST /api/chat/messages -> 发送消息
     await axios.post('/chat/messages', messageData);
-    
-    // 清空输入框
     newMessageContent.value = '';
-    // 发送成功后，新消息会通过SSE推送过来，所以前端不需要手动添加
-    // 这样可以保证数据来源的唯一性
+    // 不手动 push，新消息通过 SSE 推送
   } catch (error) {
     console.error('发送消息失败:', error);
     alert('消息发送失败！');
@@ -158,222 +327,63 @@ async function sendMessage() {
 }
 
 /**
- * 建立Server-Sent Events (SSE)连接以接收实时消息
+ * SSE 实时消息
  */
 function setupSseConnection() {
-
   if (!token.value) return;
 
   const url = `/api/chat/stream?token=${token.value}`;
-  
   eventSource = new EventSource(url);
 
-  eventSource.onopen = () => {
-    console.log('SSE connection established.');
-  };
+  eventSource.onopen = () => console.log('SSE connection established.');
 
-  // 监听后端推送的消息事件
-  eventSource.onmessage = (event) => {
+  eventSource.onmessage = async (event) => {
     const newMessage = JSON.parse(event.data);
-    
-    // 只处理当前会话的消息
     if (currentSession.value && newMessage.sessionId === currentSession.value.sessionId) {
-      messages.value.unshift(newMessage);
-      scrollToBottom();
+      // 最新消息追加到末尾
+      messages.value.push(newMessage);
+      await scrollToBottom();
     }
   };
 
   eventSource.onerror = (error) => {
     console.error('SSE Error:', error);
     eventSource.close();
-    // 这里可以添加重连逻辑
+    // 可加重连逻辑
   };
 }
 
-
 /**
- * 根据消息时间，格式化为 "今天/昨天/日期" 的形式
- * @param {string} dateTimeStr - 后端返回的时间字符串 (e.g., "2023-10-27T15:30:00")
+ * 格式化消息时间
  */
 function formatMessageTime(dateTimeStr) {
   if (!dateTimeStr) return '';
-
   const messageDate = new Date(dateTimeStr);
   const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterdayStart = new Date(todayStart.getTime() - 86400000);
+  const thisYearStart = new Date(now.getFullYear(), 0, 1);
 
-  // 定义时间边界
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // 今天 00:00
-  const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000); // 昨天 00:00
-  const thisYearStart = new Date(now.getFullYear(), 0, 1); // 今年第一天 00:00
+  const fmtTime = (d) => `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
 
-  // 辅助函数：格式化时间为 HH:mm
-  const formatTimeOnly = (date) => {
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${hours}:${minutes}`;
-  };
-
-  const timeStr = formatTimeOnly(messageDate);
-
-  if (messageDate.getTime() >= todayStart.getTime()) {
-    // 今天：只显示时间
-    return timeStr;
-  } else if (messageDate.getTime() >= yesterdayStart.getTime()) {
-    // 昨天：显示“昨天 + 时间”
-    return `昨天 ${timeStr}`;
-  } else if (messageDate.getTime() >= thisYearStart.getTime()) {
-    // 今年内，但早于昨天：显示“月-日 + 时间”
-    const month = (messageDate.getMonth() + 1).toString().padStart(2, '0');
-    const day = messageDate.getDate().toString().padStart(2, '0');
-    return `${month}-${day} ${timeStr}`;
-  } else {
-    // 去年或更早：显示“年-月-日 + 时间”
-    const year = messageDate.getFullYear();
-    const month = (messageDate.getMonth() + 1).toString().padStart(2, '0');
-    const day = messageDate.getDate().toString().padStart(2, '0');
-    return `${year}-${month}-${day} ${timeStr}`;
-  }
+  if (messageDate >= todayStart) return fmtTime(messageDate);
+  if (messageDate >= yesterdayStart) return `昨天 ${fmtTime(messageDate)}`;
+  if (messageDate >= thisYearStart) return `${(messageDate.getMonth()+1).toString().padStart(2,'0')}-${messageDate.getDate().toString().padStart(2,'0')} ${fmtTime(messageDate)}`;
+  return `${messageDate.getFullYear()}-${(messageDate.getMonth()+1).toString().padStart(2,'0')}-${messageDate.getDate().toString().padStart(2,'0')} ${fmtTime(messageDate)}`;
 }
 
-
 /**
- * 滚动到聊天窗口底部
+ * 滚动到底部
  */
 async function scrollToBottom() {
-  await nextTick(); // 等待DOM更新
+  await nextTick();
   if (messageContainer.value) {
     messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
   }
 }
 
 function goBack() {
-  router.back()
+  router.back();
 }
-
 </script>
 
-<style scoped>
-.chat-container {
-  display: flex;
-  height: calc(100vh - 100px); /* 减去头部导航栏的高度 */
-  width: 100%;
-  background-color: #f5f5f5;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.chat-window {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.chat-header {
-  display: flex;
-  justify-content: space-between;
-  padding: 15px 20px;
-  border-bottom: 1px solid #e0e0e0;
-  background-color: #ffffff;
-}
-
-.chat-header h3 {
-  margin: 0;
-  font-size: 1.2rem;
-  color: #333;
-}
-
-.messages {
-  flex-grow: 1;
-  padding: 20px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.message-item {
-  display: flex;
-  max-width: 70%;
-}
-
-.message-bubble {
-  padding: 10px 15px;
-  border-radius: 18px;
-  position: relative;
-}
-
-.message-content {
-  margin: 0;
-  word-wrap: break-word;
-}
-
-.message-time {
-  display: block;
-  font-size: 0.75rem;
-  color: #888;
-  margin-top: 5px;
-  text-align: right;
-}
-
-/* 自己发送的消息 */
-.message-item.sent {
-  align-self: flex-end;
-}
-.message-item.sent .message-bubble {
-  background-color: #DCF8C6; /* 绿色气泡 */
-  border-bottom-right-radius: 4px;
-}
-.message-item.sent .message-time {
-  color: #6a8a5b;
-}
-
-/* 接收到的消息 */
-.message-item.received {
-  align-self: flex-start;
-}
-.message-item.received .message-bubble {
-  background-color: #FFFFFF; /* 白色气泡 */
-  border-bottom-left-radius: 4px;
-}
-
-.chat-input-area {
-  padding: 15px 20px;
-  border-top: 1px solid #e0e0e0;
-  background-color: #f9f9f9;
-}
-
-.message-form {
-  display: flex;
-  gap: 10px;
-}
-
-.message-input {
-  flex-grow: 1;
-  padding: 12px;
-  border: 1px solid #ccc;
-  border-radius: 20px;
-  font-size: 1rem;
-}
-
-.send-button {
-  padding: 10px 20px;
-  border: none;
-  background-color: #2D7D4F; /* 主题绿色 */
-  color: white;
-  border-radius: 20px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.3s;
-}
-
-.send-button:hover {
-  background-color: #256841;
-}
-
-.send-button:disabled {
-  background-color: #a5d6a7;
-  cursor: not-allowed;
-}
-
-</style>

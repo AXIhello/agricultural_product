@@ -15,4 +15,7 @@ public interface BankProductService {
     Page<BankProduct> listMyProducts(Long bankUserId, Integer pageNum, Integer pageSize);
 
     Page<BankProduct> listAllProducts(Integer pageNum, Integer pageSize);
+
+    boolean deleteProduct(Long bankUserId, Integer productId);
+
 }

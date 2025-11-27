@@ -7,88 +7,94 @@
       <!-- 顶部导航 -->
       <nav class="main-nav">
         <button @click="switchView('products')" :class="{ active: currentView === 'products' }">
-          所有融资产品
+          融资产品
         </button>
         <button @click="switchView('applications')" :class="{ active: currentView === 'applications' }">
-          所有融资申请
+          融资申请
         </button>
       </nav>
 
 
-      <!--所有融资产品（无角色限制-->
+      <!--融资产品（无角色限制-->
       <div v-if="currentView === 'products'" class="view-wrapper">
 
-        <!-- 产品列表 -->
-        <div
-            class="item-card"
-            v-for="p in products"
-            :key="p.productId"
-        >
-          <div class="item-left">
-            <h3>{{ p.productName }}</h3>
-            <p><strong>银行：</strong>{{ p.bankName }}</p>
-            <p><strong>期限：</strong>{{ p.termMonths }} 月</p>
-            <p><strong>利率：</strong>{{ p.interestRate }}%</p>
-            <p><strong>额度范围：</strong>{{ p.minAmount }} - {{ p.maxAmount }} 元</p>
+          <!-- 表格头 -->
+          <div class="items-table-header">
+            <span>产品名称</span>
+            <span>银行</span>
+            <span>期限</span>
+            <span>利率</span>
+            <span>额度范围</span>
+            <span>操作</span>
           </div>
 
-          <div class="item-right">
-            <button @click="viewProduct(p)" class="detail-btn">查看详情</button>
-
-            <button
-                v-if="role === 'bank'"
-                @click="deleteProduct(p.productId)"
-                class="delete-btn"
-            >
-              删除
-            </button>
+          <!-- 产品行 -->
+          <div
+              class="items-table-row"
+              v-for="p in products"
+              :key="p.productId"
+          >
+            <span>{{ p.productName }}</span>
+            <span>{{ p.bankName }}</span>
+            <span>{{ p.termMonths }} 月</span>
+            <span>{{ p.interestRate }}%</span>
+            <span>{{ p.minAmount }} - {{ p.maxAmount }} 元</span>
+            <span>
+      <button @click="viewProduct(p)" class="detail-btn">查看详情</button>
+      <button
+          v-if="role === 'bank'"
+          @click="deleteProduct(p.productId)"
+          class="delete-btn"
+      >
+        删除
+      </button>
+    </span>
           </div>
-        </div>
 
-        <p v-if="!products.length" class="empty-state">暂无融资产品</p>
+          <p v-if="!products.length" class="empty-state">暂无融资产品</p>
 
-        <!-- bank 才能创建产品 -->
-        <button
-            v-if="role === 'bank'"
-            class="create-btn"
-            @click="showCreateProduct = true"
-        >
-          + 发布新产品
-        </button>
+          <!-- bank 才能创建产品 -->
+          <button
+              v-if="role === 'bank'"
+              class="create-btn"
+              @click="showCreateProduct = true"
+          >
+            + 发布新产品
+          </button>
 
         <!-- 弹窗：银行发布新产品 -->
         <div v-if="showCreateProduct" class="modal-overlay" @click.self="showCreateProduct = false">
-          <div class="modal-content">
+          <div class="model-container">
             <h3>发布新产品</h3>
 
             <form @submit.prevent="submitNewProduct" class="modal-form">
 
-              <div class="form-group">
+              <div class="modal-form-group">
                 <label>产品名称：</label>
                 <input v-model="newProduct.productName" required />
               </div>
 
-              <div class="form-group">
+              <div class="modal-form-group">
                 <label>描述：</label>
                 <textarea v-model="newProduct.description" required></textarea>
               </div>
 
-              <div class="form-group">
+              <div class="modal-form-group">
                 <label>期限（月）：</label>
                 <input type="number" v-model="newProduct.termMonths" required />
               </div>
 
-              <div class="form-group">
+              <div class="modal-form-group">
                 <label>利率：</label>
                 <input type="number" step="0.01" v-model="newProduct.interestRate" required />
               </div>
 
-              <div class="form-group">
+              <div class="modal-form-group">
                 <label>最小额度：</label>
                 <input type="number" v-model="newProduct.minAmount" required />
               </div>
 
-              <div class="form-group">
+              <div class="modal-form-group">
                 <label>最大额度：</label>
                 <input type="number" v-model="newProduct.maxAmount" required />
               </div>
@@ -104,7 +110,7 @@
 
         <!-- 弹窗：查看产品详情 -->
         <div v-if="showProductDetail" class="modal-overlay" @click.self="closeProductDetail">
-          <div class="modal-content product-detail-modal">
+          <div class="model-container product-detail-modal">
             <div class="modal-title-div">
               <h3 class="modal-title">产品编号 #{{ currentProduct.productId }}</h3>
               <button @click="closeProductDetail" class="modal-close-btn">关闭</button>
@@ -144,11 +150,11 @@
               <h4 class="section-title">申请贷款</h4>
 
               <form @submit.prevent="applyProduct" class="offer-item">
-                <div class="form-group">
+                <div class="modal-form-group">
                   <label>融资金额 (元):</label>
                   <input type="number" v-model.number="newApp.amount" required min="1000" />
                 </div>
-                <div class="form-group">
+                <div class="modal-form-group">
                   <label>资金用途:</label>
                   <input type="text" v-model="newApp.purpose" required />
                 </div>
@@ -163,31 +169,37 @@
         </div>
 
 
-
       </div>
 
-      <!--所有融资申请（farmer / bank 都能访问）-->
+      <!-- 融资申请（farmer / bank 都能访问）-->
       <div v-if="currentView === 'applications'" class="view-wrapper">
+
+        <!-- 表格头 -->
+        <div class="items-table-header">
+          <span>申请编号</span>
+          <span>申请人</span>
+          <span>金额</span>
+          <span>期限</span>
+          <span>状态</span>
+          <span>操作</span>
+        </div>
 
         <!-- 申请列表 -->
         <div
-            class="item-card"
+            class="items-table-row"
             v-for="app in applications"
             :key="app.financingId"
         >
-          <div class="item-left">
-            <h3>申请编号 #{{ app.financingId }}</h3>
-            <p><strong>申请人：</strong>{{ app.farmerName }}</p>
-            <p><strong>金额：</strong>{{ app.amount }} 元</p>
-            <p><strong>期限：</strong>{{ app.term }} 月</p>
-            <p><strong>状态：</strong>{{ app.applicationStatus }}</p>
-          </div>
-
-          <div class="item-right">
-            <button @click="openApplicationDetail(app)" class="detail-btn">
-              查看详情
-            </button>
-          </div>
+          <span>{{ app.financingId }}</span>
+          <span>{{ app.farmerName }}</span>
+          <span>{{ app.amount }} 元</span>
+          <span>{{ app.term }} 月</span>
+          <span>{{ app.applicationStatus }}</span>
+          <span>
+      <button @click="openApplicationDetail(app)" class="detail-btn">
+        查看详情
+      </button>
+    </span>
         </div>
 
         <p v-if="!applications.length" class="empty-state">暂无申请</p>
@@ -201,99 +213,12 @@
           + 发起申请
         </button>
 
-
-        <!-- 弹窗：申请详情 -->
-        <div v-if="showDetail" class="modal-overlay" @click.self="closeDetail()">
-          <div class="modal-content">
-            <h3>申请详情</h3>
-
-            <div class="form-row"><label>ID：</label><span>{{ currentApp.financingId }}</span></div>
-            <div class="form-row"><label>金额：</label><span>{{ currentApp.amount }} 元</span></div>
-            <div class="form-row"><label>用途：</label><span>{{ currentApp.purpose }}</span></div>
-            <div class="form-row"><label>期限：</label><span>{{ currentApp.term }} 月</span></div>
-            <div class="form-row"><label>状态：</label><span>{{ currentApp.applicationStatus }}</span></div>
-
-            <hr />
-
-            <!-- 银行回复区 -->
-            <div v-if="role === 'farmer'">
-              <h4>银行回复</h4>
-
-              <div v-if="currentApp.reply && currentApp.reply.length">
-                <div v-for="(r, i) in currentApp.reply" :key="i" class="reply-block">
-                  <div class="form-row"><label>利率：</label><span>{{ r.offeredInterestRate }}%</span></div>
-                  <div class="form-row"><label>批复金额：</label><span>{{ r.offeredAmount }} 元</span></div>
-                  <div class="form-row"><label>备注：</label><span>{{ r.bankNotes || '无' }}</span></div>
-                  <div class="form-row"><label>时间：</label><span>{{ r.offerTime }}</span></div>
-                  <div class="form-row"><label>状态：</label><span>{{ r.offerStatus }}</span></div>
-
-                  <div v-if="role === 'farmer' && r.offerStatus === 'pending'" class="bank-action-buttons">
-                    <button @click="acceptOffer(r.offerId)" class="accept-btn">接受</button>
-                    <button @click="rejectOffer(r.offerId)" class="reject-btn">拒绝</button>
-                  </div>
-                  <hr />
-                </div>
-              </div>
-              <p v-else>暂无银行回复</p>
-            </div>
-
-            <!-- 银行可回复 -->
-            <div v-if="role === 'bank'" class="reply-form">
-              <h4>提交批复</h4>
-              <form @submit.prevent="submitReply" class="modal-form">
-                <div class="form-row">
-                  <label>利率：</label>
-                  <input type="number" step="0.01" v-model="newReply.offeredInterestRate" required />
-                </div>
-                <div class="form-row">
-                  <label>批复金额：</label>
-                  <input type="number" v-model="newReply.offeredAmount" required />
-                </div>
-                <div class="form-row">
-                  <label>备注：</label>
-                  <textarea v-model="newReply.bankNotes"></textarea>
-                </div>
-                <div class="action-buttons">
-                  <button class="submit-btn">提交</button>
-                </div>
-              </form>
-            </div>
-
-            <button class="cancel-btn" @click="closeDetail()">关闭</button>
-          </div>
-        </div>
-
-        <!-- 弹窗：农户新建申请 -->
-        <div v-if="showCreateApplication" class="modal-overlay" @click.self="showCreateApplication = false">
-          <div class="modal-content">
-            <h3>发起融资申请</h3>
-            <form @submit.prevent="submitNewApplication" class="modal-form">
-              <div class="form-row">
-                <label>金额（元）：</label>
-                <input type="number" v-model="newApp.amount" required />
-              </div>
-              <div class="form-row">
-                <label>用途：</label>
-                <input v-model="newApp.purpose" required />
-              </div>
-              <div class="form-row">
-                <label>期限（月）：</label>
-                <input type="number" v-model="newApp.term" required />
-              </div>
-              <div class="form-actions">
-                <button class="submit-btn">提交</button>
-                <button type="button" class="cancel-btn" @click="showCreateApplication = false">取消</button>
-              </div>
-            </form>
-          </div>
-        </div>
-
       </div>
+
 
     </section>
   </div>
 </template>
-
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
@@ -547,529 +472,189 @@ watch(currentView, val => {
 
 /*产品详情*/
 <style scoped>
-.product-info .form-row {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.product-info .form-row label {
-  width: 20%;        /* label 固定宽度，可根据需要调整 */
-  font-weight: bold;
-  text-align: justify;  /* 两端对齐 */
-}
-
-.product-info .form-row span {
-  width: 80%;
-  flex: 1;
-}
-
-.reply-section .section-title {
-  text-align: center;
-  margin: 20px 0 10px;
-}
-
-.offer-item .form-group {
-  display: flex;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.offer-item .form-group label {
-  width: 120px;
-  text-align: left;
-}
-
-.offer-item .form-group input {
-  flex: 1;
-  padding: 6px 8px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-}
-
-.form-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 15px;
-}
-
-.form-actions button {
-  flex: 1;
-}
-
-</style>
-
-<style scoped>
-.main-bg {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  width: 1800px;
-  background-color: #F0F9F4;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.main-nav {
-  display: flex;
-  border-bottom: 2px solid #e0e0e0;
-  margin-bottom: 25px;
-}
-.main-nav button {
-  padding: 10px 20px;
-  border: none;
-  background-color: transparent;
-  cursor: pointer;
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: #555;
-  transition: color 0.3s, border-bottom-color 0.3s;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -2px;
-}
-.main-nav button:hover { color: #2D7D4F; }
-.main-nav button.active {
-  color: #2D7D4F;
-  border-bottom-color: #2D7D4F;
-}
-/* 内容主容器 */
-.content {
-  width: 100%;
-  flex: 1;
-  padding: 20px;
-  background: white;
-  border-radius: 8px;
-}
-
-/* 顶部角色/类型切换导航 */
-.role-nav {
-  display: flex;
-  border-bottom: 2px solid #e0e0e0;
-  margin-bottom: 25px;
-}
-
-.role-nav button,
-.buyer-nav button {
-  padding: 10px 20px;
-  border: none;
-  background-color: transparent;
-  cursor: pointer;
-  font-size: 1.1rem;
-  color: #555;
-  transition: 0.3s;
-  border-bottom: 3px solid transparent;
-}
-
-button.active {
-  color: #2D7D4F;
-  border-bottom-color: #2D7D4F;
-}
-
-/* 页面标题 */
-.page-header h2 {
-  color: #2D7D4F;
-  font-weight: 700;
-}
-
-/* 顶部按钮（新增产品/新增申请） */
-.loan-type-buttons button {
-  background: #2D7D4F;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 16px;
-  margin-left: 10px;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-.loan-type-buttons button:hover {
-  background: #40916C;
-}
-
-/* 融资产品卡片 / 融资申请卡片*/
-.finance-card,
-.application-card {
-  background: white;
-  border-radius: 10px;
-  padding: 16px;
-  margin-bottom: 15px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
-
-.finance-card h3 {
-  color: #2D7D4F;
-  margin-bottom: 10px;
-}
-
-.finance-card p,
-.application-card p {
-  margin: 6px 0;
-  color: #333;
-}
-
-/* 操作按钮 */
-.finance-card button,
-.detail-btn {
-  margin-top: 10px;
-  background-color: #2D7D4F;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 8px 14px;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-
-.finance-card button:hover,
-.detail-btn:hover {
-  background-color: #25683F;
-}
-
-/* 蓝色详情按钮 */
-.detail-btn {
-  background: #4caf50;
-}
-.detail-btn:hover {
-  background: #52c41a;
-}
-
-/* 申请列表整体布局 */
-.application-list {
-  padding: 10px 20px;
-}
-
-/*新增 / 提交 / 取消按钮*/
-
-.add-btn,
-.submit-btn,
-.cancel-btn {
-  margin: 10px 5px;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
-  color: white;
-  cursor: pointer;
-}
-
-.add-btn,
-.submit-btn {
-  background-color: #2D7D4F;
-}
-.add-btn:hover,
-.submit-btn:hover {
-  background-color: #25683F;
-}
-
-.cancel-btn {
-  background-color: #6c757d;
-}
-.cancel-btn:hover {
-  background-color: #5a6268;
-}
-
-/*表单样式*/
-
-.application-form {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  width: 90%;
-  max-width: 500px;
-  margin: 0 auto;
-}
-
-.form-group {
-  margin-bottom: 16px;
-}
-
-.form-group label {
-  font-weight: bold;
-  display: block;
-  margin-bottom: 6px;
-}
-
-.form-group input,
-textarea,
-input,
-textarea {
-  width: 100%;
-  padding: 6px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  box-sizing: border-box;
-}
-
-/*弹窗样式*/
-
+/* 通用弹窗 */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0,0,0,0.5);
+  inset: 0; /* top/right/bottom/left 0 */
+  background: rgba(0,0,0,0.4);
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+  z-index: 1000;
 }
 
-.modal-content {
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  width: 400px;
+.model-container {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  width: 420px;
   max-width: 90%;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  transition: transform 0.2s ease;
 }
 
-/* 回复区域 */
-.reply-section {
-  margin-top: 15px;
-  border: 1px solid #2D7D4F;
-  border-radius: 10px;
-  padding: 10px;
-  text-align: left;
-  background: #f6fff6;
-}
-
-/* 动作按钮区域 */
-.action-buttons {
+/* 弹窗标题 */
+.model-container h3 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #2D7D4F;
   text-align: center;
-  gap: 8px;
 }
 
-/* 没有数据 */
-.empty-state {
-  text-align: center;
-  color: gray;
-  margin-top: 20px;
+/* 弹窗按钮 */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 10px;
 }
-/* 
-   发起申请按钮（农户）*/
-.create-btn {
+
+.submit-btn, .add-btn, .create-btn {
   background-color: #52c41a;
-  color: white;
+  color: #fff;
   border: none;
-  padding: 10px 16px;
-  border-radius: 6px;
+  padding: 10px 18px;
+  border-radius: 12px;
   cursor: pointer;
-  margin-bottom: 15px;
+  font-weight: 500;
+  transition: background 0.2s;
 }
+.submit-btn:hover,
+.add-btn:hover,
 .create-btn:hover {
   background-color: #4CAF50;
 }
 
-/* 每条申请卡片 */
-.item-card {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  background: #fff;
-  border: 1px solid #ddd;
-  padding: 15px;
-  margin-bottom: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-}
-
-.item-left h3 {
-  color: #2D7D4F;
-  margin-bottom: 8px;
-}
-
-.item-left {
-  display: flex;
-  flex-direction: row;       /* 横向排列 */
-  flex-wrap: wrap;           /* 内容多时换行 */
-  gap: 20px;                 /* 各信息间距 */
-  align-items: center;       /* 垂直居中对齐 */
-}
-
-.item-left p {
-  margin: 0;                 /* 去掉上下边距 */
-}
-
-
-/*“查看详情”按钮*/
-.detail-btn {
-  background: #4caf50;
-  color: white;
+.cancel-btn {
+  background-color: #e0e0e0;
+  color: #555;
   border: none;
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-.detail-btn:hover {
-  background: #52c41a;
-}
-
-/* 
-   空状态*/
-.empty-state {
-  text-align: center;
-  color: gray;
-  margin-top: 20px;
-}
-
-/*通用弹窗*/
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-}
-
-.modal-content {
-  background: white;
-  padding: 20px;
-  width: 420px;
-  max-width: 90%;
+  padding: 10px 18px;
   border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.25);
-}
-
-/* 
-   Modal 内标题*/
-.modal-content h3,
-.modal-content h4 {
-  color: #2D7D4F;
-  margin-bottom: 12px;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 999;
-}
-
-.modal-title-div {
-  position: relative;
-  text-align: center;      /* 让标题居中 */
-  padding: 10px 40px;      /* 给右侧留空间放按钮 */
-}
-
-.modal-title-div h3 {
-  margin: 0;
-}
-
-.modal-close-btn {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);  /* 垂直居中对齐 */
   cursor: pointer;
-  font-size: 14px;
+  transition: background 0.2s;
+}
+.cancel-btn:hover {
+  background-color: #cfcfcf;
 }
 
-.modal-content {
-  background: #fff;
+/* 申请列表卡片 */
+/* 表格头 */
+.items-table-header {
+  display: flex;
+  font-weight: bold;
+  padding: 12px;
+  background: #f5f5f5;
   border-radius: 8px;
-  padding: 20px 25px;
-  width: 400px;
-  max-width: 90%;
+  gap: 12px;
 }
 
-.modal-content h3 {
-  margin-bottom: 15px;
-  text-align: center;
-}
-
-.modal-form .form-group {
+/* 表格行 */
+.items-table-row {
   display: flex;
-  justify-content: space-between;
+  padding: 12px;
+  border-bottom: 1px solid #eee;
   align-items: center;
-  margin-bottom: 12px;
+  gap: 12px;
 }
 
-.modal-form .form-group label {
-  width: 25%;
-  text-align: left;
-  font-weight: 500;
+/* 每列根据需要可设置固定宽度或 flex-grow */
+.items-table-header span,
+.items-table-row span {
+  flex: 1; /* 平均分布 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.modal-form .form-group input,
-.modal-form .form-group textarea {
-  width: 75%;
-  padding: 5px 8px;
-  border: 1px solid #ccc;
+/* 操作按钮 */
+.detail-btn {
+  padding: 4px 12px;
+  background-color: #409eff;
+  color: #fff;
+  border: none;
   border-radius: 4px;
+  cursor: pointer;
 }
 
-.modal-form .form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 15px;
+.detail-btn:hover {
+  background-color: #66b1ff;
 }
-/*提交 & 取消按钮*/
-.submit-btn {
+
+
+/* 查看详情按钮 */
+.detail-btn {
   background-color: #52c41a;
   color: white;
-  border: none;
   padding: 8px 14px;
-  border-radius: 6px;
+  border-radius: 10px;
+  border: none;
   cursor: pointer;
-  margin-right: 8px;
+  transition: background 0.2s;
 }
-.submit-btn:hover {
+
+.detail-btn:hover {
   background-color: #4CAF50;
 }
 
-.cancel-btn {
-  background-color: #ccc;
-  color: #333;
-  border: none;
+/* 查看详情按钮 */
+.delete-btn {
+  background-color: #c82333;
+  border-color: #bd2130;
+  color: white;
   padding: 8px 14px;
-  border-radius: 6px;
+  border-radius: 10px;
+  border: none;
   cursor: pointer;
-}
-.cancel-btn:hover {
-  background-color: #aaa;
+  transition: background 0.2s;
 }
 
-/* 
-   回复列表区域*/
+.delete-btn:hover {
+  background-color: #a71d2a;
+}
+
+
+/* 回复区 */
+.reply-section {
+  background: #f6fff6;
+  border: 1px solid #52c41a;
+  border-radius: 14px;
+  padding: 12px;
+  margin-top: 16px;
+}
+
 .reply-block {
-  background: #f7fff5; /* 浅绿色背景 */
-  padding: 10px;
+  background: #f7fff5;
   border-left: 4px solid #52c41a;
-  border-radius: 6px;
+  border-radius: 10px;
+  padding: 12px;
   margin-bottom: 12px;
 }
 
 .reply-block p {
   margin: 4px 0;
+  font-size: 14px;
+  color: #333;
 }
 
+/* 银行操作按钮 */
 .bank-action-buttons {
   display: flex;
-  justify-content: center; /* 两个按钮左右均匀分布 */
-  gap: 50px;                       /* 按钮间距 */
-  width: 100%;                     /* 自动拉满容器 */
+  justify-content: center;
+  gap: 20px;
+  margin-top: 10px;
 }
 
-.accept-btn,
-.reject-btn {
-  width: 80px;
-  border: none;
-  border-radius: 6px;
-  color: white;
+.accept-btn, .reject-btn {
+  width: 90px;
+  padding: 8px 0;
+  border-radius: 10px;
+  font-weight: 500;
+  color: #fff;
   cursor: pointer;
-  text-align: center;
+  border: none;
+  transition: background 0.2s;
 }
 
 .accept-btn {
@@ -1086,54 +671,55 @@ textarea {
   background-color: #c9302c;
 }
 
-/* 银行回复表单*/
+/* 银行回复表单 */
 .reply-form {
-  margin-top: 15px;
-  padding: 12px;
-  border: 1px solid #52c41a;
-  border-radius: 8px;
   background: #f9fff8;
+  border: 1px solid #52c41a;
+  border-radius: 14px;
+  padding: 14px;
+  margin-top: 16px;
 }
+
 .form-row {
+  font-size: 16px;
   display: flex;
   align-items: center;
   margin-bottom: 12px;
 }
+
 .form-row label {
-  display: inline-block;      /* 必须是块或行内块 */
   width: 25%;
-  font-weight: bold;
-  text-align: justify;        /* 两端对齐 */
+  font-weight: 600;
+  color: #333;
 }
 
 .form-row span {
   width: 75%;
-  font-weight: bold;
-  text-align: center;       /* 文字左对齐 */
+  color: #333;
+  font-weight: 500;
 }
 
 .form-row input,
 .form-row textarea {
-  flex: 1;                /* 占据剩余空间 */
-  padding: 6px;
+  width: 70%;
+  padding: 8px 10px;
+  border-radius: 10px;
   border: 1px solid #ccc;
-  border-radius: 6px;
-  box-sizing: border-box;
+  outline: none;
 }
 
-
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
+.form-row input:focus,
+.form-row textarea:focus {
+  border-color: #52c41a;
 }
-
 
 .action-buttons {
+  font-size: 16px;
   display: flex;
-  justify-content: flex-start;
-  gap: 10px;
-  margin-top: 10px;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
 }
+
 </style>
+

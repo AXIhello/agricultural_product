@@ -18,4 +18,7 @@ public interface AddressService  extends IService<Address> {
     void deleteAddress(Long userId, Integer addressId);
 
     void setDefaultAddress(Long userId, Integer addressId);
+
+     Address getDefaultAddress(Long userId);
+
 }

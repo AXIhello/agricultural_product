@@ -15,10 +15,9 @@
     <section
         :style="{ marginLeft: ['farmer','buyer','expert'].includes(role) ? '220px' : '20px',
                   width: ['farmer','buyer','expert'].includes(role) ? 'calc(100% - 240px)' : 'calc(100% - 40px)'}"
-        class="content">
-
-
-
+        class="content"
+        v-if="role !== 'bank' && role !== 'admin'"
+      >
       <!-- 统一顶部导航 -->
       <nav v-if="role === 'farmer' || role === 'buyer' || role === 'expert' "
            :style="{ top: '180px'}"
@@ -178,7 +177,7 @@
           <p v-else class="empty-state">暂无预约记录。</p>
         </div>
 
-        <!-- ======================== 我的消息 ======================== -->
+        <!-- ======================== 买家/农户：我的消息 ======================== -->
         <div v-if="currentView === 'message'">
 
           <div v-if="isLoading" class="status-indicator">
@@ -322,7 +321,6 @@
             </div>
           </div>
         </div>
-
 
         <!-- ======================== 专家：可预约时间 ======================== -->
         <div v-if="currentView === 'availability'">
@@ -1001,7 +999,7 @@ function formatTime(dateTimeStr) {
 
 .address-list-header, .address-row {
   display: grid;
-  grid-template-columns: 60px 120px 120px 1fr 100px 160px;
+  grid-template-columns: 60px 120px 150px 1fr 100px 160px;
   align-items: center;
   padding: 8px 12px;
   border-bottom: 1px solid #e0e0e0;

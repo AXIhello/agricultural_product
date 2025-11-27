@@ -117,18 +117,45 @@ onMounted(async () => {
     const items = data.orderItems || []
     orderItems.value = await Promise.all(
         items.map(async (item) => {
-          const productRes = await axios.get(`/products/${item.productId}`)
-          const product = productRes.data
-          return {
-            ...item,
-            productName: product.productName,
-            imageUrl: product.imageUrl || defaultImage,
-            stock: product.stock, // 加入库存信息
-            price: product.price,
-            unitInfo:product.unitInfo
+          try {
+            // 1. 先获取商品信息
+            const productRes = await axios.get(`/products/${item.productId}`);
+            const product = productRes.data;
+
+            // 2. 尝试加载商品图片
+            let imageUrl = defaultImage;
+            if (product.hasImage) {
+              try {
+                const imageRes = await axios.get(`/products/${item.productId}/image`, {
+                  responseType: 'blob'
+                });
+                if (imageRes.data && imageRes.data.size > 0) {
+                  imageUrl = URL.createObjectURL(imageRes.data);
+                }
+              } catch (err) {
+                console.warn('商品图片加载失败，使用默认图', item.productId, err);
+              }
+            } else if (product.imageUrl) {
+              imageUrl = product.imageUrl;
+            }
+
+            // 3. 返回完整对象
+            return {
+              ...item,
+              productName: product.productName,
+              imageUrl,
+              stock: product.stock,
+              price: product.price,
+              unitInfo: product.unitInfo
+            };
+
+          } catch (err) {
+            console.error('获取商品信息失败', item.productId, err);
+            // 失败时返回原始 item 并使用默认图
+            return { ...item, productName: '未知商品', imageUrl: defaultImage };
           }
         })
-    )
+    );
   } catch (err) {
     console.error('获取订单失败:', err)
     ElMessage.error('加载订单失败，请稍后重试')

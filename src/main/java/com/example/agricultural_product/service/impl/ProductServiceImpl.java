@@ -10,6 +10,7 @@ import com.example.agricultural_product.mapper.ProductMapper;
 import com.example.agricultural_product.pojo.Product;
 import com.example.agricultural_product.service.ProductService;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,9 @@ import java.util.List;
 
 @Service
 public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> implements ProductService {
+
+	@Autowired
+	private ProductMapper productMapper;
 
 	private void normalizeImagePath(Page<Product> page) {
 		if (page == null || page.getRecords() == null) return;
@@ -65,6 +69,32 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
 		normalizeImagePath(result);
 		return result;
 	}
+
+	public Page<Product> selectDistinctProductsByStatusPage(String status, Integer pageNum, Integer pageSize) {
+		int offset = (pageNum - 1) * pageSize;
+		List<Product> list = productMapper.selectDistinctProductsByStatus(status, offset, pageSize);
+
+		Page<Product> page = new Page<>();
+		page.setRecords(list);
+		page.setCurrent(pageNum);
+		page.setSize(pageSize);
+		page.setTotal(productMapper.countDistinctProductsByStatus(status)); // 计算总条数
+		return page;
+	}
+
+	public Page<Product> selectDistinctProductsByFarmerIdAndStatusPage(Long farmerId, String status, Integer pageNum, Integer pageSize) {
+		int offset = (pageNum - 1) * pageSize;
+		List<Product> list = productMapper.selectDistinctProductsByFarmerIdAndStatus(farmerId, status, offset, pageSize);
+
+		Page<Product> page = new Page<>();
+		page.setRecords(list);
+		page.setCurrent(pageNum);
+		page.setSize(pageSize);
+		page.setTotal(productMapper.countDistinctProductsByFarmerIdAndStatus(farmerId, status));
+		return page;
+	}
+
+
 
 	@Override
 	public Page<Product> getProductsByFarmerId(Long farmerId, Integer pageNum, Integer pageSize) {

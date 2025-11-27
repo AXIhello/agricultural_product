@@ -5,21 +5,12 @@
     <section class="content">
       <!-- 顶部导航 -->
       <nav class="main-nav">
-        <template v-if="role === 'farmer'">
-          <button @click="switchView('products')" :class="{ active: currentView === 'products' }">所有产品</button>
-          <button @click="switchView('predict')" :class="{ active: currentView === 'predict' }">行情大厅</button>
-          <button @click="switchView('demands')" :class="{ active: currentView === 'demands' }">求购需求</button>
-          <button @click="switchView('myProducts')" :class="{ active: currentView === 'myProducts' }">我的产品</button>
-        </template>
-
-        <template v-else>
-          <button @click="switchView('products')" :class="{ active: currentView === 'products' }">所有产品</button>
-          <button @click="switchView('predict')" :class="{ active: currentView === 'predict' }">行情大厅</button>
-          <button @click="switchView('cart')" :class="{ active: currentView === 'cart' }">我的购物车</button>
-          <button @click="switchView('demands')" :class="{ active: currentView === 'demands' }">求购需求</button>
-          <button @click="switchView('addDemand')" :class="{ active: currentView === 'addDemand' }">发布求购需求</button>
-          <button @click="switchView('myOrders')" :class="{ active: currentView === 'myOrders' }">我的订单</button>
-        </template>
+        <button @click="switchView('products')" :class="{ active: currentView === 'products' }">所有产品</button>
+        <button @click="switchView('predict')" :class="{ active: currentView === 'predict' }">行情大厅</button>
+        <button @click="switchView('demands')" :class="{ active: currentView === 'demands' }">求购需求</button>
+        <button v-if="role === 'farmer'" @click="switchView('myProducts')" :class="{ active: currentView === 'myProducts' }">我的产品</button>
+        <button v-if="role === 'buyer'" @click="switchView('cart')" :class="{ active: currentView === 'cart' }">我的购物车</button>
+        <button v-if="role === 'buyer'" @click="switchView('myOrders')" :class="{ active: currentView === 'myOrders' }">我的订单</button>
       </nav>
 
       <!-- 内容区域 -->
@@ -55,6 +46,7 @@
                 v-for="product in products"
                 :key="product.productId"
                 class="product-card"
+                @click="goToProductDetail(product)"
             >
               <div class="product-image">
                 <img :src="product.imageUrl" :alt="product.productName" @error="handleImageError" />
@@ -66,16 +58,16 @@
                 <p class="product-stock">库存: {{ product.stock }} {{ product.unitInfo }}</p>
               </div>
 
-              <div class="card-actions">
-                <button class="view-btn" @click="goToProductDetail(product)">查看详情</button>
-                <button
-                    v-if="role !== 'farmer'"
-                    class="add-to-cart-btn"
-                    @click="addToCart(product)"
-                >
-                  加入购物车
-                </button>
-              </div>
+<!--              <div class="action-buttons">-->
+<!--                <button class="view-btn" @click="goToProductDetail(product)">查看详情</button>-->
+<!--                <button-->
+<!--                    v-if="role !== 'farmer'"-->
+<!--                    class="add-to-cart-btn"-->
+<!--                    @click="addToCart(product)"-->
+<!--                >-->
+<!--                  加入购物车-->
+<!--                </button>-->
+<!--              </div>-->
             </div>
           </div>
         </div>
@@ -86,7 +78,7 @@
           <!-- 左侧：产品横向列表 -->
           <div class="prediction-left">
             <div class="product-card-horizontal"
-                 v-for="product in products"
+                 v-for="product in allSpecs"
                  :key="product.productId">
 
               <img :src="product.imageUrl" class="h-img">
@@ -110,7 +102,7 @@
 
             <div class="chart-box">
               <div v-if="loading">预测中，请稍候...</div>
-              <div ref="chartRef" style="width:100%;height:350px;"></div>
+              <div ref="chartRef" style="width:100%;height:100%;"></div>
             </div>
           </div>
         </div>
@@ -137,6 +129,7 @@
               <div class="batch-operations">
                 <button @click="toggleBatchActions">批量操作</button>
                 <div v-if="showBatchActions" class="batch-dropdown">
+                  <button @click="batchChoose">全选</button>
                   <button @click="batchDelete">一键删除</button>
                   <button @click="batchDown">一键下架</button>
                 </div>
@@ -169,7 +162,11 @@
               <div class="col stock-col">{{ product.stock }}</div>
               <div class="col status-col">
                 <label class="switch">
-                  <input type="checkbox" v-model="product.status" @change="toggleProductStatus(product)" />
+                  <input
+                      type="checkbox"
+                      :checked="product.status === 'active'"
+                      @change="toggleProductStatus(product, $event.target.checked)"
+                  />
                   <span class="slider"></span>
                 </label>
               </div>
@@ -288,6 +285,7 @@
 
         <!-- 购物车（仅买家） -->
         <div v-if="role === 'buyer' && currentView === 'cart'">
+          <p v-if="!cartItems.length" class="empty-state">购物车暂无商品~</p>
           <div v-if="cartItems.length" class="cart-list">
             <div v-for="item in cartItems" :key="item.productId" class="cart-card">
               <div class="cart-product-image">
@@ -309,7 +307,7 @@
           <p v-else class="empty-state">购物车是空的。</p>
         </div>
 
-        <!-- 求购需求 -->
+        <!-- 求购需求列表 -->
         <div v-if="currentView === 'demands'">
           <div class="request-list">
             <div v-for="request in demands" :key="request.demandId" class="request-card">
@@ -318,39 +316,64 @@
               <p>需求描述：{{ request.details }}</p>
             </div>
             <p v-if="!demands.length" class="empty-state">暂无求购需求</p>
+            <!-- 买家可以发布求购需求 -->
+            <button
+                v-if="role !== 'farmer'"
+                class="create-btn"
+                @click="showCreateDemand = true"
+            >
+              + 发布求购需求
+            </button>
           </div>
-        </div>
 
-        <!-- 发布求购需求（仅买家） -->
-        <div v-if="role !== 'farmer' && currentView === 'addDemand'">
-          <form @submit.prevent="handleAddDemand" class="add-product-form">
-            <div class="form-group">
-              <label>需求产品名称:</label>
-              <input v-model="newDemand.productNameDesired" required />
+
+
+          <!-- 弹窗：发布求购需求 -->
+          <div v-if="showCreateDemand" class="modal-overlay" @click.self="showCreateDemand = false">
+            <div class="modal-container">
+              <h3>发布求购需求</h3>
+
+              <form @submit.prevent="handleAddDemand" class="modal-form">
+
+                <div class="modal-form-group">
+                  <label>需求产品名称：</label>
+                  <input v-model="newDemand.productNameDesired" required />
+                </div>
+
+                <div class="modal-form-group">
+                  <label>需求数量 (Kg)：</label>
+                  <input type="number" v-model.number="newDemand.quantityDesired" required />
+                </div>
+
+                <div class="modal-form-group">
+                  <label>期望最高单价 (元/Kg)：</label>
+                  <input type="number" v-model.number="newDemand.maxPricePerUnit" required />
+                </div>
+
+                <div class="modal-form-group">
+                  <label>期望交货日期：</label>
+                  <input type="date" v-model="newDemand.deliveryDateDesired" required />
+                </div>
+
+                <div class="modal-form-group">
+                  <label>补充说明：</label>
+                  <textarea v-model="newDemand.details"></textarea>
+                </div>
+
+                <div class="actions-btn">
+                  <button type="button" class="cancel-btn" @click="showCreateDemand = false">取消</button>
+                  <button type="submit" class="submit-btn">确认发布</button>
+                </div>
+
+              </form>
             </div>
-            <div class="form-group">
-              <label>需求数量 (Kg):</label>
-              <input type="number" v-model.number="newDemand.quantityDesired" required />
-            </div>
-            <div class="form-group">
-              <label>期望最高单价 (元/Kg):</label>
-              <input type="number" v-model.number="newDemand.maxPricePerUnit" required />
-            </div>
-            <div class="form-group">
-              <label>期望交货日期:</label>
-              <input type="date" v-model="newDemand.deliveryDateDesired" required />
-            </div>
-            <div class="form-group">
-              <label>补充说明:</label>
-              <textarea v-model="newDemand.details"></textarea>
-            </div>
-            <button type="submit" class="submit-btn">确认发布</button>
-          </form>
+          </div>
         </div>
 
         <!-- 我的订单（农户 + 买家） -->
         <div v-if="role === 'buyer' && currentView === 'myOrders'">
           <div class="order-list">
+            <p v-if="!myOrders.length" class="empty-state">暂无订单</p>
             <template v-if="myOrders && myOrders.length > 0">
               <div v-for="order in myOrders" :key="order.orderId" class="order-card">
                 <div class="order-header">
@@ -367,7 +390,7 @@
                       <span class="item-name">{{ item.productName || '产品名未知' }}</span>
                       <span>数量: {{ item.quantity }}</span>
                       <span>单价: ¥{{ item.unitPrice }}</span>
-                      <button v-if="role !== 'farmer'" class="contact-btn" @click="goToChat(item.farmerId)">联系卖家</button>
+<!--                      <button v-if="role !== 'farmer'" class="contact-btn" @click="goToChat(item.farmerId)">联系卖家</button>-->
                     </div>
                   </div>
                   <div v-else><p>此订单无产品详情</p></div>
@@ -417,6 +440,7 @@ function switchView(view) { currentView.value = view }
 onMounted(async () => {
 
   await loadProducts();
+  await loadAllProducts();
   await loadDemands();
   if (isLoggedIn.value) {
     await loadAddresses();
@@ -453,103 +477,33 @@ watch(currentView, (val) => {
 // ====== 产品逻辑 ======
 const mainCategories = ref(['蔬菜','水产','水果','肉类'])
 const products = ref([])
+const allSpecs = ref([])
 const selectedSubcat = ref(null)
 const imageFile = ref(null)
 
 // 产品列表和分类
 const myProducts = ref([]) // 后端获取的产品数组
 const filterCategory = ref('')
-const filterStatus = ref('all') // all / up / inactive
+const filterStatus = ref('all') // all / active / inactive
 
 // 批量操作
 const showBatchActions = ref(false)
 const showBatch = computed(() => showBatchActions.value)
 const selectedProducts = ref([])
 
-// 筛选后的产品列表
+// 计算筛选后的产品列表
 const filteredProducts = computed(() => {
-  return myProducts.value.filter(p => {
-    const categoryMatch = !filterCategory.value || p.prodCat === filterCategory.value
-    const statusMatch =
-        filterStatus.value === 'all' ||
-        (filterStatus.value === 'active' && p.status === 'active') ||
-        (filterStatus.value === 'inactive' && p.status === 'inactive')
-    return categoryMatch && statusMatch
-  })
+  let list = [...myProducts.value]
+  if (filterCategory.value) {
+    list = list.filter(p => p.prodCat === filterCategory.value)
+  }
+  if (filterStatus.value !== 'all') {
+    list = list.filter(p => p.status === filterStatus.value)
+  }
+  return list
 })
 
-// 批量操作函数
-function toggleBatchActions() {
-  showBatchActions.value = !showBatchActions.value
-  if (!showBatchActions.value) selectedProducts.value = []
-}
 
-function toggleAll(e) {
-  if (e.target.checked) {
-    selectedProducts.value = filteredProducts.value.map(p => p.productId)
-  } else {
-    selectedProducts.value = []
-  }
-}
-//TODO
-async function batchDelete() {
-  if (!selectedProducts.value.length) return alert('请选择产品')
-  try {
-    // 调接口批量删除
-    await axios.post('/products/batch-delete', { ids: selectedProducts.value })
-    alert('批量删除成功')
-    // 更新本地产品列表
-    myProducts.value = myProducts.value.filter(p => !selectedProducts.value.includes(p.productId))
-    selectedProducts.value = []
-  } catch (err) {
-    console.error(err)
-    alert('批量删除失败')
-  }
-}
-//TODO
-async function batchDown() {
-  if (!selectedProducts.value.length) return alert('请选择产品')
-  try {
-    await axios.post('/products/batch-inactive', { ids: selectedProducts.value })
-    alert('批量下架成功')
-    myProducts.value.forEach(p => {
-      if (selectedProducts.value.includes(p.productId)) p.status = 'inactive'
-    })
-    selectedProducts.value = []
-  } catch (err) {
-    console.error(err)
-    alert('批量下架失败')
-  }
-}
-
-// 单个产品操作
-// TODO: 跳转到编辑页面或弹窗
-function editProduct(product) {
-  console.log('编辑产品', product)
-}
-//TODO
-async function deleteProduct(product) {
-  if (!confirm('确定删除该产品？')) return
-  try {
-    await axios.post(`/products/delete/${product.productId}`)
-    myProducts.value = myProducts.value.filter(p => p.productId !== product.productId)
-    alert('删除成功')
-  } catch (err) {
-    console.error(err)
-    alert('删除失败')
-  }
-}
-//TODO
-async function toggleProductStatus(product) {
-  try {
-    const newStatus = product.status === 'active' ? 'inactive' : 'active'
-    await axios.post(`/products/update-status/${product.productId}`, { status: newStatus })
-    product.status = newStatus
-  } catch (err) {
-    console.error(err)
-    alert('切换状态失败')
-  }
-}
 
 function handleImageUpload(event) {
   // 获取上传的文件对象
@@ -660,16 +614,24 @@ async function handleAddProduct() {
 
 async function loadProducts() {
   try {
-    const res = await axios.get('/products')
-    const records = res.data.records || []
+    // 调用带分页的接口
+    const res = await axios.get('/products/productName', {
+    });
 
-    //并行加载每个产品的图片
+    // 注意：分页返回对象里才有 records
+    const page = res.data;
+    const records = page.records || [];
+
+    console.log('分页信息：', page);
+    records.forEach((product, index) => {
+      console.log(`商品 ${index + 1}:`, product);
+    });
+
+    // 并行加载每个产品的图片
     products.value = await Promise.all(
-      records.map(async (product) => {
-        // 1. 默认设置
-        let imageUrl = defaultImg; 
-        // 2. 如果后端说有图，尝试加载
-        if (product.hasImage === true) {
+        records.map(async (product) => {
+          let imageUrl = defaultImg;
+
           try {
             const imageRes = await axios.get(`/products/${product.productId}/image`, {
               responseType: 'blob'
@@ -677,24 +639,53 @@ async function loadProducts() {
             if (imageRes.data && imageRes.data.size > 0) {
               imageUrl = URL.createObjectURL(imageRes.data);
             }
+            console.log('产品图片：',imageUrl);
           } catch (err) {
-            console.warn('产品图片加载失败，使用默认图：', product.productId, err);
+            console.log('产品图片加载失败，使用默认图：', product.productId, err);
             imageUrl = defaultImg;
           }
-        }
 
-        return { ...product, imageUrl };
-      })
+          return { ...product, imageUrl };
+        })
     );
 
-    if (products.value.length > 0) {
-      await startPrediction(products.value[0])
-    }
+  } catch (err) {
+    console.error('加载产品失败', err);
+  }
+}
+
+async function loadAllProducts() {
+  try {
+    const res = await axios.get('/products')
+    const records = res.data.records || []
+
+    // 并行加载每个产品的图片
+    allSpecs.value = await Promise.all(
+        records.map(async (product) => {
+          try {
+            let imageUrl = ''
+            try {
+              const imageRes = await axios.get(`/products/${product.productId}/image`, {
+                responseType: 'blob'
+              })
+              if (imageRes.data.size > 0)
+                imageUrl = URL.createObjectURL(imageRes.data)
+            } catch {
+              // 如果图片加载失败，使用默认占位图
+              imageUrl = new URL('../assets/img.png', import.meta.url).href
+            }
+            console.log('全部产品：', imageUrl)
+            return {...product, imageUrl}
+          } catch (err) {
+            console.warn('产品加载失败:', product.productId, err)
+            return {...product, imageUrl: new URL('../assets/img.png', import.meta.url).href}
+          }
+        })
+    )
   } catch (err) {
     console.error('加载产品失败', err)
   }
 }
-
 // 分类结构：{ 大类: [小类1, 小类2, ...] }
 const categoryMap = computed(() => {
   const map = {}
@@ -716,7 +707,7 @@ function selectCategory(subcat) {
 async function loadMyProducts() {
   if (!isLoggedIn.value || role.value !== 'farmer') return;
   try {
-    const res = await axios.get(`/products/farmer/${userInfo.value.userId}`);
+    const res = await axios.get(`/products/farmer`);
     const records = res.data.records || []
 
     // 并行加载每个产品的图片
@@ -783,12 +774,82 @@ const handleImageError = (e) => {
   e.target.onerror = null; 
 };
 
+const editProduct = (product) => {
+  // 将原数据复制到表单模型中
+  newProduct.value = { ...product }
+
+  showAddProductModal.value = true
+}
+
+
+// 删除商品
+const deleteProduct = async (product) => {
+  if (!confirm('确定删除该商品吗？')) return
+  try {
+    await axios.delete(`/products/${product.productId}`)
+    alert('删除成功')
+    await loadMyProducts()
+  } catch(e) {
+    console.error('删除失败', e)
+  }
+}
+
+// 切换上架状态
+const toggleProductStatus = async (product, checked) => {
+  try {
+    const status = checked ? 'active' : 'inactive'
+    await axios.put(`/products/${product.productId}/status`, null, { params: { status } })
+    // 同步更新本地状态，避免切换后 UI 不一致
+    product.status = status
+    console.log(`商品 ${product.productName} 状态更新为 ${status}`)
+  } catch (e) {
+    console.error('更新状态失败', e)
+  }
+}
+
+
+// 批量操作
+const toggleBatchActions = () => { showBatchActions.value = !showBatchActions.value }
+const batchChoose = () => {
+  const ids = filteredProducts.value.map(p => p.productId)
+
+  // 如果当前已经全部选中 → 取消全选
+  if (selectedProducts.value.length === ids.length) {
+    selectedProducts.value = []
+  } else {
+    // 否则 → 全选
+    selectedProducts.value = ids
+  }
+}
+
+const batchDelete = async () => {
+  if (!selectedProducts.value.length) return
+  if (!confirm('确定删除选中的商品吗？')) return
+  for (const id of selectedProducts.value) {
+    await axios.delete(`/products/${id}`)
+  }
+  alert('批量删除完成')
+  await loadMyProducts()
+}
+const batchDown = async () => {
+  if (!selectedProducts.value.length) return
+  for (const id of selectedProducts.value) {
+    await axios.put(`/products/${id}/status`, null, { params:{ status:'inactive' }})
+  }
+  alert('批量下架完成')
+  await loadMyProducts()
+}
+
+// 过滤条件改变时刷新列表
+watch([filterStatus, filterCategory], loadMyProducts)
 
 // ====== 预测逻辑 ======
 
 //启动预测任务
 async function startPrediction(product) {
   try {
+
+    loading.value = true;
     const requestData = {
       labelPre: "预测",
       productName: product.productName,
@@ -831,7 +892,6 @@ async function pollPredictionStatus(product) {
     return;
   }
 
-  loading.value = true;
   let completed = false;
 
   try {
@@ -865,6 +925,7 @@ function drawChart(productName) {
   if (!chartRef.value || !chartData.value.length) return;
 
   const myChart = echarts.init(chartRef.value);
+  chartData.value = [];
 
   // 只保留最近 10 条
   const recentData = chartData.value.slice(-10);
@@ -935,17 +996,6 @@ function drawChart(productName) {
   });
 }
 
-
-/**
- * 清空图表
- */
-function clearChart() {
-  if (chartRef.value) {
-    const myChart = echarts.init(chartRef.value);
-    myChart.clear();
-    chartData.value = [];
-  }
-}
 // ====== 需求逻辑 ======
 const demands = ref([])
 const newDemand = ref({
@@ -956,6 +1006,8 @@ const newDemand = ref({
   deliveryDateDesired: '',
   details: ''
 })
+
+const showCreateDemand = ref(false)
 
 async function loadDemands() {
   try{
@@ -1263,6 +1315,7 @@ async function createOrder() {
     const res = await axios.post('/orders', reqBody);
 
     if (res.data) {
+      const orderId = res.data;
       alert(`订单提交成功！`)
       cartItems.value = []
       await router.push(`/orders/${orderId}`)
@@ -1282,79 +1335,8 @@ async function createOrder() {
 </script>
 
 <style scoped>
-.main-bg {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  width: 1800px;
-  background-color: #F0F9F4; /* 浅绿色背景色 */
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
 
-nav ul {
-  list-style: none;
-  display: flex;
-  padding: 0;
-  margin: 0;
-}
 
-nav li {
-  margin-right: 50px;
-}
-
-nav a {
-  text-decoration: none;
-  color: white;
-  font-weight: 600;
-  font-size: 20px;
-  transition: color 0.3s;
-}
-
-nav a:hover {
-  color: #B7E4C7; /* 鼠标悬停时变为淡绿色 */
-}
-
-.content {
-  width: 100%;
-  flex: 1;
-  padding: 20px;
-  background: white;
-  color: #333; /* 深灰色文字 */
-  font-size: 18px;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-.content h2 {
-  color: #2D7D4F;
-  font-weight: 700;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #eee;
-}
-
-.main-nav {
-  display: flex;
-  border-bottom: 2px solid #e0e0e0;
-  margin-bottom: 25px;
-}
-.main-nav button {
-  padding: 10px 20px;
-  border: none;
-  background-color: transparent;
-  cursor: pointer;
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: #555;
-  transition: color 0.3s, border-bottom-color 0.3s;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -2px;
-}
-.main-nav button:hover { color: #2D7D4F; }
-.main-nav button.active {
-  color: #2D7D4F;
-  border-bottom-color: #2D7D4F;
-}
 /* 左侧分类栏 */
 .category-sidebar {
   width: 100px;
@@ -1483,14 +1465,6 @@ nav a:hover {
   font-size: 12px;
 }
 
-/* 按钮部分 */
-.card-actions {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 10px 10px;
-  gap: 6px;
-}
-
 .view-btn,
 .add-to-cart-btn,
 。contanct-btn{
@@ -1520,15 +1494,6 @@ nav a:hover {
 .add-to-cart-btn:hover {
   background-color: #43a047;
 }
-
-.empty-state {
-  width: 100%;
-  text-align: center;
-  color: #888;
-  font-size: 14px;
-  margin-top: 30px;
-}
-
 
 .contact-btn {
   background-color: #2196F3; /* 蓝色背景 */
@@ -1680,8 +1645,12 @@ nav a:hover {
 .remove-btn:hover {
   background-color: #e04343;
 }
+
+.actions-btn{
+  display: flex;
+  justify-content: space-between;
+}
 .submit-btn {
-  display: block;            /* 转块级以占整行 */
   margin-left: auto;         /* 自动推向右边 */
   width: 120px;              /* 固定宽度 */
   background-color: #4caf50;
@@ -1822,12 +1791,6 @@ nav a:hover {
   border-radius: 8px;
 }
 
-.loading,
-.empty {
-  text-align: center;
-  margin-top: 50px;
-  color: #999;
-}
 .order-card {
   border: 1px solid #eee;
   border-radius: 10px;
@@ -1929,24 +1892,7 @@ nav a:hover {
   align-items: center;
   padding-top: 10px;
 }
-.actions button {
-  margin-left: 10px;
-  padding: 6px 12px;
-  border: none;
-  border-radius: 5px;
-  background: #4caf50;
-  color: white;
-  cursor: pointer;
-}
-.actions button:hover {
-  background: #43a047;
-}
-.actions button:nth-child(2) {
-  background: #f44336;
-}
-.actions button:nth-child(2):hover {
-  background: #d32f2f;
-}
+
 .order-header {
   display: flex;
   justify-content: space-between;
@@ -2120,7 +2066,7 @@ nav a:hover {
 }
 
 .checkbox-col { width: 5%; }
-.img-col { width: 10%; }
+.img-col { width: 10%; height:100%}
 .name-col { width: 20%; text-align: left; padding-left: 5px; }
 .price-col { width: 15%; }
 .stock-col { width: 15%; }
@@ -2233,86 +2179,6 @@ input:checked + .slider::before {
 
 //添加产品样式
 <style scoped>
-/* 遮罩层 */
-.modal-overlay {
-position: fixed;
-top: 0;
-left: 0;
-width: 100%;
-height: 100%;
-background: rgba(0,0,0,0.45);
-display: flex;
-justify-content: center;
-align-items: center;
-z-index: 1100;
-}
-
-/* 弹窗主体 */
-.modal-container {
-width: 40%;
-height: 80%;
-background: #fff;
-border-radius: 10px;
-padding: 20px 25px;
-display: flex;
-flex-direction: column;
-position: relative;
-overflow-y: auto;
-}
-
-/* 右上角关闭按钮 */
-.close-btn {
-position: absolute;
-right: 15px;
-top: 10px;
-border: none;
-background: none;
-font-size: 24px;
-cursor: pointer;
-color: #999;
-}
-
-/* 标题 */
-.modal-title {
-text-align: center;
-font-size: 20px;
-margin-bottom: 15px;
-color: #2a7f2a;
-}
-
-/* 表单部分 */
-.modal-body {
-flex: 1;
-overflow-y: auto;
-padding-right: 5px;
-}
-
-.modal-form-group {
-margin-bottom: 15px;
-display: flex;
-flex-direction: row;
-}
-
-.modal-form-group label {
-  width:80px;
-  display: inline-block;
-  text-align: justify;
-font-size: 14px;
-margin-bottom: 5px;
-}
-
-.modal-form-group input,
-.modal-form-group textarea,
-.modal-form-group select {
-  flex: 1;
-  width: 100%;
-  padding: 6px 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  outline: none;
-}
-
-
 
 /* 上传图片 */
 .image-upload-box {
@@ -2427,6 +2293,7 @@ color: #fff;
   padding: 15px;
   width: 100%;
   box-sizing: border-box;
+  align-items: stretch;
 }
 
 /* 左侧宽度占比大 */
@@ -2444,8 +2311,6 @@ color: #fff;
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 3px 12px rgba(0,0,0,0.12);
-  height: fit-content;
-  position: sticky;
   top: 10px;
 }
 
@@ -2460,7 +2325,7 @@ color: #fff;
 /* 图表区域 */
 .chart-box {
   width: 100%;
-  height: auto;
+  height: 100%;
 }
 
 
@@ -2508,7 +2373,7 @@ color: #fff;
 }
 
 /* 按钮（与你现在的绿色按钮风格一致） */
-.h-btn {
+.h-btn{
   background-color: #4caf50;
   color: white;
   border: none;
@@ -2522,10 +2387,38 @@ color: #fff;
 .h-btn:hover {
   background-color: #43a047;
 }
+.create-btn{
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: 0.2s;
+  width: 180px;
+}
 
+.create-btn:hover {
+  background-color: #43a047;
+}
 .h-btn:disabled {
   background: #9ca3af;
   cursor: not-allowed;
+}
+h3{
+  padding-bottom: 10px;
+  border-bottom: 1px solid #369870;
+  margin-bottom: 20px;
+}
+
+.modal-form-group label {
+  width:22%;
+}
+
+.modal-form-group input,
+.modal-form-group textarea,
+.modal-form-group select {
+  width: 78%;
 }
 
 </style>

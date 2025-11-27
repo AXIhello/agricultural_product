@@ -46,9 +46,12 @@ public interface ProductService extends IService<Product> {
 	//农户查询商品，"active"（上架）、"inactive"（下架）或 null（全部）
 	Page<Product> getProductsByFarmerIdAndStatusPage(Long farmerId, String status, Integer pageNum, Integer pageSize);
 
-
+	// 返回按 product_name 去重后的代表性 Product 列表（每个名字只保留一条）
+	Page<Product> selectDistinctProductsByStatusPage(String status, Integer pageNum, Integer pageSize);
 	// 根据商品状态，查询去重后的商品名称列表。
 	Page<Product> getProductsByStatusPage( String status, String productName, Integer pageNum, Integer pageSize);
+
+	Page<Product> selectDistinctProductsByFarmerIdAndStatusPage(Long farmerId, String status, Integer pageNum, Integer pageSize);
 
 	// 根据农户ID和商品状态，查询去重后的商品名称列表。
 	Page<Product> getProductsByFarmerIdAndStatusPage(Long farmerId, String status, String productName, Integer pageNum, Integer pageSize);

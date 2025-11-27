@@ -1,10 +1,12 @@
 package com.example.agricultural_product.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.agricultural_product.mapper.AddressMapper;
 import com.example.agricultural_product.pojo.Address;
 import com.example.agricultural_product.service.AddressService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +15,9 @@ import java.util.List;
 
 @Service
 public class AddressServiceImpl extends ServiceImpl<AddressMapper, Address> implements AddressService {
+
+    @Autowired
+    private AddressMapper addressMapper;
 
     @Override
     @Transactional
@@ -116,4 +121,14 @@ public class AddressServiceImpl extends ServiceImpl<AddressMapper, Address> impl
         addr.setUpdateTime(LocalDateTime.now());
         this.updateById(addr);
     }
+
+    public Address getDefaultAddress(Long userId) {
+        // 假设 Address 表有字段 is_default (1 默认, 0 非默认)
+        return addressMapper.selectOne(
+                new QueryWrapper<Address>()
+                        .eq("user_id", userId)
+                        .eq("is_default", 1)
+        );
+    }
+
 }

@@ -93,4 +93,25 @@ public class AddressController {
         addressService.setDefaultAddress(userId, addressId);
         return ResponseEntity.ok().build();
     }
+
+    /**
+     * 获取当前用户的默认地址
+     */
+    @GetMapping("/default")
+    public ResponseEntity<Address> getDefaultAddress(HttpServletRequest request) {
+        // 1. 从请求中解析 JWT 获取 userId
+        Claims claims = JwtUtil.getClaimsFromRequest(request);
+        Long userId = claims.get("userId", Long.class);
+
+        // 2. 调用 Service 查询默认地址
+        Address defaultAddress = addressService.getDefaultAddress(userId);
+
+        // 3. 返回结果
+        if (defaultAddress != null) {
+            return ResponseEntity.ok(defaultAddress);
+        } else {
+            return ResponseEntity.noContent().build(); // 或者返回 404
+        }
+    }
+
 }

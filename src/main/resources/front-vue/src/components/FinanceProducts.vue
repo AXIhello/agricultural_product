@@ -35,14 +35,41 @@ const products = [
 <style scoped>
 .finance-products-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 22px;
+  padding: 10px 0;
 }
+
+/* 单个理财产品卡片 */
 .finance-product {
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  background-color: #f9f9f9;
+  background-color: #f8fbf8;
+  padding: 16px 18px;
+  border: 1px solid #d9e8df;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* 悬停交互效果 */
+.finance-product:hover {
+  transform: translateY(-4px);
+  border-color: #8bc3a1;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.10);
+}
+
+/* 产品标题 */
+.finance-product h4 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2d7d4f;
+  margin-bottom: 8px;
+}
+
+/* 简介文案 */
+.finance-product p {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.45;
 }
 </style>

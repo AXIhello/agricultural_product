@@ -1,6 +1,6 @@
 <template>
   <header class="header">
-    <h1>农产品交易平台</h1>
+    <h1 class="header-logo">农慧通</h1>
     <nav>
       <ul>
         <li>
@@ -17,9 +17,6 @@
         </li>
         <li v-if="isAdmin">
           <router-link to="/admin-review" active-class="active-link">审核信息</router-link>
-        </li>
-        <li>
-          <router-link to="/messages">我的消息</router-link>
         </li>
         <li>
           <router-link to="/profile" active-class="active-link">个人信息</router-link>
@@ -57,50 +54,51 @@ export default {
 <style scoped>
 .header {
   width: 100%;
-  background: #2D7D4F;
-  color: white;
+  height: 64px;
+  padding: 0 24px;
+
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 20px;
-  height: 60px;
-  font-size: 15px;
-  font-weight: 500;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  font-family: 'PingFang SC', 'Heiti SC', 'Microsoft YaHei', sans-serif;
-}
+  flex-shrink: 0;
 
-nav ul {
-  list-style: none;
-  display: flex;
-  padding: 0;
-  margin: 0;
-}
+  /* 舒适自然的绿渐变 */
+  background: linear-gradient(120deg, #2E8B57 0%, #4CAF50 100%);
 
-nav li {
-  margin-right: 30px;
-}
+  color: #fff;
+  border-radius: 0 0 14px 14px;
 
-nav a {
-  text-decoration: none;
-  color: white;
+  font-family: 'PingFang SC','Microsoft YaHei',sans-serif;
+  font-size: 18px;
   font-weight: 600;
-  font-size: 20px;
-  transition: color 0.3s, background-color 0.3s;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-family: 'PingFang SC', 'Heiti SC', 'Microsoft YaHei', sans-serif;
+
+  /* 柔和阴影，避免突兀 */
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
 }
 
-/* 鼠标悬停时字体颜色变浅绿 */
-nav a:hover {
-  color: #B7E4C7;
-}
 
-/* 当前激活路由的样式（浅绿色背景 + 深绿色文字） */
+/* 激活：亮绿色 + 阴影更突出 */
 .active-link {
-  background-color: #B7E4C7;
-  color: #2D7D4F;
+  background: #A5D6A7;
+  color: #1B5E20;
+  box-shadow: 0 0 10px rgba(150, 200, 150, 0.4);
 }
+.header-logo {
+  font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  font-size: 40px;
+  font-weight: 700;
+  color: white; /* 主绿色 */
+  letter-spacing: 1px; /* 字母间距略大 */
+  margin: 0;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.header-logo:hover {
+  transform: scale(1.05);
+}
+
+
 </style>
+
+

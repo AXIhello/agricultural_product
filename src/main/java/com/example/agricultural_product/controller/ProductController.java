@@ -358,7 +358,7 @@ public class ProductController {
     @PutMapping("/{id}/status")
     public ResponseEntity<Boolean> updateProductStatus(HttpServletRequest request,
                                                        @PathVariable("id") Integer productId,
-                                                       @RequestBody ProductStatusDTO statusDTO) { // 需创建一个简单的 DTO
+                                                       @RequestParam("status") String status) {
         // 1. 权限校验
         if (!checkToken(request)) {
             return ResponseEntity.status(401).body(false);
@@ -369,13 +369,9 @@ public class ProductController {
             return ResponseEntity.status(401).body(false);
         }
 
-        String newStatus = statusDTO.getStatus();
-        if (newStatus == null || (!newStatus.equals("active") && !newStatus.equals("inactive"))) {
-            return ResponseEntity.badRequest().body(false);
-        }
 
         // 2. 调用 Service 执行状态更新
-        boolean success = productService.updateProductStatus(productId, farmerId, newStatus);
+        boolean success = productService.updateProductStatus(productId, farmerId, status);
 
         if (!success) {
             // 如果更新失败，可能是权限问题 (403) 或商品不存在 (404)
@@ -431,37 +427,35 @@ public class ProductController {
      * 仅供当前登录用户查询商品。进行名字筛选
      * 允许参数 status="active", "inactive", 或不传（查询全部）
      */
-    @GetMapping("/ProductName")
-    public ResponseEntity<?> getProductsByStatus(HttpServletRequest request,
+    @GetMapping("/productName")
+    public ResponseEntity<Page<Product>> getProductsByStatus(HttpServletRequest request,
                                                    @RequestParam(value = "status", required = false) String status,
                                                    @RequestParam(value = "name", required = false) String productName,
                                                    @RequestParam(defaultValue = "1") Integer pageNum,
                                                    @RequestParam(defaultValue = "10") Integer pageSize) {
 
 
-        // --- 阶段一：未传入名字，返回去重商品名称列表 ---
+        if (status == null) status = "active";
+
+        Page<Product> page;
+
+        // --- 阶段一：未传入名字，返回去重商品名称分页列表 ---
         if (productName == null || productName.trim().isEmpty()) {
-            log.info("【查询】，状态:{}，请求去重商品名称列表。",  status);
-
-            List<String> distinctNames = productService.getDistinctProductNamesByFarmerIdAndStatus( status);
-
-            // 返回 List<String>
-            return ResponseEntity.ok(distinctNames);
+            page = productService.selectDistinctProductsByStatusPage(status, pageNum, pageSize);
         }
-
         // --- 阶段二：传入名字，返回带分页的商品实体列表 ---
         else {
             log.info("【查询】状态:{}，商品名:{}，请求分页商品实体列表。",  status, productName);
 
             // 调用修改后的 Service 方法，该方法现在支持 status 和 productName 过滤
-            Page<Product> page = productService.getProductsByStatusPage(status, productName, pageNum, pageSize);
+            page = productService.getProductsByStatusPage(status, productName, pageNum, pageSize);
 
-            // 屏蔽图片路径
-            maskImagePath(page.getRecords());
-
-            // 返回 Page<Product>
-            return ResponseEntity.ok(page);
         }
+        // 屏蔽图片路径
+        maskImagePath(page.getRecords());
+
+        // 返回 Page<Product>
+        return ResponseEntity.ok(page);
     }
 
 
@@ -471,11 +465,12 @@ public class ProductController {
      * 允许参数 status="active", "inactive", 或不传（查询全部）
      */
     @GetMapping("/farmerProductName")
-    public ResponseEntity<?> getFarmerProductsByStatus(HttpServletRequest request,
-                                                   @RequestParam(value = "status", required = false) String status,
-                                                   @RequestParam(value = "name", required = false) String productName,
-                                                   @RequestParam(defaultValue = "1") Integer pageNum,
-                                                   @RequestParam(defaultValue = "10") Integer pageSize) {
+    public ResponseEntity<Page<Product>> getFarmerProductsByStatus(
+            HttpServletRequest request,
+            @RequestParam(value = "status", required = false) String status,
+            @RequestParam(value = "name", required = false) String productName,
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
 
         // 1. 权限校验
         Long farmerId = getUserIdFromToken(request);
@@ -483,29 +478,27 @@ public class ProductController {
             return ResponseEntity.status(401).build();
         }
 
-        // --- 阶段一：未传入名字，返回去重商品名称列表 ---
+        if (status == null) status = "active";
+
+        Page<Product> page;
+
+        // --- 阶段一：未传入名字，返回去重商品名称分页列表 ---
         if (productName == null || productName.trim().isEmpty()) {
             log.info("【查询】农户:{}，状态:{}，请求去重商品名称列表。", farmerId, status);
 
-            List<String> distinctNames = productService.getDistinctProductNamesByFarmerIdAndStatus(farmerId, status);
-
-            // 返回 List<String>
-            return ResponseEntity.ok(distinctNames);
+            page = productService.selectDistinctProductsByFarmerIdAndStatusPage(farmerId, status, pageNum, pageSize);
         }
-
         // --- 阶段二：传入名字，返回带分页的商品实体列表 ---
         else {
             log.info("【查询】农户:{}，状态:{}，商品名:{}，请求分页商品实体列表。", farmerId, status, productName);
 
-            // 调用修改后的 Service 方法，该方法现在支持 status 和 productName 过滤
-            Page<Product> page = productService.getProductsByFarmerIdAndStatusPage(farmerId, status, productName, pageNum, pageSize);
-
-            // 屏蔽图片路径
-            maskImagePath(page.getRecords());
-
-            // 返回 Page<Product>
-            return ResponseEntity.ok(page);
+            page = productService.getProductsByFarmerIdAndStatusPage(farmerId, status, productName, pageNum, pageSize);
         }
+
+        // 屏蔽图片路径
+        maskImagePath(page.getRecords());
+
+        return ResponseEntity.ok(page);
     }
 
 }

@@ -62,4 +62,18 @@ public class BankProductServiceImpl extends ServiceImpl<BankProductMapper, BankP
           .orderByDesc(BankProduct::getCreateTime);
         return bankProductMapper.selectPage(page, qw);
     }
+
+    @Override
+    public boolean deleteProduct(Long bankUserId, Integer productId) {
+        // 先查询产品是否存在且属于当前用户
+        BankProduct product = bankProductMapper.selectById(productId);
+        if (product == null || !bankUserId.equals(product.getBankUserId())) {
+            return false; // 不存在或不是当前用户的产品
+        }
+
+        // 执行删除
+        int rows = bankProductMapper.deleteById(productId);
+        return rows > 0;
+    }
+
 }

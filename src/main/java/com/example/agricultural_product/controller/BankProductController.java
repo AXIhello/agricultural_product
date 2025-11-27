@@ -8,6 +8,7 @@ import com.example.agricultural_product.service.BankProductService;
 import com.example.agricultural_product.utils.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -70,4 +71,27 @@ public class BankProductController {
                                             @RequestParam(defaultValue = "10") Integer pageSize) {
         return bankProductService.listAllProducts(pageNum, pageSize);
     }
+
+    /**
+     * 删除银行产品
+     * URL: /api/bankProducts/{productId}
+     * 仅允许发布者本人删除
+     */
+    @DeleteMapping("/{productId}")
+    public ResponseEntity<Void> deleteProduct(HttpServletRequest request,
+                                              @PathVariable Integer productId) {
+        // 1. 从 token 中获取当前银行用户 ID
+        Long bankUserId = getUserIdFromToken(request);
+
+        // 2. 调用 Service 删除产品
+        boolean success = bankProductService.deleteProduct(bankUserId, productId);
+
+        // 3. 返回结果
+        if (success) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.status(403).build(); // 无权限删除或产品不存在
+        }
+    }
+
 }

@@ -1,66 +1,95 @@
 <template>
   <div class="product-detail-page">
-    <!-- 数据加载完成前显示 loading 状态，防止页面闪烁和报错 -->
+    <!-- 加载中 -->
     <div v-if="loading" class="loading-state">
       <p>正在努力加载商品信息...</p>
     </div>
 
-    <!-- 数据加载成功后显示商品内容 -->
-    <div v-else-if="product.productId" class="product-container">
+    <!-- 商品详情 -->
+    <div v-else-if="currentSpec.productId" class="product-container">
       <div class="product-image">
         <img :src="imgUrl" alt="商品图片">
       </div>
 
       <div class="product-info">
-        <h1>{{ product.productName }}</h1>
-        
+        <h1>{{ currentSpec.productName }}</h1>
+
+        <!-- 价格库存 -->
         <div class="price-section">
-          <!-- 在价格和库存后面加上单位信息 -->
-          <span class="price">¥{{ product.price }} / {{ product.unitInfo }}</span>
-          <span class="stock">库存: {{ product.stock }} {{ product.unitInfo }}</span>
+          <span class="price">¥{{ currentSpec.price }} / {{ currentSpec.unitInfo }}</span>
+          <span class="stock">库存: {{ currentSpec.stock }} {{ currentSpec.unitInfo }}</span>
         </div>
 
         <div class="description">
           <h3>商品描述</h3>
-          <p>{{ product.description || '该商品暂无详细描述' }}</p>
+          <p>{{ currentSpec.description || '该商品暂无详细描述' }}</p>
         </div>
 
-        <!-- 新增：显示商品分类信息 -->
         <div class="category-info">
           <h3>商品分类</h3>
           <p>
-            <span class="category-tag">{{ product.prodCat }}</span>
+            <span class="category-tag">{{ currentSpec.prodCat }}</span>
             <span class="category-separator">></span>
-            <span class="category-tag">{{ product.prodPcat }}</span>
+            <span class="category-tag">{{ currentSpec.prodPcat }}</span>
           </p>
         </div>
 
         <div class="farmer-info">
           <h3>农户信息</h3>
-          <p>农户ID: {{ product.farmerId }}</p>
+          <div class="farmer-info-row">
+            <p>农户ID: {{ currentSpec.farmerId }}</p>
+            <button v-if="role !== 'farmer'" class="contact-btn" @click="contactSeller(currentSpec)">
+              联系卖家
+            </button>
+          </div>
         </div>
 
-        <div class="action-section">
-          <button class="contact-btn" @click="contactSeller(product)">联系卖家</button>
+
+        <!-- 规格选择 -->
+        <div v-if="productSpecs.length > 1" class="spec-section">
+          <h3>选择规格</h3>
+          <div class="spec-buttons">
+            <button
+                v-for="spec in productSpecs"
+                :key="spec.productId"
+                :class="['spec-button', { active: spec.productId === currentSpec.productId }]"
+                @click="selectSpec(spec)"
+            >
+              ¥{{ spec.specInfo }}
+            </button>
+          </div>
+        </div>
+
+
+        <div v-if="role !== 'farmer'" class="action-buttons">
+
           <div class="quantity-control">
-             <label>数量:</label>
-             <el-input-number 
-              v-model="quantity" 
-              :min="1" 
-              :max="product.stock"
-              size="default"
+            <label>数量:</label>
+            <el-input-number
+                v-model="quantity"
+                :min="1"
+                :max="currentSpec.stock"
+                size="default"
             />
           </div>
-          <el-button type="primary" size="large" @click="handleAddToCart" :loading="isAddingToCart">加入购物车</el-button>
-          <el-button type="danger" size="large" @click="buyNow">立即购买</el-button>
+
+          <el-button type="primary" size="large"
+                     @click="handleAddToCart(currentSpec)"
+                     :loading="isAddingToCart">
+            加入购物车
+          </el-button>
+
+          <el-button type="danger" size="large" @click="buyNow(currentSpec)">
+            立即购买
+          </el-button>
         </div>
       </div>
     </div>
-    
-    <!-- 加载失败或商品不存在时显示 -->
+
+    <!-- 错误 -->
     <div v-else class="error-state">
-        <p>抱歉，商品信息加载失败或该商品不存在。</p>
-        <el-button @click="router.back()">返回上一页</el-button>
+      <p>抱歉，商品信息加载失败或该商品不存在。</p>
+      <el-button @click="router.back()">返回上一页</el-button>
     </div>
   </div>
 </template>
@@ -70,53 +99,83 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import axios from '../utils/axios'
-import placeholder from '../assets/img.png' // 引入占位图
+import placeholder from '../assets/img.png'
 import { useAuthStore } from '@/stores/authStore'
 import { storeToRefs } from 'pinia'
+
+const authStore = useAuthStore()
+const {userInfo, isLoggedIn, role} = storeToRefs(authStore)
 
 const imgUrl = ref(placeholder)
 const route = useRoute()
 const router = useRouter()
-const product = ref({})
+
+// 新增：规格相关
+const productSpecs = ref([])     // 所有规格（同名的不同商品）
+const currentSpec = ref({})      // 当前选中的规格
+
 const quantity = ref(1)
 const loading = ref(true)
 const isAddingToCart = ref(false)
 
-const authStore = useAuthStore();
-const { userInfo, isLoggedIn } = storeToRefs(authStore)
+// 加载某个规格的图片
+const loadImage = async (productId) => {
+  imgUrl.value = placeholder
 
-// 获取商品详情
+  try {
+    const imageRes = await axios.get(`/products/${productId}/image`, {
+      responseType: 'blob'
+    })
+    if (imageRes.status === 200 && imageRes.data.size > 0) {
+      imgUrl.value = URL.createObjectURL(imageRes.data)
+    }
+  } catch (e) {
+    console.warn("加载规格图片失败，使用默认图")
+  }
+}
+
+
+// 主方法：加载详情 + 同名规格
 const loadProductDetail = async () => {
   loading.value = true
   try {
-    const response = await axios.get(`/products/${route.params.id}`)
-    product.value = response.data
-    
-    imgUrl.value = placeholder
-    
-    if (product.value.hasImage === true){
-       try {
-        const imageRes = await axios.get(`/products/${product.value.productId}/image`, {
-          responseType: 'blob'
-        })
+    // 第1步：根据 ID 获取该商品
+    const res = await axios.get(`/products/${route.params.id}`)
+    const base = res.data
 
-        // 如果请求成功且有数据
-        if (imageRes.status === 200 && imageRes.data.size > 0) {
-          imgUrl.value = URL.createObjectURL(imageRes.data)
-        }
-      } catch (imgError) {
-        // 图片加载失败（比如文件丢失），控制台打印警告，但页面不崩，继续显示默认图
-        console.warn('商品图片加载失败，已使用默认图:', imgError)
-      }
-    }
+    // 第2步：获取同名所有规格
+    const specRes = await axios.get('/products/productName', {
+      params: { name: base.productName }
+    })
+
+    // 后端可能返回 Page，也可能返回 List
+    productSpecs.value = specRes.data?.records || specRes.data || []
+
+    // 第3步：设置当前规格 = 当前 ID 对应项
+    currentSpec.value =
+        productSpecs.value.find(s => s.productId == base.productId) ||
+        productSpecs.value[0]
+
+    // 第4步：加载当前规格图片
+    await loadImage(currentSpec.value.productId)
 
   } catch (error) {
     console.error('获取商品详情失败:', error)
     ElMessage.error('获取商品详情失败，请稍后重试')
   } finally {
-    loading.value = false // 无论成功失败，都结束 loading
+    loading.value = false
   }
 }
+
+
+// 切换规格
+const selectSpec = async (spec) => {
+  currentSpec.value = spec
+  quantity.value = 1
+  await loadImage(spec.productId)
+}
+
+
 
 //联系卖家
 async function contactSeller(product) {
@@ -158,62 +217,86 @@ async function goToChat(receiverId) {
 }
 
 
-/**
- * 用于“我的订单”列表，点击后调用核心函数
- * @param {number | string} farmerId - 农户的ID
- */
-async function contactFarmer(farmerId) {
-
-  await goToChat(farmerId);
-}
-
 // 加入购物车
-const handleAddToCart = async () => {
-  
+const handleAddToCart = async (product) => {
   if (!isLoggedIn.value) {
     ElMessage.warning('请先登录后再操作！');
     router.push('/login');
     return;
   }
-  
-  isAddingToCart.value = true
+
+  isAddingToCart.value = true;
   try {
-    // 加入购物车的请求格式通常需要 userId
     await axios.post('/cart/add', null, {
       params: {
         userId: userInfo.value.userId,
-        productId: product.value.productId,
+        productId: product.productId, // 使用传入的 product
         quantity: quantity.value
       }
-    })
-    ElMessage.success('成功加入购物车')
+    });
+    ElMessage.success('成功加入购物车');
   } catch (error) {
-    console.error('加入购物车失败:', error)
-    ElMessage.error(error.response?.data?.message || '加入购物车失败')
+    console.error('加入购物车失败:', error);
+    ElMessage.error(error.response?.data?.message || '加入购物车失败');
   } finally {
-    isAddingToCart.value = false
+    isAddingToCart.value = false;
   }
 }
 
 // 立即购买
-const buyNow = () => {
+const buyNow = async (product) => {
+
   if (!isLoggedIn.value) {
-    ElMessage.warning('请先登录后再操作！');
-    router.push('/login');
+    alert('请先登录！');
     return;
   }
+  const defaultAddress = ref();
 
-  ElMessage.info('“立即购买”功能正在开发中，您可以先将商品加入购物车')
-  // 实际开发中，这里会跳转到订单确认页面
-  /*
-  router.push({
-    name: 'orderConfirm',
-    state: { 
-      orderItems: [{ ...product.value, quantity: quantity.value }]
+  try {
+
+    try {
+      const res = await axios.get('/address/default')
+      if (res.status === 200 && res.data) {
+        defaultAddress.value = res.data
+        console.log('默认地址:', defaultAddress.value)
+      } else {
+        defaultAddress.value = null
+        console.warn('未找到默认地址')
+        return
+      }
+    } catch (err) {
+      console.error('获取默认地址失败', err)
+      ElMessage.error('请先到个人信息添加地址！')
     }
-  })
-  */
+
+    const reqBody = {
+      addressId: defaultAddress.value.addressId,
+      orderItems: [{
+        productId: product.productId,
+        quantity: quantity.value
+      }]
+    }
+
+    console.log('即将发送到后端的订单数据:', JSON.stringify(reqBody, null, 2));
+
+    const res = await axios.post('/orders', reqBody);
+
+    if (res.data) {
+      const orderId = res.data;
+      alert(`订单提交成功！`)
+      currentSpec.value = []
+      await router.push(`/orders/${orderId}`)
+    } else {
+      alert('提交失败，请稍后再试')
+    }
+
+  } catch (err) {
+    console.error('提交订单失败:', err)
+    alert('提交失败，请检查登录状态或网络')
+  }
+
 }
+
 
 onMounted(() => {
   loadProductDetail()
@@ -222,132 +305,219 @@ onMounted(() => {
 
 <style scoped>
 .product-detail-page {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 1200px;
+  margin: 0 auto;
   padding: 20px;
-  background-color: #f5f5f5;
-  min-height: calc(100vh - 60px); /* 假设你有60px的导航栏 */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #333;
+  background-color: #f5f5f7;
+}
+
+.loading-state,
+.error-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+  color: #888;
+  font-size: 16px;
 }
 
 .product-container {
   display: flex;
-  gap: 40px;
-  background: white;
+  gap: 30px;
+  background: #fff;
+  border-radius: 16px;
   padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  max-width: 1200px;
-  margin: 0 auto;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.08);
 }
 
 .product-image {
-  flex: 0 0 400px;
-  align-self: center;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .product-image img {
-  width: 100%;
-  height: 400px;
-  object-fit: cover;
-  border-radius: 8px;
-  border: 1px solid #eee;
+  max-width: 100%;
+  border-radius: 12px;
+  object-fit: contain;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
 .product-info {
-  flex: 1;
+  flex: 2;
   display: flex;
   flex-direction: column;
+  gap: 18px;
 }
 
 .product-info h1 {
-  margin: 0 0 15px 0;
-  color: #303133;
   font-size: 28px;
   font-weight: 600;
+  color: #111;
 }
 
 .price-section {
-  margin-bottom: 20px;
-  padding: 20px;
-  background: #fff8f8; /* 淡红色背景突出价格 */
-  border-radius: 8px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.price {
-  color: #f56c6c;
-  font-size: 32px;
-  font-weight: bold;
-}
-
-.stock {
-  color: #909399;
-  font-size: 16px;
-}
-
-.description, .farmer-info, .category-info {
-  margin-bottom: 25px;
-}
-
-.description h3, .farmer-info h3, .category-info h3 {
-  color: #303133;
-  margin-bottom: 10px;
-  font-size: 18px;
-  padding-left: 10px;
-  border-left: 4px solid #409EFF; /* 添加蓝色竖线装饰 */
-}
-
-.description p, .farmer-info p, .category-info p {
-  color: #606266;
-  line-height: 1.8;
-  font-size: 16px;
-}
-
-.action-section {
-  margin-top: auto; /* 将操作区推到底部 */
-  padding-top: 20px;
-  border-top: 1px solid #f0f0f0;
-  display: flex;
+  align-items: baseline;
   gap: 20px;
+}
+
+.price-section .price {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2d7d4f; /* 深绿色突出价格 */
+}
+
+.price-section .stock {
+  font-size: 14px;
+  color: #666;
+}
+
+.description, .category-info, .farmer-info {
+  background: #f9f9f9;
+  padding: 15px 20px;
+  border-radius: 12px;
+}
+
+.description h3,
+.category-info h3,
+.farmer-info h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.description p,
+.category-info p,
+.farmer-info p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #555;
+}
+
+.farmer-info-row {
+  display: flex;
+  justify-content: space-between; /* 左右分开 */
+  align-items: center;           /* 垂直居中 */
+  margin-top: 8px;
+}
+
+.category-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #e6f4ea;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #2d7d4f;
+}
+
+.category-separator {
+  margin: 0 5px;
+  color: #aaa;
+}
+
+.spec-section {
+  margin-top: 15px;
+}
+
+.spec-section h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.spec-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.spec-button {
+  padding: 8px 16px;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  background-color: #f5f5f7;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.spec-button.active {
+  background-color: #2d7d4f;
+  color: #fff;
+  border-color: #2d7d4f;
+}
+
+.spec-button:hover {
+  background-color: #e6f4ea;
+}
+
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.contact-btn {
+  width: 100px;
+  padding: 10px 0;
+  background: #fff;
+  border: 1px solid #2d7d4f;
+  border-radius: 12px;
+  color: #2d7d4f;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.contact-btn:hover {
+  background: #2d7d4f;
+  color: #fff;
 }
 
 .quantity-control {
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-
-.quantity-control label {
-  font-size: 16px;
-  color: #606266;
+  gap: 8px;
 }
 
 .el-input-number {
-  width: 120px;
+  width: 100px;
 }
 
-/* loading 和 error 状态的样式 */
-.loading-state, .error-state {
-  text-align: center;
-  padding: 80px 20px;
-  color: #909399;
-  font-size: 18px;
+.el-button {
+  border-radius: 12px;
+  font-weight: 600;
 }
 
-/* 分类标签样式 */
-.category-tag {
-  display: inline-block;
-  background-color: #ecf5ff;
-  color: #409eff;
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 14px;
-  border: 1px solid #d9ecff;
+.el-button.primary {
+  background-color: #2d7d4f;
+  border-color: #2d7d4f;
+  color: #fff;
 }
 
-.category-separator {
-  margin: 0 8px;
-  color: #909399;
+.el-button.danger {
+  background-color: #e74c3c;
+  border-color: #e74c3c;
+  color: #fff;
+}
+
+.el-button.primary:hover {
+  background-color: #246641;
+  border-color: #246641;
+}
+
+.el-button.danger:hover {
+  background-color: #c0392b;
+  border-color: #c0392b;
 }
 </style>

@@ -79,14 +79,17 @@ onMounted(() => {
   position: relative;
   width: 100%;
   overflow: hidden;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  background-color: #f9f9f9;
+  padding: 15px;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
 .news-carousel-slide {
   display: none;
   padding: 10px;
-  transition: opacity 0.5s ease-in-out;
+  transition: opacity 0.4s ease-in-out;
 }
 
 .news-carousel-slide.active {
@@ -94,51 +97,56 @@ onMounted(() => {
 }
 
 .news-image {
-  width: 80%;
-  height: 200px;
+  width: 100%;
+  height: 220px;
   object-fit: cover;
-  border-radius: 6px;
-  transition: transform 0.3s ease;
+  border-radius: 8px;
+  transition: transform 0.25s ease;
 }
 
 .news-image:hover {
-  transform: scale(1.03); /* 鼠标悬停放大效果 */
+  transform: scale(1.03);
 }
 
 .news-carousel-content {
-  margin-top: 8px;
+  margin-top: 10px;
 }
 
 .news-title {
-  margin: 5px 0;
-  font-size: 16px;
-  font-weight: 600;
+  margin: 8px 0 6px 0;
+  font-size: 18px;
+  font-weight: bold;
+  color: #2d7d4f; /* 深绿标题（与你首页一致） */
 }
 
 .news-summary {
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 5px;
+  font-size: 15px;
+  color: #555;
+  line-height: 1.45;
+  margin-bottom: 10px;
 }
 
 .news-carousel-controls {
   position: absolute;
-  bottom: 10px;
-  right: 10px;
+  bottom: 12px;
+  right: 12px;
   display: flex;
-  gap: 5px;
+  gap: 6px;
 }
 
 .control-btn {
-  background: #ddd;
-  border: none;
-  padding: 5px 10px;
+  background-color: #d7f0e3; /* 淡绿按钮 */
+  border: 1px solid #b8d9c6;
+  padding: 6px 12px;
   cursor: pointer;
-  border-radius: 4px;
-  transition: background-color 0.3s;
+  border-radius: 6px;
+  font-size: 13px;
+  transition: all 0.25s ease;
 }
 
 .control-btn:hover {
-  background: #b7e4c7; /* 淡绿色悬停效果 */
+  background-color: #b7e4c7; /* 悬停更明显 */
+  border-color: #8bc3a1;
 }
 </style>
+
