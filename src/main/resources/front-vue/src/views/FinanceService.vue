@@ -39,16 +39,16 @@
             <span>{{ p.termMonths }} 月</span>
             <span>{{ p.interestRate }}%</span>
             <span>{{ p.minAmount }} - {{ p.maxAmount }} 元</span>
-            <span>
-      <button @click="viewProduct(p)" class="detail-btn">查看详情</button>
-      <button
-          v-if="role === 'bank'"
-          @click="deleteProduct(p.productId)"
-          class="delete-btn"
-      >
-        删除
-      </button>
-    </span>
+            <span style="display: flex; gap: 10px;">
+                    <button @click="viewProduct(p)" class="detail-btn">查看详情</button>
+                    <button
+                        v-if="role === 'bank'"
+                        @click="deleteProduct(p.productId)"
+                        class="delete-btn"
+                    >
+                              删除
+                    </button>
+            </span>
           </div>
 
           <p v-if="!products.length" class="empty-state">暂无融资产品</p>
@@ -113,7 +113,7 @@
           <div class="model-container product-detail-modal">
             <div class="modal-title-div">
               <h3 class="modal-title">产品编号 #{{ currentProduct.productId }}</h3>
-              <button @click="closeProductDetail" class="modal-close-btn">关闭</button>
+<!--              <button @click="closeProductDetail" class="modal-close-btn">关闭</button>-->
             </div>
 
 
@@ -196,10 +196,10 @@
           <span>{{ app.term }} 月</span>
           <span>{{ app.applicationStatus }}</span>
           <span>
-      <button @click="openApplicationDetail(app)" class="detail-btn">
-        查看详情
-      </button>
-    </span>
+          <button @click="openApplicationDetail(app)" class="detail-btn">
+            查看详情
+          </button>
+          </span>
         </div>
 
         <p v-if="!applications.length" class="empty-state">暂无申请</p>
@@ -212,6 +212,92 @@
         >
           + 发起申请
         </button>
+
+        <!-- 弹窗：申请详情 -->
+        <div v-if="showDetail" class="modal-overlay" @click.self="closeDetail()">
+          <div class="modal-container">
+            <h3>申请详情</h3>
+
+            <div class="form-row"><label>ID：</label><span>{{ currentApp.financingId }}</span></div>
+            <div class="form-row"><label>金额：</label><span>{{ currentApp.amount }} 元</span></div>
+            <div class="form-row"><label>用途：</label><span>{{ currentApp.purpose }}</span></div>
+            <div class="form-row"><label>期限：</label><span>{{ currentApp.term }} 月</span></div>
+            <div class="form-row"><label>状态：</label><span>{{ currentApp.applicationStatus }}</span></div>
+
+            <hr />
+
+            <!-- 银行回复区 -->
+            <div v-if="role === 'farmer'">
+              <h4>银行回复</h4>
+
+              <div v-if="currentApp.reply && currentApp.reply.length">
+                <div v-for="(r, i) in currentApp.reply" :key="i" class="reply-block">
+                  <div class="form-row"><label>利率：</label><span>{{ r.offeredInterestRate }}%</span></div>
+                  <div class="form-row"><label>批复金额：</label><span>{{ r.offeredAmount }} 元</span></div>
+                  <div class="form-row"><label>备注：</label><span>{{ r.bankNotes || '无' }}</span></div>
+                  <div class="form-row"><label>时间：</label><span>{{ r.offerTime }}</span></div>
+                  <div class="form-row"><label>状态：</label><span>{{ r.offerStatus }}</span></div>
+
+                  <div v-if="role === 'farmer' && r.offerStatus === 'pending'" class="bank-action-buttons">
+                    <button @click="acceptOffer(r.offerId)" class="accept-btn">接受</button>
+                    <button @click="rejectOffer(r.offerId)" class="reject-btn">拒绝</button>
+                  </div>
+                  <hr />
+                </div>
+              </div>
+              <p v-else>暂无银行回复</p>
+            </div>
+
+            <!-- 银行可回复 -->
+            <div v-if="role === 'bank'" class="reply-form">
+              <h4>提交批复</h4>
+              <form @submit.prevent="submitReply" class="modal-form">
+                <div class="form-row">
+                  <label>利率：</label>
+                  <input type="number" step="0.01" v-model="newReply.offeredInterestRate" required />
+                </div>
+                <div class="form-row">
+                  <label>批复金额：</label>
+                  <input type="number" v-model="newReply.offeredAmount" required />
+                </div>
+                <div class="form-row">
+                  <label>备注：</label>
+                  <textarea v-model="newReply.bankNotes"></textarea>
+                </div>
+                <div class="action-buttons">
+                  <button class="submit-btn">提交</button>
+                </div>
+              </form>
+            </div>
+
+            <button class="cancel-btn" @click="closeDetail()">关闭</button>
+          </div>
+        </div>
+
+        <!-- 弹窗：农户新建申请 -->
+        <div v-if="showCreateApplication" class="modal-overlay" @click.self="showCreateApplication = false">
+          <div class="modal-container">
+            <h3>发起融资申请</h3>
+            <form @submit.prevent="submitNewApplication" class="modal-form">
+              <div class="form-row">
+                <label>金额（元）：</label>
+                <input type="number" v-model="newApp.amount" required />
+              </div>
+              <div class="form-row">
+                <label>用途：</label>
+                <input v-model="newApp.purpose" required />
+              </div>
+              <div class="form-row">
+                <label>期限（月）：</label>
+                <input type="number" v-model="newApp.term" required />
+              </div>
+              <div class="form-actions">
+                <button class="submit-btn">提交</button>
+                <button type="button" class="cancel-btn" @click="showCreateApplication = false">取消</button>
+              </div>
+            </form>
+          </div>
+        </div>
 
       </div>
 
@@ -271,6 +357,22 @@ const applyProduct = async () => {
     alert('提交失败')
   }
 }
+
+// 删除银行产品
+async function deleteProduct(productId) {
+  if (!confirm('确定删除该产品吗？')) return;
+
+  try {
+    await axios.delete(`/bank/products/${productId}`);
+    // 删除成功后，从本地列表移除
+    products.value = products.value.filter(p => p.productId !== productId);
+    alert('删除成功');
+  } catch (err) {
+    console.error('删除失败', err);
+    alert('删除失败，请稍后重试');
+  }
+}
+
 // 弹窗控制
 const showDetail = ref(false)
 const showCreateApplication = ref(false)

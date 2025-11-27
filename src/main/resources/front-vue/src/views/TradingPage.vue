@@ -142,6 +142,7 @@
             <div class="col checkbox-col" v-if="showBatch">选择</div>
             <div class="col img-col">图片</div>
             <div class="col name-col">产品名称</div>
+            <div class="col name-col">规格名称</div>
             <div class="col price-col">价格</div>
             <div class="col stock-col">库存</div>
             <div class="col status-col">上架</div>
@@ -158,6 +159,7 @@
                 <img :src="product.imageUrl" alt="" class="product-image" @error="handleImageError" />
               </div>
               <div class="col name-col">{{ product.productName }}</div>
+              <div class="col name-col">{{ product.specInfo }}</div>
               <div class="col price-col">¥{{ product.price.toFixed(2) }}</div>
               <div class="col stock-col">{{ product.stock }}</div>
               <div class="col status-col">
@@ -282,6 +284,105 @@
           </div>
         </div>
 
+        <!-- 编辑商品弹窗 -->
+        <div v-if="showEditProductModal" class="modal-overlay">
+          <div class="modal-container">
+
+            <!-- 右上角关闭按钮 -->
+            <button class="close-btn" @click="closeAddModal">×</button>
+
+            <h2 class="modal-title">编辑商品</h2>
+
+            <div class="modal-body">
+
+              <!-- 商品名称 -->
+              <div class="modal-form-group row-layout">
+                <label>商品名称：</label>
+                <input v-model="newProduct.productName" type="text" placeholder="请输入商品名称" />
+              </div>
+
+              <!-- 商品图片 -->
+              <div class="modal-form-group">
+                <label>商品图片：</label>
+
+                <div class="image-upload-box" @click="triggerImageInput">
+                  <span v-if="!newProduct.imagePath">＋ 上传</span>
+                  <img v-else :src="newProduct.imagePath" alt="预览" />
+                </div>
+
+                <input type="file" ref="imageInput" style="display:none"
+                       @change="handleImageUpload" accept="image/*" />
+              </div>
+
+              <!-- 商品主类 -->
+              <div class="modal-form-group row-layout">
+                <label>商品主类：</label>
+                <select v-model="newProduct.prodCat" class="form-input">
+                  <option v-for="cat in mainCategories" :key="cat" :value="cat">
+                    {{ cat }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- 商品副类 -->
+              <div class="modal-form-group row-layout">
+                <label>商品副类：</label>
+                <input v-model="newProduct.prodPcat" type="text" placeholder="例如：叶菜类" />
+              </div>
+
+
+              <!-- 商品单位 -->
+              <div class="modal-form-group row-layout">
+                <label>商品单位：</label>
+                <input
+                    v-model="newProduct.unitInfo"
+                    type="text"
+                    placeholder="例如：斤 / 袋 / 份"
+                />
+              </div>
+
+              <div class="modal-form-group row-layout">
+                <label>描述：</label>
+                <textarea v-model="newProduct.description" rows="2"></textarea>
+              </div>
+
+
+              <!-- 添加规格标题 + 按钮 -->
+              <div class="spec-header">
+                <label>商品规格：</label>
+              </div>
+
+              <!-- 动态规格框 -->
+              <div class="spec-box" v-for="(spec, index) in specs" :key="index">
+
+                <div class="spec-item-row">
+                  <label>规格名称：</label>
+                  <input v-model="newProduct.specInfo" type="text" />
+                </div>
+
+                <div class="spec-item-row">
+                  <label>价格(元):</label>
+                  <input type="number" v-model.number="newProduct.price" placeholder="请输入价格" />
+                </div>
+
+
+                <div class="spec-item-row">
+                  <label>库存量：</label>
+                  <input type="number" v-model.number="newProduct.stock" />
+                </div>
+
+              </div>
+
+            </div>
+
+            <!-- 底部按钮 -->
+            <div class="modal-footer">
+              <button class="cancel-btn" @click="closeAddModal">取消</button>
+              <button @click="updateProduct">保存修改</button>
+            </div>
+
+          </div>
+        </div>
 
         <!-- 购物车（仅买家） -->
         <div v-if="role === 'buyer' && currentView === 'cart'">
@@ -525,6 +626,7 @@ function handleImageUpload(event) {
 
 
 const showAddProductModal = ref(false)
+const showEditProductModal = ref(false)
 
 function openAddModal() {
   showAddProductModal.value = true
@@ -532,6 +634,7 @@ function openAddModal() {
 
 function closeAddModal() {
   showAddProductModal.value = false
+  showEditProductModal.value = false
 }
 
 const imageInput = ref(null)
@@ -546,7 +649,8 @@ const newProduct = ref({
   prodCat: '',
   prodPcat: '',
   unitInfo:''  ,
-  imagePath: ''
+  imagePath: '',
+
 })
 //规格列表
 const specs = ref([
@@ -775,10 +879,62 @@ const handleImageError = (e) => {
 };
 
 const editProduct = (product) => {
-  // 将原数据复制到表单模型中
-  newProduct.value = { ...product }
+  console.log('product', product);
+  newProduct.value = {
+    productId: product.productId,  // 必须保留 ID
+    productName: product.productName,
+    prodCat: product.prodCat,
+    prodPcat: product.prodPcat,
+    unitInfo: product.unitInfo,
+    description: product.description,
+    imagePath: product.imagePath || '',
+    specInfo: product.specInfo,
+    price: product.price,
+    stock: product.stock
+  }
 
-  showAddProductModal.value = true
+  imageFile.value = null   // 清空旧图片
+  showEditProductModal.value = true
+}
+
+async function updateProduct() {
+  if (!isLoggedIn.value || role.value !== 'farmer') {
+    alert('只有农户才能修改产品！')
+    return
+  }
+
+  try {
+    // 更新规格 + 基础信息（走 JSON PUT）
+    for (const spec of specs.value) {
+      const productData = {
+        ...newProduct.value
+      }
+
+      console.log("更新基础信息：", productData)
+
+      await axios.put(`/products/${newProduct.value.productId}`, productData)
+    }
+
+    // 如果有图片，就单独 PATCH 图片
+    if (imageFile.value) {
+      const formData = new FormData()
+      formData.append("image", imageFile.value)
+
+      console.log("上传新图片")
+
+      await axios.patch(`/products/${newProduct.value.productId}/image`, formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      })
+    }
+
+    alert("商品修改成功！")
+    showEditProductModal.value = false
+    loadMyProducts()
+
+  } catch (err) {
+    console.error("更新失败", err)
+    alert("更新失败，请稍后重试")
+  }
 }
 
 
@@ -1091,7 +1247,7 @@ async function loadMyOrders() {
     if (error.response && (error.response.status === 401 || error.response.status === 403)) {
       alert("登录已过期，请重新登录。");
       // 这里可以添加跳转到登录页的逻辑
-      // router.push('/login');
+      router.push('/login');
     } else {
       alert("加载订单失败，请稍后重试。");
     }
@@ -2247,7 +2403,7 @@ margin-bottom: 10px;
 .spec-item-row  select {
   flex: 1;
   width: 100%;
-  height: 15px;
+  height: 35px;
   padding: 6px 10px;
   border: 1px solid #ccc;
   border-radius: 6px;
@@ -2405,7 +2561,7 @@ color: #fff;
   background: #9ca3af;
   cursor: not-allowed;
 }
-h3{
+.modal-container h3{
   padding-bottom: 10px;
   border-bottom: 1px solid #369870;
   margin-bottom: 20px;
