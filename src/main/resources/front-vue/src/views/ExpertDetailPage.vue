@@ -10,7 +10,7 @@
         <div class="profile-card">
           <h3>专家档案</h3>
           <div class="profile-details">
-            <img :src="expertProfile.photoUrl || defaultAvatar" alt="Expert Photo" class="profile-photo">
+            <img :src="finalPhotoUrl" alt="Expert Photo" class="profile-photo">
             <div class="profile-info-text">
               <h4>{{ expertName || '专家姓名' }}</h4>
               <p><strong>专业领域：</strong>{{ expertProfile.specialization }}</p>
@@ -65,7 +65,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive } from 'vue';
+import { ref, onMounted, reactive,computed} from 'vue';
 import { useRoute } from 'vue-router';
 import axios from '../utils/axios';
 import HeaderComponent from '@/components/HeaderComponent.vue';
@@ -85,6 +85,8 @@ const isBooking = ref(false);
 const expertId = route.params.id; // 从URL中获取专家ID
 const expertName = ref('')
 
+const API_BASE_URL = 'http://localhost:8080'//基础地址
+
 console.log('ExpertDetailPage.vue 已加载，从URL获取到的专家ID是:', expertId);
 console.log('完整的路由参数对象:', route.params);
 
@@ -95,6 +97,8 @@ const pagination = reactive({
   pages: 1,
 });
 
+//===========专家个人信息加载===========
+//获取专家档案
 async function fetchExpertProfile() {
 
   console.log('正在调用fetchExpertProfile');
@@ -103,7 +107,7 @@ async function fetchExpertProfile() {
     // API: 根据ID获取指定专家的档案
     // 注意: 这个API需要后端实现，根据ID返回单个专家的档案和用户信息
     const response = await axios.get(`/expert/profile/${expertId}`);
-    console.log('fetchExpertProfile 获取到的响应数据:', response.data);
+    console.log('🔥 [调试] fetchExpertProfile (专家详情) 返回的完整数据:', response.data);
     if (response.data && response.data.success ) {
       expertProfile.value = response.data.data;
     }
@@ -115,9 +119,11 @@ async function fetchExpertProfile() {
   }
 }
 
+//加载专家名字
 async function loadExpertName() {
   try {
     const response = await axios.get(`/expert/profile/list`);
+    console.log('🔥 [调试] loadExpertName (专家列表) 返回的完整数据:', response.data);
     if (response.data && response.data.success) {
       const list = response.data.data;
       const item = list.find(obj => obj.id === String(expertId));
@@ -131,6 +137,26 @@ async function loadExpertName() {
   }
 } 
 
+//处理图片路径
+const finalPhotoUrl = computed(() => {
+  // 1. 如果 expertProfile 还没加载，显示默认图
+  if (!expertProfile.value) return defaultAvatar;
+  
+  // 2. 获取后端返回的 url
+  const url = expertProfile.value.photoUrl;
+
+  // 3. 如果 url 为空，显示默认图
+  if (!url) return defaultAvatar;
+
+  // 4. 如果 url 已经是 http 开头的完整路径（比如网络图片），直接返回
+  if (url.startsWith('http')) return url;
+
+  // 5. 否则，拼接后端地址 + 相对路径
+  return `${API_BASE_URL}${url}`;
+});
+
+//===========预约相关===========
+//获取可预约时间段
 async function fetchAvailableSlots() {
   isLoadingSlots.value = true;
   try {
@@ -153,6 +179,7 @@ async function fetchAvailableSlots() {
   }
 }
 
+//预约时间段
 async function bookAppointment(slotId) {
   if (!authStore.isLoggedIn) {
       ElMessage.warning('请先登录再进行预约！');
@@ -179,6 +206,7 @@ async function bookAppointment(slotId) {
   }
 }
 
+//分页切换
 function changePage(page) {
   if (page > 0 && page <= pagination.pages) {
     pagination.current = page;

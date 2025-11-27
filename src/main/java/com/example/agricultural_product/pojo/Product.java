@@ -71,5 +71,8 @@ public class Product {
     @TableField(exist = false)
     private String labelPre; // 关键：判断分支的字段
 
+    @TableField(exist = false)
+    private Boolean hasImage; // 关键：判断是否有图片的字段
+
 
 }

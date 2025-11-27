@@ -57,7 +57,7 @@
                 class="product-card"
             >
               <div class="product-image">
-                <img :src="product.imageUrl" :alt="product.productName" />
+                <img :src="product.imageUrl" :alt="product.productName" @error="handleImageError" />
               </div>
 
               <div class="product-info">
@@ -162,7 +162,7 @@
                 <input type="checkbox" v-model="selectedProducts" :value="product.productId" />
               </div>
               <div class="col img-col">
-                <img :src="product.imageUrl" alt="" class="product-image" />
+                <img :src="product.imageUrl" alt="" class="product-image" @error="handleImageError" />
               </div>
               <div class="col name-col">{{ product.productName }}</div>
               <div class="col price-col">¥{{ product.price.toFixed(2) }}</div>
@@ -291,7 +291,7 @@
           <div v-if="cartItems.length" class="cart-list">
             <div v-for="item in cartItems" :key="item.productId" class="cart-card">
               <div class="cart-product-image">
-                <img :src="item.imageUrl || placeholder"  alt=""/>
+                <img :src="item.imageUrl || placeholder"  alt="" @error="handleImageError" />
               </div>
               <div class="cart-info">
                 <h3>{{ item.productName }}</h3>
@@ -404,6 +404,7 @@ import placeholder from "@/assets/img.png";
 import {useAuthStore} from '@/stores/authStore'
 import {storeToRefs} from 'pinia'
 import {ElMessage} from "element-plus";
+import defaultImg from '@/assets/img.png'
 
 
 // ====== 主逻辑 ======
@@ -662,31 +663,33 @@ async function loadProducts() {
     const res = await axios.get('/products')
     const records = res.data.records || []
 
-    // 并行加载每个产品的图片
+    //并行加载每个产品的图片
     products.value = await Promise.all(
-        records.map(async (product) => {
+      records.map(async (product) => {
+        // 1. 默认设置
+        let imageUrl = defaultImg; 
+        // 2. 如果后端说有图，尝试加载
+        if (product.hasImage === true) {
           try {
-            let imageUrl = ''
-            try {
-              const imageRes = await axios.get(`/products/${product.productId}/image`, {
-                responseType: 'blob'
-              })
-              if (imageRes.data.size > 0)
-                imageUrl = URL.createObjectURL(imageRes.data)
-            } catch {
-              // 如果图片加载失败，使用默认占位图
-              imageUrl = new URL('../assets/img.png', import.meta.url).href
+            const imageRes = await axios.get(`/products/${product.productId}/image`, {
+              responseType: 'blob'
+            });
+            if (imageRes.data && imageRes.data.size > 0) {
+              imageUrl = URL.createObjectURL(imageRes.data);
             }
-            return { ...product, imageUrl }
           } catch (err) {
-            console.warn('产品加载失败:', product.productId, err)
-            return { ...product, imageUrl: new URL('../assets/img.png', import.meta.url).href }
+            console.warn('产品图片加载失败，使用默认图：', product.productId, err);
+            imageUrl = defaultImg;
           }
-        })
-    )
-    // if (products.value.length > 0) {
-    //   await startPrediction(products.value[0])
-    // }
+        }
+
+        return { ...product, imageUrl };
+      })
+    );
+
+    if (products.value.length > 0) {
+      await startPrediction(products.value[0])
+    }
   } catch (err) {
     console.error('加载产品失败', err)
   }
@@ -719,26 +722,24 @@ async function loadMyProducts() {
     // 并行加载每个产品的图片
     myProducts.value = await Promise.all(
         records.map(async (product) => {
+          let imageUrl = defaultImg
+
+          if (product.hasImage === true) {
           try {
-            let imageUrl = ''
-            try {
-              const imageRes = await axios.get(`/products/${product.productId}/image`, {
-                responseType: 'blob'
-              })
-              if (imageRes.data.size > 0)
-                imageUrl = URL.createObjectURL(imageRes.data)
-            } catch {
-              // 如果图片加载失败，使用默认占位图
-              imageUrl = new URL('../assets/img.png', import.meta.url).href
+            const imageRes = await axios.get(`/products/${product.productId}/image`, {
+              responseType: 'blob'
+            });
+            if (imageRes.data && imageRes.data.size > 0) {
+              imageUrl = URL.createObjectURL(imageRes.data);
             }
-            console.log('我的产品：',imageUrl)
-            return { ...product, imageUrl }
           } catch (err) {
-            console.warn('产品加载失败:', product.productId, err)
-            return { ...product, imageUrl: new URL('../assets/img.png', import.meta.url).href }
+             // 忽略错误
           }
-        })
-    )
+        }
+        
+        return { ...product, imageUrl };
+      })
+    );
 
   } catch(err) {
     console.error('加载我的产品失败', err);
@@ -773,6 +774,14 @@ async function goToChat(receiverId) {
   }
   await router.push(`/chat/${receiverId}`);
 }
+
+//处理图片错误
+const handleImageError = (e) => {
+  
+  e.target.src = defaultImg;
+
+  e.target.onerror = null; 
+};
 
 
 // ====== 预测逻辑 ======
@@ -1122,17 +1131,18 @@ async function loadCart() {
             const product = productRes.data
 
             // 尝试获取产品图片
-            let imageUrl = ''
-            try {
-              const imageRes = await axios.get(`/products/${product.productId}/image`, {
-                responseType: 'blob' // 返回二进制
-              })
-              if (imageRes.data.size > 0) imageUrl = URL.createObjectURL(imageRes.data)
-              console.log('图片获取成功')
-            } catch {
-              // 如果图片获取失败，使用默认占位图
-              console.log('<图片获取失败>', product)
-              imageUrl = new URL('../assets/img.png', import.meta.url).href
+            let imageUrl = defaultImg
+            if (product.hasImage === true) {
+                try {
+                  const imageRes = await axios.get(`/products/${product.productId}/image`, {
+                    responseType: 'blob'
+                  });
+                  if (imageRes.data.size > 0) {
+                    imageUrl = URL.createObjectURL(imageRes.data);
+                  }
+                } catch {
+                  // 忽略
+                }
             }
 
             return {
@@ -1150,10 +1160,7 @@ async function loadCart() {
           }
         })
     )
-    // totalPrice.value = detailedItems.reduce(
-    //     (sum, i) => sum + i.price * i.quantity,
-    //     0
-    // )
+    
   } catch (err) {
     console.error('加载购物车失败:', err)
     alert('加载购物车失败，请稍后重试')

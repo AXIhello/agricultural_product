@@ -3,6 +3,8 @@ package com.example.agricultural_product.controller;
 import com.example.agricultural_product.dto.PredictionRequest;
 import com.example.agricultural_product.service.PricePredictionService;
 import com.example.agricultural_product.utils.JwtUtil;
+import org.slf4j.Logger; 
+import org.slf4j.LoggerFactory; 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +16,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/predictions")
 public class PricePredictionController {
+
+    private static final Logger logger = LoggerFactory.getLogger(PricePredictionController.class);
 
     @Autowired
     private PricePredictionService predictionService;
@@ -54,10 +58,12 @@ public class PricePredictionController {
                         .body(Map.of("status", "RUNNING", "taskId", taskIdOrStatus, "message", "预测任务已启动，请稍后查询结果"));
             }
         } catch (IllegalArgumentException e) {
+            logger.warn("请求参数校验失败: {}", e.getMessage());
             // 捕获 Service 层抛出的业务校验错误
             return ResponseEntity.badRequest().body(Map.of("status", "FAILED", "message", e.getMessage()));
         } catch (Exception e) {
             // 捕获启动任务时的其他异常
+            logger.error("启动预测任务时发生系统异常", e);
             return ResponseEntity.internalServerError().body(Map.of("status", "ERROR", "message", "启动预测任务失败"));
         }
     }
@@ -79,13 +85,15 @@ public class PricePredictionController {
 
         switch (status) {
             case "COMPLETED":
-                // 成功完成，返回 200 OK，包含数据
+                // 成功完成，返回 200 OK
                 return ResponseEntity.ok(result);
             case "RUNNING":
                 // 任务仍在进行，返回 202 Accepted，客户端应继续轮询
                 return ResponseEntity.status(HttpStatus.ACCEPTED).body(result);
             case "FAILED":
                 // 任务失败，返回 500 Internal Server Error (或 400 视具体错误)
+                String errorMessage = (String) result.getOrDefault("message", "未知错误");
+                logger.error("预测任务执行失败 [TaskId: {}]: {}", taskId, errorMessage);
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
             case "NOT_FOUND":
             default:

@@ -39,7 +39,7 @@ public class SecurityConfig {
 
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/chat/stream").permitAll() 
-            
+                        .requestMatchers("/uploads/**").permitAll() 
                         .requestMatchers("/api/**").authenticated()
                         // 其他非 /api/ 的路径（例如 /）允许访问
                         .anyRequest().permitAll() 

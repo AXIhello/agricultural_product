@@ -25,9 +25,20 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
 
 	private void normalizeImagePath(Page<Product> page) {
 		if (page == null || page.getRecords() == null) return;
+
 		page.getRecords().forEach(p -> {
-			if (p != null && p.getImagePath() != null && p.getImagePath().trim().isEmpty()) {
-				p.setImagePath(null);
+
+			if (p != null){
+				String path = p.getImagePath();
+
+				boolean hasImage = path != null && !path.trim().isEmpty();
+
+				p.setHasImage(hasImage);
+
+				if(!hasImage){
+					p.setImagePath(null);
+				}	
+
 			}
 		});
 	}

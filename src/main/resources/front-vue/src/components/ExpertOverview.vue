@@ -20,15 +20,19 @@
 import { ref, onMounted } from 'vue';
 import axios from '../utils/axios'; 
 import { useRouter } from 'vue-router';
+import defaultAvatar from '@/assets/default.jpg';
 
 const router = useRouter();
 const experts = ref([]);
+
+const API_BASE_URL = 'http://localhost:8080';//后端基础地址
 
 onMounted(() => {
   fetchExperts();
 });
 
 
+//获取专家列表
 async function fetchExperts() {
   try {
     const response = await axios.get('/expert/profile/list');
@@ -44,19 +48,23 @@ async function fetchExperts() {
   }
 }
 
-
-// 辅助函数，用于处理图片URL
-// 如果你的 photo_url 已经是完整的URL，则不需要这个函数
+// 处理专家图片
 function getFullImageUrl(url) {
-  if (!url || url.startsWith('http')) {
-    return url || 'https://via.placeholder.com/80'; // 提供一个默认图片
+  // 情况1：如果 url 为空，返回默认头像
+  if (!url) {
+    return defaultAvatar;
   }
-  // 如果 url 是相对路径（如 /uploads/...），你需要拼接上你的后端服务器地址
-  // 例如： return `http://localhost:8080${url}`;
-  // 更好的方式是配置开发代理（proxy）
-  return url;
+
+  // 情况2：如果是网络图片 (http 开头)，直接返回
+  if (url.startsWith('http')) {
+    return url;
+  }
+
+  // 情况3：如果是相对路径 (/uploads/...)，拼接后端地址
+  return `${API_BASE_URL}${url}`;
 }
 
+//跳转到专家详情页
 function goToExpertDetail(id) {
   console.log('尝试跳转到专家详情页，专家ID是:', id);
   if (id) {
