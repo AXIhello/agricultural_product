@@ -91,18 +91,25 @@ const loadProductDetail = async () => {
   try {
     const response = await axios.get(`/products/${route.params.id}`)
     product.value = response.data
-    console.log(product.value)
+    
+    imgUrl.value = placeholder
+    
+    if (product.value.hasImage === true){
+       try {
+        const imageRes = await axios.get(`/products/${product.value.productId}/image`, {
+          responseType: 'blob'
+        })
 
-    const imageRes = await axios.get(`/products/${product.value.productId}/image`, {
-      responseType: 'blob'
-    })
-
-    // 如果请求成功且有数据
-    if (imageRes.status === 200 && imageRes.data.size > 0) {
-      imgUrl.value = URL.createObjectURL(imageRes.data)
-    } else {
-      imgUrl.value = placeholder // 请求失败或者没有图片
+        // 如果请求成功且有数据
+        if (imageRes.status === 200 && imageRes.data.size > 0) {
+          imgUrl.value = URL.createObjectURL(imageRes.data)
+        }
+      } catch (imgError) {
+        // 图片加载失败（比如文件丢失），控制台打印警告，但页面不崩，继续显示默认图
+        console.warn('商品图片加载失败，已使用默认图:', imgError)
+      }
     }
+
   } catch (error) {
     console.error('获取商品详情失败:', error)
     ElMessage.error('获取商品详情失败，请稍后重试')
@@ -111,6 +118,7 @@ const loadProductDetail = async () => {
   }
 }
 
+//联系卖家
 async function contactSeller(product) {
   if (!product || !product.farmerId) {
     console.error("该商品缺少卖家信息:", product);
@@ -120,6 +128,7 @@ async function contactSeller(product) {
   await goToChat(product.farmerId);
 }
 
+// 发起与指定用户的聊天
 async function goToChat(receiverId) {
   // 检查用户是否已登录
   if (!isLoggedIn.value) {
@@ -147,6 +156,7 @@ async function goToChat(receiverId) {
   console.log(`准备跳转到与用户 ${receiverId} 的聊天室`);
   await router.push(`/chat/${receiverId}`);
 }
+
 
 /**
  * 用于“我的订单”列表，点击后调用核心函数

@@ -99,9 +99,19 @@ public class ProductController {
     public ResponseEntity<Product> getProduct(HttpServletRequest request,
                                               @PathVariable Integer id) {
         if (!checkToken(request)) return ResponseEntity.status(401).build();
+
         Product p = productService.getById(id);
+
         if (p != null) {
-            p.setImagePath(null);
+
+            String originalPath = p.getImagePath();
+
+            boolean hasImg = originalPath != null && !originalPath.trim().isEmpty();
+
+            p.setHasImage(hasImg);
+
+            p.setImagePath(null); // 屏蔽图片路径
+
         }
         return ResponseEntity.ok(p);
     }
