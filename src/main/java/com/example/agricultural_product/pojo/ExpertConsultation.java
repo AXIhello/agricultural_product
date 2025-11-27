@@ -31,4 +31,7 @@ public class ExpertConsultation {
 
     @TableField("update_time")
     private LocalDateTime updateTime;
+
+    @TableField(exist = false)
+    private String expertName; 
 }

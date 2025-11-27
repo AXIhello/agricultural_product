@@ -10,6 +10,9 @@ public interface UserMapper extends BaseMapper<User> {
     @Select("SELECT * FROM users WHERE user_name = #{userName}")
     User findByUserName(String userName);
 
+    @Select("SELECT name FROM users WHERE user_id = #{userId}"   )
+    String getUserName(Long userId);
+
     @Select("SELECT * FROM users WHERE user_id = #{userId}")
     User findByUserId(Long userId);
 
@@ -29,6 +32,7 @@ public interface UserMapper extends BaseMapper<User> {
 
     @Update("UPDATE users SET region = #{region} WHERE user_id = #{userId}")
     int updateRegion(@Param("userId") Long userId, @Param("region") String region);
+
     @Update("UPDATE users SET credit_score = #{score} WHERE user_id = #{userId}")
     void updateCreditScore(@Param("userId") Long userId, @Param("score") int score);
 

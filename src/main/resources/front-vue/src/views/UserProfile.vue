@@ -156,6 +156,9 @@
               <div v-if="appt.status === 'cancelled'" class="cancelled-overlay">
                 已取消
               </div>
+              <div v-if="appt.status === 'completed'" class="cancelled-overlay">
+                已结束
+              </div>
 
               <div class="card-body">
                 <p><strong>预约日期：</strong>{{ appt.date }}</p>
@@ -724,6 +727,9 @@ async function cancelAppointment(appointmentId) {
         consultationId: appointmentId
       }
     });
+    
+    console.log('取消预约后端返回:', response.data);
+
     if (response.data === true) {
       alert('预约已成功取消！');
       await loadAppointments(currentPage.value);

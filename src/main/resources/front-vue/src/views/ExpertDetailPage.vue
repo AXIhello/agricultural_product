@@ -191,16 +191,27 @@ async function bookAppointment(slotId) {
   isBooking.value = true;
   try {
     const response = await axios.post(`/expert-appointments/book?slotId=${slotId}`);
+    
+    // 成功逻辑
     if (response.data && response.data.success) {
-      ElMessage.success(`预约成功！预约ID为: ${response.data.consultationId}`);
-      // 预约成功后，刷新时间段列表，更新剩余名额
-      await fetchAvailableSlots();
-    } else {
-      ElMessage.error(response.data.message || '预约失败，该时段可能已被约满。');
+      ElMessage.success(`预约成功！`);
+      await fetchAvailableSlots(); // 刷新列表
+    } 
+    // 后端返回 200 但 success 为 false（如果你的后端架构是这样的）
+    else {
+      // 🔥 显示后端传回来的具体错误信息
+      const msg = response.data.message || '预约失败，该时段可能已被约满。';
+      alert(msg); // 或者 ElMessage.error(msg);
     }
   } catch (error) {
-    console.error('预约失败:', error);
-    ElMessage.error(error.response?.data?.message || '预约时发生错误，请稍后重试。');
+    // 🔥 捕获 400 错误 (BusinessException 抛出的)
+    console.error('预约请求发生异常:', error);
+    
+    // 获取后端返回的 message
+    const errorMsg = error.response?.data?.message || '预约时发生错误，请稍后重试。';
+    
+    // 弹窗提示用户
+    alert("预约失败：" + errorMsg); // 建议用 alert 或 ElMessage.error
   } finally {
     isBooking.value = false;
   }

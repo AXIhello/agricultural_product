@@ -37,6 +37,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public String getUserName(Long userId) {
+        return userMapper.getUserName(userId);
+    }
+
+    @Override
     // 更新地区
     public boolean updateRegion(Long userId, String region) {
         User user = new User();

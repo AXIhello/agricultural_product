@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.agricultural_product.pojo.ExpertConsultation;
 import com.example.agricultural_product.pojo.ExpertWorkingSlot;
 import com.example.agricultural_product.service.ExpertAppointmentService;
+import com.example.agricultural_product.utils.BusinessException;
 import com.example.agricultural_product.utils.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
@@ -67,10 +68,19 @@ public class ExpertAppointmentController {
     // 农户预约
     @PostMapping("/book")
     public ResponseEntity<Map<String, Object>> book(HttpServletRequest request, @RequestParam Integer slotId) {
-        Long farmerId = getUserIdFromToken(request);
-        Integer consultationId = service.bookSlot(farmerId, slotId);
-        boolean success = consultationId != null;
-        return ResponseEntity.ok(Map.of("success", success, "consultationId", consultationId));
+
+        try {
+
+           Long farmerId = getUserIdFromToken(request);
+           Integer consultationId = service.bookSlot(farmerId, slotId);
+           boolean success = consultationId != null;
+           return ResponseEntity.ok(Map.of("success", success, "consultationId", consultationId));
+           
+        } catch(BusinessException e){
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        } catch(Exception e){
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", "Internal server error"));
+        }
     }
 
     // 农户取消预约

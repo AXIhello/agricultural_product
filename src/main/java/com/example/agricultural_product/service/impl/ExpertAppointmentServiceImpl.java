@@ -5,9 +5,11 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.agricultural_product.mapper.ExpertConsultationMapper;
 import com.example.agricultural_product.mapper.ExpertWorkingSlotMapper;
+import com.example.agricultural_product.mapper.UserMapper;
 import com.example.agricultural_product.pojo.ExpertConsultation;
 import com.example.agricultural_product.pojo.ExpertWorkingSlot;
 import com.example.agricultural_product.service.ExpertAppointmentService;
+import com.example.agricultural_product.utils.BusinessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,10 +22,12 @@ public class ExpertAppointmentServiceImpl implements ExpertAppointmentService {
 
     private final ExpertWorkingSlotMapper slotMapper;
     private final ExpertConsultationMapper consultationMapper;
+    private final com.example.agricultural_product.mapper.UserMapper userMapper; 
 
-    public ExpertAppointmentServiceImpl(ExpertWorkingSlotMapper slotMapper, ExpertConsultationMapper consultationMapper) {
+    public ExpertAppointmentServiceImpl(ExpertWorkingSlotMapper slotMapper, ExpertConsultationMapper consultationMapper, com.example.agricultural_product.mapper.UserMapper userMapper) {
         this.slotMapper = slotMapper;
         this.consultationMapper = consultationMapper;
+        this.userMapper = userMapper;
     }
 
     @Override
@@ -68,6 +72,19 @@ public class ExpertAppointmentServiceImpl implements ExpertAppointmentService {
     public Integer bookSlot(Long farmerId, Integer slotId) {
         ExpertWorkingSlot slot = slotMapper.selectById(slotId);
         if (slot == null || !"open".equals(slot.getStatus())) return null;
+        
+        //检查该农户是否已经预约过该时间段（排除已取消的）
+        LambdaQueryWrapper<ExpertConsultation> checkWrapper = new LambdaQueryWrapper<>();
+        checkWrapper.eq(ExpertConsultation::getFarmerId, farmerId)
+                    .eq(ExpertConsultation::getSlotId, slotId)
+                    .ne(ExpertConsultation::getStatus, "cancelled"); // 关键：排除已取消的记录
+        
+        Long count = consultationMapper.selectCount(checkWrapper);
+        if (count > 0) {
+            System.out.println(" 预约失败：检测到重复预约 (FarmerId=" + farmerId + ", SlotId=" + slotId + ")");
+            // 返回 null 表示失败（或者你可以抛出一个自定义异常，让Controller捕获并返回具体错误信息）
+            throw new BusinessException("您已预约过该专家的同一时间段，不可重复预约！"); 
+        }
 
         // 原子增加已预约数，防止并发超卖
         UpdateWrapper<ExpertWorkingSlot> uw = new UpdateWrapper<>();
@@ -113,10 +130,35 @@ public class ExpertAppointmentServiceImpl implements ExpertAppointmentService {
     @Override
     public Page<ExpertConsultation> listMyAppointments(Long farmerId, Integer pageNum, Integer pageSize) {
         Page<ExpertConsultation> page = new Page<>(pageNum, pageSize);
+
         LambdaQueryWrapper<ExpertConsultation> qw = new LambdaQueryWrapper<ExpertConsultation>()
                 .eq(ExpertConsultation::getFarmerId, farmerId)
                 .orderByDesc(ExpertConsultation::getConsultationTime);
-        return consultationMapper.selectPage(page, qw);
+
+        // 查出预约记录
+        Page<ExpertConsultation> result = consultationMapper.selectPage(page, qw);
+
+        // 🔥 2. 遍历每一条记录，填入专家名字
+        if (result.getRecords() != null) {
+            result.getRecords().forEach(item -> {
+                Long expertId = item.getExpertId();
+                
+                // 去用户表查名字
+                // 假设你的用户实体叫 User，获取名字的方法叫 getUserName() 或 getName()
+                var user = userMapper.selectById(expertId);
+                
+                if (user != null) {
+                    String name = userMapper.getUserName(item.getExpertId()); // 先把名字取出来放到变量里
+                    item.setExpertName(name); // 填入名字
+                    
+                } else {
+                    item.setExpertName("未知专家 (ID:" + expertId + ")");
+                }
+            });
+        }
+
+        return result;
+    
     }
 
     @Override
