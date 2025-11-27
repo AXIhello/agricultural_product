@@ -430,78 +430,8 @@ onMounted(() => {
 </style>
 
 <style scoped>
-.main-bg {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  width: 1800px;
-  background-color: #F0F9F4; /* 浅绿色背景色 */
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-.main-nav {
-  display: flex;
-  border-bottom: 2px solid #e0e0e0;
-  margin-bottom: 25px;
-}
-.main-nav button {
-  padding: 10px 20px;
-  border: none;
-  background-color: transparent;
-  cursor: pointer;
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: #555;
-  transition: color 0.3s, border-bottom-color 0.3s;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -2px;
-}
-.main-nav button:hover { color: #2D7D4F; }
-.main-nav button.active {
-  color: #2D7D4F;
-  border-bottom-color: #2D7D4F;
-}
-
-nav ul {
-  list-style: none;
-  display: flex;
-  padding: 0;
-  margin: 0;
-}
-
-nav li {
-  margin-right: 50px;
-}
-
-nav a {
-  text-decoration: none;
-  color: white;
-  font-weight: 600;
-  font-size: 20px;
-  transition: color 0.3s;
-}
-
-nav a:hover {
-  color: #B7E4C7; /* 鼠标悬停时变为淡绿色 */
-}
-
-.content {
-  width: 100%;
-  flex: 1;
-  padding: 20px;
-  background: white;
-  color: #333; /* 深灰色文字 */
-  font-size: 18px;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
 
 
-.content h2 {
-  color: #2D7D4F; /* 深绿色标题 */
-  font-weight: 700;
-  margin-bottom: 10px;
-}
 
 .expert-overview,
 .expert-qa{

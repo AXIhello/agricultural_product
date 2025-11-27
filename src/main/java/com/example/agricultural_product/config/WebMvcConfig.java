@@ -32,7 +32,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
         String uploadPath = projectRoot + "/uploads/";
 
         // 4. 打印路径到控制台，方便你排查（重启后请查看控制台输出）
-        System.out.println("🔥 [静态资源映射] 物理路径: " + uploadPath);
+        System.out.println("[静态资源映射] 物理路径: " + uploadPath);
 
         // 5. 配置映射
         // "file:" 告诉 Spring 这是文件系统路径

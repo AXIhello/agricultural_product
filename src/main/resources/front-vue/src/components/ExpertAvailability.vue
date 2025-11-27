@@ -233,22 +233,6 @@ onMounted(() => {
   margin-bottom: 2rem; /* 卡片间距 */
 }
 
-/* 统一标题样式 (h2, h3, h4) */
-h2 {
-  margin-top: 0;
-  color: #2D7D4F; /* 使用主题绿色 */
-  border-bottom: 2px solid #F0F9F4; /* 使用主题浅绿色 */
-  padding-bottom: 0.5rem;
-  margin-bottom: 1.5rem;
-  font-size: 1.5rem; /* 调整字号使其与 h3 协调 */
-}
-
-h4 {
-  color: #555;
-  margin-top: 1.5rem;
-  margin-bottom: 1rem;
-}
-
 /* 统一表单和输入框样式 */
 .slot-form {
   display: flex;
@@ -349,15 +333,7 @@ h4 {
   align-items: flex-end;
 }
 
-/* 加载和空状态 */
-.loading-state, .empty-state {
-  text-align: center;
-  color: #888;
-  padding: 2rem;
-  background-color: #F0F9F4; /* 使用主题浅绿色背景 */
-  border-radius: 8px;
-  margin-top: 1rem;
-}
+
 
 /* 表格样式 */
 .slots-table {

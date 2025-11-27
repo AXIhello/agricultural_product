@@ -77,15 +77,54 @@ function goToExpertDetail(id) {
 <style scoped>
 .expert-overview-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 20px;
-}
-.expert {
-  text-align: center;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 22px;
   padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  background-color: #f9f9f9;
+}
+
+/* 单个专家 */
+.expert {
+  background-color: #f8fbf8;
+  padding: 16px 12px;
+  border-radius: 16px;
+
+  border: 1px solid #d9e8df;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
+
+  transition: all 0.25s ease;
+  cursor: pointer;
+  text-align: center;
+}
+
+/* 悬停提升感 */
+.expert:hover {
+  transform: translateY(-4px);
+  border-color: #8bc3a1;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.10);
+}
+
+/* 专家头像 */
+.expert img {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 10px;
+  border: 3px solid #e4f3e8;
+}
+
+/* 名称 */
+.expert-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2d7d4f;
+  margin-bottom: 6px;
+}
+
+/* 专业方向 */
+.expert-specialty {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 6px;
 }
 </style>

@@ -1,7 +1,7 @@
 <template>
-  <div>
+  <div class="main-bg">
     <HeaderComponent />
-    <div v-if="isAdmin" class="admin-content">
+    <div v-if="isAdmin" class="content">
     <h2>审核信息</h2>
     <!--  显示待审核的申请列表，以及审核的按钮等  -->
     <p v-if="loading">加载中...</p>
@@ -11,7 +11,7 @@
         <h3>{{ application.apply_role === 'expert' ? '专家申请' : '银行账号申请' }}</h3>
         <p>申请人: {{ application.userName }}</p>
         <p>申请信息: {{ application.reason }}</p>
-        <div class="actions">
+        <div class="action-buttons">
           <button @click="approveApplication(application.id, application.type)">批准</button>
           <button @click="rejectApplication(application.id, application.type)">拒绝</button>
         </div>
@@ -64,7 +64,7 @@ const fetchApplications = async () => {
     console.log('后端返回的完整响应:', response);
     console.log('响应中的 data 部分:', response.data);
     console.log('响应中的 records 部分:', response.data?.records);
-    
+
     applications.value = response.data?.data?.records || [];
 
     if (applications.value.length === 0) {
@@ -88,7 +88,7 @@ const handleReview = async (applicationId, status, type) => {
       const reason = prompt("请输入拒绝理由：");
       if (reason === null) return;
       await request.post(`/admin/applications/${applicationId}/reject`, null, {
-          params: { reason }
+        params: { reason }
       });
     }
     alert('操作成功！');
@@ -108,17 +108,17 @@ const approveApplication = async (applicationId) => {
     if (!confirm('确定要批准这条申请吗？')) {
       return;
     }
-    
+
     // 调用后端的批准接口
     // 注意：URL 路径根据你的 baseURL 配置，这里假设 baseURL 是 /api
     const response = await request.post(`/admin/applications/${applicationId}/approve`);
-    
+
     // 使用后端返回的消息提示用户
     alert(response.data?.message || response.data || '操作成功！'); // 后端可能直接返回字符串或在Result对象中
-    
+
     // 操作成功后，重新加载列表以移除已处理的项
     fetchApplications();
-    
+
   } catch (err) {
     console.error(`批准申请 ${applicationId} 失败:`, err);
     // 提示更详细的错误信息
@@ -135,29 +135,29 @@ const rejectApplication = async (applicationId) => {
   try {
     // 弹出一个输入框让管理员填写拒绝理由
     const reason = prompt('请输入拒绝该申请的理由：');
-    
+
     // 如果用户点击了“取消”或没有输入任何内容
     if (reason === null || reason.trim() === '') {
       alert('操作已取消或拒绝理由不能为空。');
       return;
     }
-    
+
     // 调用后端的拒绝接口，并通过 params 发送查询参数
     const response = await request.post(
-      `/admin/applications/${applicationId}/reject`, 
-      null, // 第一个参数是请求体，这里我们没有，所以传 null
-      {
-        params: {
-          reason: reason // reason 会被拼接到 URL 后面，变成 ?reason=...
+        `/admin/applications/${applicationId}/reject`,
+        null, // 第一个参数是请求体，这里我们没有，所以传 null
+        {
+          params: {
+            reason: reason // reason 会被拼接到 URL 后面，变成 ?reason=...
+          }
         }
-      }
     );
-    
+
     alert(response.data?.message || response.data || '操作成功！');
-    
+
     // 重新加载列表
     fetchApplications();
-    
+
   } catch (err) {
     console.error(`拒绝申请 ${applicationId} 失败:`, err);
     const errorMessage = err.response?.data?.message || err.response?.data || err.message;
@@ -176,25 +176,58 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.content {
+  margin-left: 20px;
+  margin-right: 20px;
+  width: calc(100% - 40px);
+  padding: 26px;
+}
+
+/* 页面整体结构 */
+.access-denied {
+  max-width: 900px;
+  margin: 20px auto;
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* 每条申请卡片 */
 .application-item {
-  border: 1px solid #ccc;
-  padding: 10px;
-  margin-bottom: 10px;
-  border-radius: 4px;
+  background: #F9F9F9;
+  border: 1px solid #E3E3E3;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 20px;
+  transition: 0.25s ease-in-out;
 }
-.actions {
-  margin-top: 10px;
+
+.application-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
 }
-button {
-  margin-right: 10px;
-  padding: 8px 12px;
-  border: none;
-  border-radius: 4px;
-  background-color: #4CAF50; /* 绿色 */
-  color: white;
-  cursor: pointer;
+
+/* 小标题 */
+.application-item h3 {
+  margin-bottom: 8px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #2D7D4F;
 }
-button:hover {
-  background-color: #3e8e41; /* 鼠标悬停时的颜色 */
+
+/* 内容文本 */
+.application-item p {
+  margin: 4px 0;
+  font-size: 14px;
+  color: #555;
+}
+
+/* 无权限页面 */
+.access-denied h2 {
+  color: #B71C1C;
+}
+.access-denied p {
+  color: #555;
 }
 </style>

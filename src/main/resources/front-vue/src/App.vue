@@ -39,26 +39,23 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+.app-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%) fixed;
+}
+
+/* 保留 logo 动画效果，但换成与主题协调颜色 */
 .logo {
   height: 6em;
   padding: 1.5em;
   will-change: filter;
-  transition: filter 300ms;
+  transition: filter 300ms ease;
 }
 .logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+  filter: drop-shadow(0 0 1.5em rgba(76, 175, 80, 0.45));
 }
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
-}
-
-.app-container {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start; /* 改为 flex-start 让它从顶部开始 */
-  min-height: 100vh;
-  padding-top: 50px; /* 增加一些顶部间距 */
-  background-color: #f0f2f5; /* 给页面一个浅灰色背景 */
-}
-
 </style>
+

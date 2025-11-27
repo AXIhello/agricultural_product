@@ -341,12 +341,6 @@ onMounted(() => {
     cursor: not-allowed; 
 }
 
-.empty-state { 
-    text-align: center; 
-    color: #888; 
-    padding: 2rem; 
-}
-
 /* 分页样式 */
 .pagination { 
     display: flex; 

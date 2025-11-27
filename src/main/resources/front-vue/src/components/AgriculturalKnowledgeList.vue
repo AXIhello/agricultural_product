@@ -1,7 +1,7 @@
 <template>
   <div class="knowledge-container">
 
-    <div v-if="!knowledgeList.length" class="empty">
+    <div v-if="!knowledgeList.length" class="empty-state">
       当前暂无农业知识！
     </div>
 
@@ -137,12 +137,6 @@ function goToKnowledgeDetail(knowledgeId) {
   color: #999;
   text-align: right;
   margin-top: auto; /* 自动推到底 */
-}
-
-.empty {
-  text-align: center;
-  color: #888;
-  padding: 20px 0;
 }
 
 .pagination {

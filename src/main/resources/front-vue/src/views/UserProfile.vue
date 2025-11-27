@@ -1,41 +1,35 @@
 <template>
   <div class="main-bg">
     <HeaderComponent />
-
-    <section class="content">
-
-      <!-- 顶部用户信息 + 退出 -->
-      <div class="top-info-bar">
-        <div class="info">
-          <p><label>用户名：</label>{{ userInfo.userName }}</p>
-          <p><label>邮箱：</label>{{ userInfo.email }}</p>
-          <p><label>身份：</label>{{ role }}</p>
-        </div>
-        <div>
-          <button @click="exit()">退出登录</button>
-        </div>
+    <!-- 顶部用户信息 + 退出 -->
+    <div class="top-info-bar">
+      <div class="info">
+        <p><label>用户名：</label>{{ userInfo.userName }}</p>
+        <p><label>邮箱：</label>{{ userInfo.email }}</p>
+        <p><label>身份：</label>{{ role }}</p>
       </div>
+      <div>
+        <button @click="exit()">退出登录</button>
+      </div>
+    </div>
+    <section
+        :style="{ marginLeft: ['farmer','buyer','expert'].includes(role) ? '220px' : '20px',
+                  width: ['farmer','buyer','expert'].includes(role) ? 'calc(100% - 240px)' : 'calc(100% - 40px)'}"
+        class="content">
+
+
 
       <!-- 统一顶部导航 -->
-      <nav class="main-nav">
-        <!-- 买家 -->
-        <template v-if="role === 'buyer'">
-          <button @click="switchView('address')" :class="{ active: currentView === 'address' }">我的地址</button>
-        </template>
-
-        <!-- 农户 -->
-        <template v-if="role === 'farmer'">
-          <button @click="switchView('address')" :class="{ active: currentView === 'address' }">我的地址</button>
-          <button @click="switchView('appointments')" :class="{ active: currentView === 'appointments' }">我的预约</button>
-        </template>
-
-        <!-- 专家 -->
-        <template v-if="role === 'expert'">
-          <button @click="switchView('profile')" :class="{ active: currentView === 'profile' }">个人档案</button>
-          <button @click="switchView('knowledgeManage')" :class="{ active: currentView === 'knowledgeManage' }">知识管理</button>
-          <button @click="switchView('availability')" :class="{ active: currentView === 'availability' }">可预约时间</button>
-          <button @click="switchView('schedule')" :class="{ active: currentView === 'schedule' }">我的日程</button>
-        </template>
+      <nav v-if="role === 'farmer' || role === 'buyer' || role === 'expert' "
+           :style="{ top: '180px'}"
+           class="main-nav">
+          <button v-if="role === 'farmer' || role === 'buyer'" @click="switchView('address')" :class="{ active: currentView === 'address' }">我的地址</button>
+          <button v-if="role === 'farmer'" @click="switchView('appointments')" :class="{ active: currentView === 'appointments' }">我的预约</button>
+        <button v-if="role === 'farmer' || role === 'buyer'" @click="switchView('message')" :class="{ active: currentView === 'message' }">我的消息</button>
+          <button v-if="role === 'expert'" @click="switchView('profile')" :class="{ active: currentView === 'profile' }">个人档案</button>
+          <button v-if="role === 'expert'" @click="switchView('knowledgeManage')" :class="{ active: currentView === 'knowledgeManage' }">知识管理</button>
+          <button v-if="role === 'expert'" @click="switchView('availability')" :class="{ active: currentView === 'availability' }">可预约时间</button>
+          <button v-if="role === 'expert'" @click="switchView('schedule')" :class="{ active: currentView === 'schedule' }">我的日程</button>
       </nav>
 
       <!-- 内容区域 -->
@@ -44,29 +38,36 @@
         <!-- ======================== 买家/农户：我的地址 ======================== -->
         <div v-if="currentView === 'address'" class="address-view">
 
-          <!-- 地址列表 -->
-          <div v-if="addresses.length" class="address-list">
-            <div
-                v-for="addr in addresses"
-                :key="addr.addressId"
-                class="address-card"
-            >
-              <p v-if="addr.isDefault">🌟 默认地址</p>
-              <p><strong>{{ role === 'buyer' ? '收货人' : '发货人' }}：</strong>{{ addr.recipientName }}</p>
-              <p><strong>电话：</strong>{{ addr.phoneNumber }}</p>
-              <p><strong>地址：</strong>{{ addr.province }}{{ addr.city }}{{ addr.district }}{{ addr.streetAddress }}</p>
-              <p><strong>邮编：</strong>{{ addr.postalCode }}</p>
+          <!-- 地址列表表头 -->
+          <div class="address-list-header">
+            <div class="col default-col">默认</div>
+            <div class="col name-col">{{ role === 'buyer' ? '收货人' : '发货人' }}</div>
+            <div class="col phone-col">电话</div>
+            <div class="col address-col">地址</div>
+            <div class="col postal-col">邮编</div>
+            <div class="col action-col">操作</div>
+          </div>
 
-              <div class="card-actions">
+          <!-- 地址列表 -->
+          <div class="address-list">
+            <div class="address-row" v-for="addr in addresses" :key="addr.addressId">
+              <div class="col default-col">
+                <span v-if="addr.isDefault">🌟</span>
+              </div>
+              <div class="col name-col">{{ addr.recipientName }}</div>
+              <div class="col phone-col">{{ addr.phoneNumber }}</div>
+              <div class="col address-col">{{ addr.province }}{{ addr.city }}{{ addr.district }}{{ addr.streetAddress }}</div>
+              <div class="col postal-col">{{ addr.postalCode }}</div>
+              <div class="col action-col">
                 <button class="set-default-btn" @click="setDefault(addr.addressId)">设为默认</button>
                 <button class="delete-btn" @click="deleteAddress(addr.addressId)">删除</button>
               </div>
             </div>
+
+            <p v-if="!addresses.length" class="empty-state">暂无地址，请添加新的地址。</p>
           </div>
 
-          <p v-else class="empty-state">暂无地址，请添加新的地址。</p>
-
-          <!-- 新增地址按钮（弹窗） -->
+          <!-- 新增地址按钮 -->
           <button class="add-btn" @click="showAddAddressPopup = true">＋ 新增地址</button>
 
           <!-- ========== 新增地址弹窗 ========== -->
@@ -165,7 +166,7 @@
                 <p><strong>预约时间：</strong>{{ appt.timeSlot }}</p>
               </div>
 
-              <div class="card-actions">
+              <div class="action-buttons">
                 <button v-if="appt.status === 'scheduled'" class="delete-btn" @click="cancelAppointment(appt.id)">
                   取消预约
                 </button>
@@ -175,6 +176,36 @@
           </div>
 
           <p v-else class="empty-state">暂无预约记录。</p>
+        </div>
+
+        <!-- ======================== 我的消息 ======================== -->
+        <div v-if="currentView === 'message'">
+
+          <div v-if="isLoading" class="status-indicator">
+            <p>正在加载消息...</p>
+          </div>
+          <div v-else-if="sessions.length === 0" class="status-indicator">
+            <p>您还没有任何消息</p>
+          </div>
+          <ul v-else class="session-list">
+            <!-- 循环渲染会话列表 -->
+            <li v-for="session in sessions" :key="session.sessionId" class="session-item" @click="goToChat(session)">
+              <div class="avatar-placeholder">
+                <!-- 可以放一个用户头像图标或图片 -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              </div>
+              <div class="session-details">
+                <div class="session-header">
+                  <span class="peer-user-id">用户 {{ getPeerUser(session).id }}</span>
+                  <span class="last-message-time">{{ formatTime(session.lastMessageTime) }}</span>
+                </div>
+                <div class="last-message-preview">
+                  <!-- 这里可以未来扩展，显示最后一条消息的预览 -->
+                  点击查看对话
+                </div>
+              </div>
+            </li>
+          </ul>
         </div>
 
         <!-- ======================== 专家：个人档案 ======================== -->
@@ -338,8 +369,10 @@ import ExpertAvailability from '../components/ExpertAvailability.vue';
 import { useAuthStore } from '@/stores/authStore';
 import { storeToRefs } from 'pinia';
 import defaultAvatar from '@/assets/default.jpg';
+import {useRouter} from "vue-router";
 
 const authStore = useAuthStore();// 使用 Pinia 的认证存储
+const router = useRouter();
 
 const { userInfo, role } = storeToRefs(authStore);//从 store 中解构出响应式的数据
 
@@ -655,7 +688,7 @@ async function deleteKnowledge(id) {
 
   try {
     await axios.delete(`/knowledge/${id}`)
-    fetchExpertKnowledge()
+    await fetchExpertKnowledge()
   } catch (e) {
     console.error(e)
   }
@@ -670,11 +703,6 @@ function cancelKnowledgeEdit() {
 function summary(text) {
   return text?.length > 60 ? text.slice(0, 60) + "..." : text
 }
-
-function formatTime(time) {
-  return time ? time.replace('T', ' ') : ''
-}
-
 //====我的专家预约相关方法====
 //加载预约记录
 async function loadAppointments(page) {
@@ -821,7 +849,7 @@ onMounted(() => {
   } else {
     currentView.value = '';
   }
-
+  loadSessions();
   hasInitialLoadFinished.value = true;
 });
 
@@ -857,132 +885,193 @@ function exit(){
   authStore.logout();
 }
 
+
+const sessions = ref([]);
+const isLoading = ref(true);
+
+// --- Methods ---
+
+/**
+ * 从后端加载用户的会话列表.
+ */
+async function loadSessions() {
+  try {
+    // API: GET /api/chat/sessions
+    const response = await axios.get('/chat/sessions');
+    // 按最后消息时间降序排序
+    sessions.value = (response.data || []).sort((a, b) =>
+        new Date(b.lastMessageTime) - new Date(a.lastMessageTime)
+    );
+  } catch (error) {
+    console.error('加载会话列表失败:', error);
+    alert('无法加载消息列表，请稍后再试。');
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+/**
+ * 确定会话中的对方用户ID.
+ * @param {object} session - 会话对象.
+ * @returns {object} 包含对方用户ID的对象.
+ */
+function getPeerUser(session) {
+  if (!userInfo.value?.userId) return { id: '未知' };
+  const peerId = session.userAId === userInfo.value.userId ? session.userBId : session.userAId;
+  return { id: peerId };
+}
+
+/**
+ * 导航到对应的聊天室.
+ * @param {object} session - 被点击的会话对象.
+ */
+function goToChat(session) {
+  const peer = getPeerUser(session);
+  // 添加对自己ID的判断
+  if (peer.id !== '未知' && peer.id !== userInfo.value?.userId) {
+    router.push(`/chat/${peer.id}`);
+  } else if (peer.id === userInfo.value?.userId) {
+    console.warn("Attempted to open a chat with self. Operation blocked.");
+    alert('您不能和自己聊天。');
+  }
+}
+
+/**
+ * 格式化时间字符串.
+ * @param {string} dateTimeStr - ISO格式的时间字符串.
+ */
+function formatTime(dateTimeStr) {
+  if (!dateTimeStr) return '';
+  const date = new Date(dateTimeStr);
+  const now = new Date();
+  const diffInMs = now - date;
+  const diffInHours = diffInMs / (1000 * 60 * 60);
+
+  if (diffInHours < 24 && date.getDate() === now.getDate()) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } else {
+    return date.toLocaleDateString();
+  }
+}
+
+
 </script>
 
 <style scoped>
-.main-bg {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  width: 1800px;
-  background-color: #F0F9F4;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
 
-.main-nav {
-  display: flex;
-  border-bottom: 2px solid #e0e0e0;
-  margin-bottom: 25px;
-}
-.main-nav button {
-  padding: 10px 20px;
-  border: none;
-  background-color: transparent;
-  cursor: pointer;
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: #555;
-  transition: color 0.3s, border-bottom-color 0.3s;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -2px;
-}
-.main-nav button:hover { color: #2D7D4F; }
-.main-nav button.active {
-  color: #2D7D4F;
-  border-bottom-color: #2D7D4F;
-}
-
-.top-info-bar{
+.top-info-bar {
   display: flex;
   justify-content: space-between;
-}
-nav ul {
-  list-style: none;
-  display: flex;
-  padding: 0;
-  margin: 0;
-}
-
-nav li {
-  margin-right: 50px;
-}
-
-nav a {
-  text-decoration: none;
-  color: white;
-  font-weight: 600;
-  font-size: 20px;
-  transition: color 0.3s;
-}
-
-nav a:hover {
-  color: #B7E4C7; /* 鼠标悬停时变为淡绿色 */
-}
-
-.content {
-  width: 100%;
-  flex: 1;
-  padding: 20px;
-  background: white;
-  border-radius: 8px;
-}
-
-.farmer-nav, .buyer-nav ,.expert-nav{
-  display: flex;
-  border-bottom: 2px solid #e0e0e0;
-  margin-bottom: 25px;
-}
-
-.farmer-nav button, .buyer-nav button, .expert-nav button  {
-  padding: 10px 20px;
-  border: none;
-  background-color: transparent;
-  cursor: pointer;
-  font-size: 1.1rem;
-  color: #555;
-  transition: color 0.3s, border-bottom-color 0.3s;
-  border-bottom: 3px solid transparent;
-}
-
-.farmer-nav button.active,
-.buyer-nav button.active,
-.expert-nav button.active {
-  color: #2D7D4F;
-  border-bottom-color: #2D7D4F;
-}
-
-.address-card {
-  display: flex;
   align-items: center;
-  padding: 8px 16px;
-  border: 1px solid #e9e9e9;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  background: #fafafa;
-  gap: 30px;
+  padding: 12px 20px;
+  background-color: #f9f9f9;   /* 浅背景色，和整体页面统一 */
+  border-radius: 10px;          /* 圆角 */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08); /* 微阴影增加高级感 */
+  border-bottom: 1px solid #e0e0e0; /* 下方分割线 */
 }
 
-.card-actions {
-  margin-left: auto;
-  margin-top: 10px;
+.top-info-bar .info p {
+  margin: 4px 0;
+  font-size: 14px;
+  color: #333;
+  display: flex;
+  gap: 5px;
 }
 
-.delete-btn, .save-btn {
-  background-color: #4CAF50;
+.top-info-bar .info label {
+  font-weight: 600;
+  color: #2D7D4F; /* 深绿色主题色 */
+  min-width: 60px; /* 标签统一宽度 */
+}
+
+.top-info-bar button {
+  background-color: #2D7D4F;
   color: #fff;
   border: none;
-  padding: 6px 12px;
-  border-radius: 5px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 14px;
   cursor: pointer;
+  transition: 0.3s;
 }
 
-.delete-btn:hover, .save-btn:hover {
-  background-color: #45a049;
+.top-info-bar button:hover {
+  background-color: #246a3d; /* 悬停深色 */
 }
 
-.add-address-form {
-  max-width: 600px;
+.address-list-header, .address-row {
+  display: grid;
+  grid-template-columns: 60px 120px 120px 1fr 100px 160px;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.address-list-header {
+  font-weight: bold;
+  background-color: #f7f7f7;
+  border-radius: 6px;
+}
+
+.address-row {
+  background-color: #fff;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  transition: 0.2s;
+}
+
+.address-row:hover {
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.address-row .col {
+  padding: 6px 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.set-default-btn, .delete-btn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.set-default-btn {
+  background-color: #2D7D4F;
+  color: white;
+}
+
+.set-default-btn:hover {
+  background-color: #246a3d;
+}
+
+.delete-btn {
+  background-color: #e74c3c;
+  color: white;
+  margin-left: 6px;
+}
+
+.delete-btn:hover {
+  background-color: #c0392b;
+}
+
+.add-btn {
+  margin-top: 12px;
+  background-color: #2D7D4F;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.add-btn:hover {
+  background-color: #246a3d;
 }
 
 .form-group {
@@ -998,11 +1087,6 @@ nav a:hover {
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 4px;
-}
-.empty-state {
-  text-align: center;
-  color: #888;
-  padding: 2rem;
 }
 
 .info {
@@ -1134,7 +1218,7 @@ nav a:hover {
   color: #555;
 }
 
-.appointment-card .card-actions {
+.appointment-card .action-buttons {
   margin-top: auto; /* Pushes actions to the bottom */
   padding-top: 1rem;
   text-align: right;
@@ -1175,13 +1259,6 @@ nav a:hover {
 }
 .pagination-controls span {
   font-weight: bold;
-}
-
-.loading-state, .empty-state {
-  text-align: center;
-  color: #888;
-  padding: 2rem;
-  font-size: 1.1rem;
 }
 
 .date-selector {
@@ -1241,145 +1318,7 @@ nav a:hover {
 </style>
 
 <style scoped>
-/* ================= 弹窗遮罩 ================= */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0,0,0,0.5); /* 半透明遮罩 */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
 
-/* ================= 弹窗容器 ================= */
-.modal-container {
-  background-color: #fff;
-  width: 500px;
-  max-width: 90%;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  position: relative;
-}
-
-/* ================= 弹窗标题 ================= */
-.modal-title {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 15px;
-  text-align: center;
-}
-
-/* ================= 右上角关闭按钮 ================= */
-.close-btn {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  border: none;
-  background: transparent;
-  font-size: 22px;
-  cursor: pointer;
-  color: #888;
-  transition: color 0.2s;
-}
-
-.close-btn:hover {
-  color: #333;
-}
-
-/* 标题 */
-.modal-title {
-  text-align: center;
-  font-size: 20px;
-  margin-bottom: 15px;
-  color: #2a7f2a;
-}
-
-/* 表单部分 */
-.modal-body {
-  flex: 1;
-  overflow-y: auto;
-  padding-right: 5px;
-}
-
-.modal-form-group {
-  margin-bottom: 15px;
-  display: flex;
-  flex-direction: row;
-}
-
-.modal-form-group label {
-  width:80px;
-  display: inline-block;
-  text-align: justify;
-  font-size: 14px;
-  margin-bottom: 5px;
-}
-
-.modal-form-group input,
-.modal-form-group textarea,
-.modal-form-group select {
-  flex: 1;
-  width: 100%;
-  padding: 6px 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  outline: none;
-}
-
-/* 行布局 */
-.row-layout {
-  display: flex;
-  align-items: center;
-}
-
-/* ================= 底部按钮 ================= */
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 15px;
-  gap: 10px;
-}
-
-.save-btn {
-  background-color: #4caf50;
-  color: #fff;
-  border: none;
-  padding: 6px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.save-btn:hover {
-  background-color: #45a049;
-}
-
-.cancel-btn {
-  background-color: #f0f0f0;
-  color: #333;
-  border: none;
-  padding: 6px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.cancel-btn:hover {
-  background-color: #e0e0e0;
-}
-
-/* ================= 滚动条美化（可选） ================= */
-.modal-body::-webkit-scrollbar {
-  width: 6px;
-}
-
-.modal-body::-webkit-scrollbar-thumb {
-  background-color: rgba(0,0,0,0.2);
-  border-radius: 3px;
-}
 
 /* ================= 知识管理 ================= */
 
@@ -1435,6 +1374,80 @@ nav a:hover {
 .form-group textarea {
   width: 100%;
   padding: 6px;
+}
+
+/*消息中心*/
+.session-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.session-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem 0.5rem;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.session-item:last-child {
+  border-bottom: none;
+}
+
+.session-item:hover {
+  background-color: #f7f9fa;
+}
+
+.avatar-placeholder {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: #e9ecef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+  color: #495057;
+}
+
+.session-details {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.session-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.peer-user-id {
+  font-weight: 600;
+  color: #212529;
+}
+
+.last-message-time {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.last-message-preview {
+  font-size: 0.9rem;
+  color: #6c757d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.status-indicator {
+  text-align: center;
+  padding: 3rem 0;
+  color: #888;
 }
 
 </style>

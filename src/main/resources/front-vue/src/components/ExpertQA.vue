@@ -24,15 +24,43 @@ const qaList = [
 
 <style scoped>
 .expert-qa-container {
-  padding: 10px;
+  padding: 18px;
 }
 
+/* 单条专家问答卡片 */
 .qa-item {
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  background-color: #f9f9f9;
-  margin-bottom: 10px;
+  padding: 14px 18px;
+  background-color: #f8fbf8;
+  border: 1px solid #d9e8df;
+  border-radius: 12px;
+
+  margin-bottom: 14px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
+
+  transition: all 0.25s ease;
+  cursor: pointer;
 }
+
+/* 鼠标悬停效果 */
+.qa-item:hover {
+  transform: translateY(-4px);
+  border-color: #8bc3a1;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.10);
+}
+
+/* 问题 */
+.qa-question {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2d7d4f;
+  margin-bottom: 6px;
+}
+
+/* 回答 */
+.qa-answer {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #444;
+}
+
 </style>

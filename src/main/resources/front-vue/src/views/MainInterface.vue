@@ -1,7 +1,6 @@
 <template>
   <div class="main-bg">
     <HeaderComponent />
-
     <section class="content">
       <div class="home-content">
         <!--新闻轮播展示-->
@@ -42,64 +41,21 @@
 </template>
 
 <script setup>
-import NewsCarousel from '../components/NewsCarousel.vue'; 
-import FinanceProducts from '../components/FinanceProducts.vue'; 
+import NewsCarousel from '../components/NewsCarousel.vue';
+import FinanceProducts from '../components/FinanceProducts.vue';
 import ExpertOverview from '../components/ExpertOverview.vue';
-import ExpertQA from '../components/ExpertQA.vue'; 
-import ECommerce from '../components/ECommerce.vue'; 
+import ExpertQA from '../components/ExpertQA.vue';
+import ECommerce from '../components/ECommerce.vue';
 import HeaderComponent from '../components/HeaderComponent.vue';
 
 </script>
 
 <style scoped>
-.main-bg {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  width: 1800px;
-  background-color: #F0F9F4; /* 浅绿色背景色 */
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-nav ul {
-  list-style: none;
-  display: flex;
-  padding: 0;
-  margin: 0;
-}
-
-nav li {
-  margin-right: 50px;
-}
-
-nav a {
-  text-decoration: none;
-  color: white;
-  font-weight: 600;
-  font-size: 20px;
-  transition: color 0.3s;
-}
-
-nav a:hover {
-  color: #B7E4C7; /* 鼠标悬停时变为淡绿色 */
-}
-
 .content {
-  width: 100%;
-  flex: 1;
-  padding: 20px;
-  background: white;
-  color: #333; /* 深灰色文字 */
-  font-size: 18px;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.home-content {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  margin-left: 20px;
+  margin-right: 20px;
+  width: calc(100% - 40px);
+  padding: 26px;
 }
 
 .news-carousel,

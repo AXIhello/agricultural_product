@@ -5,7 +5,11 @@
     <div class="chat-window">
       <div class="chat-header">
         <h3>正在与 用户 {{ receiverId }} 聊天</h3>
+        <div>
+          <button @click="goBack()">返回</button>
+        </div>
       </div>
+
 
       <div class="messages" ref="messageContainer">
         <div v-if="isLoading" class="loading-state">正在加载消息...</div>
@@ -44,6 +48,7 @@ import { useRoute } from 'vue-router';
 import axios from '../utils/axios'; 
 import { useAuthStore } from '@/stores/authStore';
 import { storeToRefs } from 'pinia';
+import router from "@/router/index.js";
 
 // --- Reactive State ---
 const route = useRoute();
@@ -241,6 +246,10 @@ async function scrollToBottom() {
   }
 }
 
+function goBack() {
+  router.back()
+}
+
 </script>
 
 <style scoped>
@@ -261,6 +270,8 @@ async function scrollToBottom() {
 }
 
 .chat-header {
+  display: flex;
+  justify-content: space-between;
   padding: 15px 20px;
   border-bottom: 1px solid #e0e0e0;
   background-color: #ffffff;
@@ -365,9 +376,4 @@ async function scrollToBottom() {
   cursor: not-allowed;
 }
 
-.loading-state, .empty-state {
-  text-align: center;
-  color: #aaa;
-  margin: auto;
-}
 </style>

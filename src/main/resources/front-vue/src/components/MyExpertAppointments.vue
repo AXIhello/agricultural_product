@@ -137,28 +137,118 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 沿用详情页和个人中心的统一样式 */
-.main-bg { display: flex; flex-direction: column; height: 100vh; background-color: #F0F9F4; }
-.content { flex: 1; padding: 20px; background: white; }
-.my-appointments-container { max-width: 1000px; margin: auto; }
+/* —— 全局布局 —— */
+.main-bg {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #F0F9F4; /* 温和浅绿背景 */
+  padding: 20px;
+}
 
-h2 { margin-top: 0; color: #2D7D4F; border-bottom: 2px solid #F0F9F4; padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
-.loading-state, .empty-state { text-align: center; color: #888; padding: 2rem; margin-top: 2rem; background-color: #f8f9fa; border-radius: 8px; }
+.content {
+  flex: 1;
+  padding: 25px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  max-width: 1150px;
+  margin: auto;
+}
 
-.appointments-table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; }
-.appointments-table th, .appointments-table td { padding: 0.8rem 1rem; text-align: left; border-bottom: 1px solid #dee2e6; vertical-align: middle; }
-.appointments-table th { background-color: #f8f9fa; font-weight: 600; color: #333; }
+/* —— 标题 —— */
+h2 {
+  margin-top: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #2d7d4f;
+  border-bottom: 2px solid #d8eede;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
 
-.cancel-btn { padding: 6px 12px; border-radius: 5px; border: none; background-color: #dc3545; color: white; cursor: pointer; }
-.cancel-btn:hover { background-color: #c82333; }
-.cancel-btn:disabled { background-color: #6c757d; cursor: not-allowed; }
+/* —— 表格 —— */
+.appointments-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
 
-.status-badge { padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.8rem; color: white; font-weight: 500; }
-.status-scheduled { background-color: #007bff; }
+.appointments-table th,
+.appointments-table td {
+  padding: 14px 18px;
+  text-align: left;
+  border-bottom: 1px solid #e4ece7;
+  font-size: 15px;
+}
+
+.appointments-table th {
+  background-color: #eaf5ef;
+  color: #2d7d4f;
+  font-weight: 600;
+}
+
+/* —— 按钮（取消预约） —— */
+.cancel-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  background-color: #d9534f;
+  color: white;
+  transition: background-color 0.25s ease;
+}
+
+.cancel-btn:hover {
+  background-color: #c0392b;
+}
+
+.cancel-btn:disabled {
+  background-color: #a4b1aa;
+  cursor: not-allowed;
+}
+
+/* —— 状态标识 —— */
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+}
+
+.status-scheduled { background-color: #0d6efd; }
 .status-completed { background-color: #28a745; }
 .status-cancelled { background-color: #6c757d; }
 
-.pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; }
-.pagination button { padding: 0.5rem 1rem; border: 1px solid #ddd; background-color: #fff; cursor: pointer; }
-.pagination button:disabled { color: #ccc; cursor: not-allowed; }
+/* —— 分页 —— */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.pagination button {
+  padding: 6px 14px;
+  border: 1px solid #d1e3d8;
+  background-color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.25s ease;
+}
+
+.pagination button:hover:not(:disabled) {
+  background-color: #cceedd;
+  border-color: #8cc9a3;
+}
+
+.pagination button:disabled {
+  background-color: #f1f5f3;
+  color: #b7c2bc;
+  cursor: not-allowed;
+}
 </style>
