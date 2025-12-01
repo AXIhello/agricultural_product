@@ -109,6 +109,9 @@ CREATE TABLE IF NOT EXISTS `tb_product` (
     `unitInfo` text NOT NULL COMMENT '产品单位',
     `specInfo` text COMMENT '产品信息',
     `place` text COMMENT '产地',
+    -- 新增：评价统计字段
+    `average_rating` decimal(2,1) NOT NULL DEFAULT 0.0 COMMENT '商品平均评分(0.0-5.0)',
+    `rating_count` int NOT NULL DEFAULT 0 COMMENT '有效评价数',
     PRIMARY KEY (`product_id`) USING BTREE,
     KEY `idx_farmer_id` (`farmer_id`) USING BTREE,
     CONSTRAINT `fk_product_farmer` FOREIGN KEY (`farmer_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE
@@ -268,6 +271,10 @@ CREATE TABLE IF NOT EXISTS `tb_order_item`  (
   `quantity` int NOT NULL COMMENT '购买数量',
   `unit_price` decimal(10, 2) NOT NULL COMMENT '下单时的单价',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `is_reviewed` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否已评价(0-未评价,1-已评价)',
+  `status` varchar(32) NOT NULL DEFAULT 'PENDING' COMMENT '订单项状态：PENDING待支付, PAID已支付, CANCELLED已取消, SHIPPED已发货, RECEIVED已收货, REVIEWED已评价, REFUND_REQUESTED申请退款, REFUND_APPROVED退款通过, REFUND_REJECTED退款驳回, REFUNDED已退款',
+  `refund_status` varchar(32) DEFAULT NULL COMMENT '退款状态：NULL无退款, REQUESTED已申请, APPROVED通过, REJECTED驳回, COMPLETED已退款',
+  `refund_reason` varchar(255) DEFAULT NULL COMMENT '退款原因',
   PRIMARY KEY (`item_id`) USING BTREE,
   INDEX `idx_order_id`(`order_id` ASC) USING BTREE,
   INDEX `idx_product_id`(`product_id` ASC) USING BTREE,
@@ -275,6 +282,32 @@ CREATE TABLE IF NOT EXISTS `tb_order_item`  (
   CONSTRAINT `fk_order_item_product` FOREIGN KEY (`product_id`) REFERENCES `tb_product` (`product_id`) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '订单明细表 (基础信息)' ROW_FORMAT = Dynamic;
 
+-- 新增：订单项评价表，每个订单明细一条评价记录
+CREATE TABLE IF NOT EXISTS `tb_order_item_review` (
+  `review_id` bigint NOT NULL AUTO_INCREMENT COMMENT '评价ID',
+  `item_id` int NOT NULL COMMENT '订单明细ID，关联 tb_order_item.item_id',
+  `order_id` int NOT NULL COMMENT '订单ID，冗余字段便于查询',
+  `product_id` int NOT NULL COMMENT '产品ID，冗余字段便于统计',
+  `user_id` bigint NOT NULL COMMENT '评价用户ID，关联 users.user_id',
+  `rating` tinyint NOT NULL COMMENT '评分(1-5)',
+  `content` text NULL COMMENT '评价内容',
+  `is_anonymous` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否匿名评价(0-否,1-是)',
+  `status` varchar(20) NOT NULL DEFAULT 'published' COMMENT '状态：published/deleted/hidden 等',
+  `append_content` text NULL COMMENT '追评内容(预留)',
+  `append_time` datetime NULL COMMENT '追评时间',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`review_id`) USING BTREE,
+  UNIQUE KEY `uniq_item_user` (`item_id`, `user_id`) USING BTREE COMMENT '同一用户对同一订单项只允许首评一次',
+  KEY `idx_product_status_time` (`product_id`, `status`, `create_time`) USING BTREE,
+  KEY `idx_order_id` (`order_id`) USING BTREE,
+  KEY `idx_user_id` (`user_id`, `create_time`) USING BTREE,
+  KEY `idx_item_id` (`item_id`) USING BTREE,
+  CONSTRAINT `fk_review_item` FOREIGN KEY (`item_id`) REFERENCES `tb_order_item` (`item_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_review_order` FOREIGN KEY (`order_id`) REFERENCES `tb_order` (`order_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_review_product` FOREIGN KEY (`product_id`) REFERENCES `tb_product` (`product_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_review_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='订单项评价表';
 -- ----------------------------
 -- Table structure for tb_purchase_demands
 -- ----------------------------

@@ -5,17 +5,13 @@ import com.example.agricultural_product.pojo.OrderItem;
 
 import java.util.List;
 
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Result;
-import org.apache.ibatis.annotations.Results;
-import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.*;
 
 @Mapper
 public interface OrderItemMapper extends BaseMapper<OrderItem> {
 
     /**
      * 辅助查询方法：根据订单ID查询其所有的订单项
-     * 这里的 @Results 映射关系是专门为 OrderItem 类定制的
      */
     @Select("SELECT " +
             "oi.item_id, oi.product_id, p.product_name, oi.quantity, oi.unit_price ," +

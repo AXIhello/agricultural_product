@@ -192,4 +192,115 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
                 .orderByDesc(Order::getCreateTime);
         return this.page(page, wrapper);
     }
+
+    @Override
+    @Transactional
+    public boolean shipOrderItem(Integer orderId, Integer itemId, Long sellerId) {
+        Order order = this.getById(orderId);
+        if (order == null) {
+            return false;
+        }
+        // 这里暂不校验 sellerId 与商品归属关系，如有需要可根据商品 farmer_id 补充
+        OrderItem item = orderItemMapper.selectById(itemId);
+        if (item == null || !orderId.equals(item.getOrderId())) {
+            return false;
+        }
+        // 只有已支付的订单项才允许发货
+        if (!"PAID".equalsIgnoreCase(item.getStatus())) {
+            return false;
+        }
+        item.setStatus("SHIPPED");
+        orderItemMapper.updateById(item);
+        // 订单整体状态可以根据需要调整，这里不强制改变
+        return true;
+    }
+
+    @Override
+    @Transactional
+    public boolean confirmOrderItem(Integer orderId, Integer itemId, Long userId) {
+        Order order = this.getById(orderId);
+        if (order == null || !order.getUserId().equals(userId)) {
+            return false;
+        }
+        OrderItem item = orderItemMapper.selectById(itemId);
+        if (item == null || !orderId.equals(item.getOrderId())) {
+            return false;
+        }
+        // 仅已发货的订单项可以确认收货
+        if (!"SHIPPED".equalsIgnoreCase(item.getStatus())) {
+            return false;
+        }
+        item.setStatus("RECEIVED");
+        orderItemMapper.updateById(item);
+        return true;
+    }
+
+    @Override
+    @Transactional
+    public boolean applyRefundForItem(Integer orderId, Integer itemId, Long userId, String reason) {
+        Order order = this.getById(orderId);
+        if (order == null || !order.getUserId().equals(userId)) {
+            return false;
+        }
+        OrderItem item = orderItemMapper.selectById(itemId);
+        if (item == null || !orderId.equals(item.getOrderId())) {
+            return false;
+        }
+        // 只有已支付、已发货、已收货、已评价的订单项允许申请退款
+        String status = item.getStatus();
+        if (!"PAID".equalsIgnoreCase(status)
+                && !"SHIPPED".equalsIgnoreCase(status)
+                && !"RECEIVED".equalsIgnoreCase(status)
+                && !"REVIEWED".equalsIgnoreCase(status)) {
+            return false;
+        }
+        // 已取消/已退款/已在退款中的不再重复申请
+        if ("CANCELLED".equalsIgnoreCase(status)
+                || "REFUND_REQUESTED".equalsIgnoreCase(status)
+                || "REFUNDED".equalsIgnoreCase(status)) {
+            return false;
+        }
+        item.setRefundStatus("REQUESTED");
+        item.setRefundReason(reason);
+        item.setStatus("REFUND_REQUESTED");
+        orderItemMapper.updateById(item);
+        return true;
+    }
+
+    @Override
+    @Transactional
+    public boolean reviewRefundForItem(Integer orderId, Integer itemId, Long sellerId, boolean approve, String rejectReason) {
+        Order order = this.getById(orderId);
+        if (order == null) {
+            return false;
+        }
+        OrderItem item = orderItemMapper.selectById(itemId);
+        if (item == null || !orderId.equals(item.getOrderId())) {
+            return false;
+        }
+        if (!"REQUESTED".equalsIgnoreCase(item.getRefundStatus())) {
+            return false;
+        }
+        if (approve) {
+            // 同意该订单项退款：回滚库存并标记已退款
+            Product product = productMapper.selectById(item.getProductId());
+            if (product != null) {
+                product.setStock(product.getStock() + item.getQuantity());
+                product.setUpdateTime(LocalDateTime.now());
+                productMapper.updateById(product);
+            }
+            item.setRefundStatus("COMPLETED");
+            item.setStatus("REFUNDED");
+        } else {
+            // 拒绝该订单项退款
+            item.setRefundStatus("REJECTED");
+            item.setRefundReason(rejectReason);
+            // 简单回退到已支付状态，方便继续后续流程（可根据需要更细分）
+            if ("REFUND_REQUESTED".equalsIgnoreCase(item.getStatus())) {
+                item.setStatus("PAID");
+            }
+        }
+        orderItemMapper.updateById(item);
+        return true;
+    }
 }

@@ -3,12 +3,15 @@ package com.example.agricultural_product.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.agricultural_product.pojo.Order;
 import com.example.agricultural_product.pojo.OrderItem;
-import com.example.agricultural_product.dto.OrderDTO; 
+import com.example.agricultural_product.pojo.OrderItemReview;
+import com.example.agricultural_product.dto.OrderDTO;
 import com.example.agricultural_product.dto.CreateOrderRequest;
 import com.example.agricultural_product.dto.OrderDetailResponse;
 import com.example.agricultural_product.service.OrderService;
+import com.example.agricultural_product.service.OrderItemReviewService;
 import com.example.agricultural_product.utils.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +24,9 @@ public class OrderController {
 
     @Autowired
     private OrderService orderService;
+
+    @Autowired
+    private OrderItemReviewService orderItemReviewService;
 
     // ===== JWT 鉴权工具方法 =====
     private Long getUserIdFromToken(HttpServletRequest request) {
@@ -146,5 +152,103 @@ public class OrderController {
         getUserIdFromToken(request);
         boolean success = orderService.updateOrderStatus(orderId, status);
         return ResponseEntity.ok(success);
+    }
+
+    /**
+     * 卖家发货（针对单个订单项）
+     */
+    @PutMapping("/{orderId}/items/{itemId}/ship")
+    public ResponseEntity<Boolean> shipOrderItem(HttpServletRequest request,
+                                                 @PathVariable Integer orderId,
+                                                 @PathVariable Integer itemId) {
+        Long sellerId = getUserIdFromToken(request);
+        boolean success = orderService.shipOrderItem(orderId, itemId, sellerId);
+        return ResponseEntity.ok(success);
+    }
+
+    /**
+     * 买家确认收货（针对单个订单项）
+     */
+    @PutMapping("/{orderId}/items/{itemId}/confirm")
+    public ResponseEntity<Boolean> confirmOrderItem(HttpServletRequest request,
+                                                    @PathVariable Integer orderId,
+                                                    @PathVariable Integer itemId) {
+        Long userId = getUserIdFromToken(request);
+        boolean success = orderService.confirmOrderItem(orderId, itemId, userId);
+        return ResponseEntity.ok(success);
+    }
+
+    /**
+     * 买家申请退款（针对单个订单项）
+     */
+    @PutMapping("/{orderId}/items/{itemId}/refund/apply")
+    public ResponseEntity<Boolean> applyRefundForItem(HttpServletRequest request,
+                                                      @PathVariable Integer orderId,
+                                                      @PathVariable Integer itemId,
+                                                      @RequestParam(required = false) String reason) {
+        Long userId = getUserIdFromToken(request);
+        boolean success = orderService.applyRefundForItem(orderId, itemId, userId, reason);
+        return ResponseEntity.ok(success);
+    }
+
+    /**
+     * 卖家审核退款（针对单个订单项）
+     */
+    @PutMapping("/{orderId}/items/{itemId}/refund/review")
+    public ResponseEntity<Boolean> reviewRefundForItem(HttpServletRequest request,
+                                                       @PathVariable Integer orderId,
+                                                       @PathVariable Integer itemId,
+                                                       @RequestParam boolean approve,
+                                                       @RequestParam(required = false) String rejectReason) {
+        Long sellerId = getUserIdFromToken(request);
+        boolean success = orderService.reviewRefundForItem(orderId, itemId, sellerId, approve, rejectReason);
+        return ResponseEntity.ok(success);
+    }
+
+    /**
+     * 针对某个订单项提交评价
+     */
+    @PostMapping("/{orderId}/items/{itemId}/review")
+    public ResponseEntity<?> createOrderItemReview(HttpServletRequest request,
+                                                   @PathVariable Integer orderId,
+                                                   @PathVariable Integer itemId,
+                                                   @RequestBody CreateReviewRequest body) {
+        Long userId = getUserIdFromToken(request);
+
+        // 如果 body 中没有 orderId/itemId，则从路径参数补全
+        Integer reqOrderId = body.getOrderId() != null ? body.getOrderId() : orderId;
+        Integer reqItemId = body.getItemId() != null ? body.getItemId() : itemId;
+
+        OrderItemReview review = orderItemReviewService.createReview(
+                userId,
+                reqOrderId,
+                reqItemId,
+                body.getProductId(),
+                body.getRating(),
+                body.getContent(),
+                body.getIsAnonymous()
+        );
+        return ResponseEntity.ok(review);
+    }
+
+    /**
+     * 分页查询某个商品的评价列表
+     * 为了兼容原有 /api/reviews/product/{productId}，这里提供统一入口
+     */
+    @GetMapping("/product/{productId}/reviews")
+    public Page<OrderItemReview> listProductReviews(@PathVariable Integer productId,
+                                                    @RequestParam(defaultValue = "1") Long page,
+                                                    @RequestParam(defaultValue = "10") Long size) {
+        return orderItemReviewService.listProductReviews(productId, page, size);
+    }
+
+    @Data
+    public static class CreateReviewRequest {
+        private Integer orderId;
+        private Integer itemId;
+        private Integer productId;
+        private Integer rating; // 1-5
+        private String content;
+        private Boolean isAnonymous;
     }
 }

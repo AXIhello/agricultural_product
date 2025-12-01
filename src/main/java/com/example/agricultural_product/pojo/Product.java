@@ -5,8 +5,6 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonInclude;
-
-import jakarta.persistence.Table;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -61,6 +59,12 @@ public class Product {
 
     @TableField("place")
     private String place;
+
+    @TableField("average_rating")
+    private Double averageRating; // 新增：评分字段
+
+    @TableField("rating_count")
+    private Integer ratingCount;
 
     @TableField(exist = false) // 关键：标记该字段不在 tb_product 表中，不参与SQL
     private LocalDate forecastDate; // 预测日期（如：2025-12-31，仅用于返回前端）

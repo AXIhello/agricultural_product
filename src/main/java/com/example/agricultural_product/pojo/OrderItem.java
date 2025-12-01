@@ -32,6 +32,18 @@ public class OrderItem {
     @TableField("create_time")
     private LocalDateTime createTime;
 
+    @TableField("is_reviewed")
+    private Integer isReviewed;
+
+    @TableField("status")
+    private String status; // PENDING, PAID, CANCELLED, SHIPPED, RECEIVED, REVIEWED, REFUND_*
+
+    @TableField("refund_status")
+    private String refundStatus; // NULL, REQUESTED, APPROVED, REJECTED, COMPLETED
+
+    @TableField("refund_reason")
+    private String refundReason;
+
     @TableField(exist = false)
     private String productName;
 

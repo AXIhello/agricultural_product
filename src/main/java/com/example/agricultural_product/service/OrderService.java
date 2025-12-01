@@ -77,6 +77,24 @@ public interface OrderService extends IService<Order> {
     Page<Order> getOrdersByStatus(Long userId, String status, Integer pageNum, Integer pageSize);
 
     List<OrderDTO> getMyOrdersWithItems(Long userId);
+
+    /**
+     * 卖家针对某个订单明细发货（仅该 item 状态变为 SHIPPED）。
+     */
+    boolean shipOrderItem(Integer orderId, Integer itemId, Long sellerId);
+
+    /**
+     * 买家确认某个订单明细收货（仅该 item 状态变为 RECEIVED）。
+     */
+    boolean confirmOrderItem(Integer orderId, Integer itemId, Long userId);
+
+    /**
+     * 买家针对某个订单明细申请退款（需要后续卖家审核）。
+     */
+    boolean applyRefundForItem(Integer orderId, Integer itemId, Long userId, String reason);
+
+    /**
+     * 卖家审核某个订单明细的退款申请（通过/拒绝）。
+     */
+    boolean reviewRefundForItem(Integer orderId, Integer itemId, Long sellerId, boolean approve, String rejectReason);
 }
-
-
