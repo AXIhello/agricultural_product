@@ -6,6 +6,7 @@ import com.example.agricultural_product.dto.ProductCreateDTO;
 import com.example.agricultural_product.dto.ProductUpdateDTO;
 import com.example.agricultural_product.pojo.Product;
 import com.example.agricultural_product.service.impl.ProductServiceImpl;
+import com.example.agricultural_product.vo.ProductTreeVO;
 
 import java.util.List;
 
@@ -46,6 +47,7 @@ public interface ProductService extends IService<Product> {
 	//农户查询商品，"active"（上架）、"inactive"（下架）或 null（全部）
 	Page<Product> getProductsByFarmerIdAndStatusPage(Long farmerId, String status, Integer pageNum, Integer pageSize);
 
+
 	// 返回按 product_name 去重后的代表性 Product 列表（每个名字只保留一条）
 	Page<Product> selectDistinctProductsByStatusPage(String status, Integer pageNum, Integer pageSize);
 	// 根据商品状态，查询去重后的商品名称列表。
@@ -56,11 +58,12 @@ public interface ProductService extends IService<Product> {
 	// 根据农户ID和商品状态，查询去重后的商品名称列表。
 	Page<Product> getProductsByFarmerIdAndStatusPage(Long farmerId, String status, String productName, Integer pageNum, Integer pageSize);
 
-	// 根据商品状态，查询去重后的商品名称列表。先返回名字，再返回对应名字
-	List<String> getDistinctProductNamesByFarmerIdAndStatus(String status);
 
-	// 根据农户ID和商品状态，查询去重后的商品名称列表。
-	List<String> getDistinctProductNamesByFarmerIdAndStatus(Long farmerId, String status);
+	// 添加树分类结构，按照一级分类 -> 二级分类 -> 产品名称 -> 商品列表，用户可见
+	List<ProductTreeVO> getProductTreeByStatus(String status);
+
+	// 添加树分类结构，按照一级分类 -> 二级分类 -> 产品名称 -> 商品列表，农户可见
+	List<ProductTreeVO> getProductTreeByFarmerIdAndStatus(Long farmerId, String status);
 
 
 

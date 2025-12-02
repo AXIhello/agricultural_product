@@ -6,6 +6,7 @@ import com.example.agricultural_product.dto.ProductUpdateDTO;
 import com.example.agricultural_product.pojo.Product;
 import com.example.agricultural_product.service.ProductService;
 import com.example.agricultural_product.utils.JwtUtil;
+import com.example.agricultural_product.vo.ProductTreeVO;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -499,6 +500,61 @@ public class ProductController {
         maskImagePath(page.getRecords());
 
         return ResponseEntity.ok(page);
+    }
+
+
+
+    /*
+    后端：执行 SQL 查出数据库里 1000 条商品，组装成一个巨大的 JSON，一次性发给前端。
+    前端获取到了什么？
+    前端拿到了完整的数据包：包含所有的分类、所有的子分类、所有的商品名、以及最底层具体的商品详情（ID、价格、库存等）。
+    界面显示：
+    虽然手里拿着所有数据，但在 UI 上，通常只渲染第一层（水果、水产）。其他的存在内存里，暂时隐藏（display: none）。
+     */
+    /**
+     * URL: /api/products/tree
+     * 获取商品分类树形结构 (一级 -> 二级 -> 名称 -> 商品列表)，所有人都可以看
+     */
+    @GetMapping("/tree")
+    public ResponseEntity<List<ProductTreeVO>> getProductTree(
+            HttpServletRequest request,
+            @RequestParam(value = "status", required = false, defaultValue = "active") String status) {
+
+        // 1. 鉴权 (如果需要登录才能看)
+         if (!checkToken(request)) return ResponseEntity.status(401).build();
+
+        // 2. 调用 Service 获取树形结构
+        List<ProductTreeVO> tree = productService.getProductTreeByStatus(status);
+
+        return ResponseEntity.ok(tree);
+    }
+
+    /**
+     * URL: /api/products/farmer/tree
+     * 作用: 获取商品分类树形结构 (一级 -> 二级 -> 名称 -> 商品列表)，仅获取【当前登录农户】发布的商品树形结构
+     */
+    @GetMapping("/farmer/tree")
+    public ResponseEntity<List<ProductTreeVO>> getFarmerProductTree(
+            HttpServletRequest request,
+            @RequestParam(value = "status", required = false, defaultValue = "active") String status) {
+
+        // 1. 必须鉴权：检查 Token 是否合法
+        if (!checkToken(request)) {
+            return ResponseEntity.status(401).build();
+        }
+
+        // 2. 获取 Token 中的 FarmerID
+        Long farmerId = getUserIdFromToken(request);
+        if (farmerId == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        log.info("【农户树形查询】用户ID: {}, 状态: {}", farmerId, status);
+
+        // 3. 调用 Service 新增的方法
+        List<ProductTreeVO> tree = productService.getProductTreeByFarmerIdAndStatus(farmerId, status);
+
+        return ResponseEntity.ok(tree);
     }
 
 }

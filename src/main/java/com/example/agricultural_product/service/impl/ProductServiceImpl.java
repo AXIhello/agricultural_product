@@ -1,25 +1,23 @@
 package com.example.agricultural_product.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.example.agricultural_product.dto.ProductCreateDTO;
 import com.example.agricultural_product.dto.ProductUpdateDTO;
 import com.example.agricultural_product.mapper.ProductMapper;
 import com.example.agricultural_product.pojo.Product;
 import com.example.agricultural_product.service.ProductService;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.agricultural_product.vo.ProductTreeVO;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> implements ProductService {
@@ -393,46 +391,79 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
 	}
 
 
+	// 【通用私有方法】将 List<Product> 转换为 List<ProductTreeVO>，(把这段复杂的逻辑提出来，给下面两个方法共用)
+	private List<ProductTreeVO> buildTreeFromList(List<Product> products) {
+		if (products == null || products.isEmpty()) {
+			return new ArrayList<>();
+		}
+
+		// 屏蔽图片路径
+		products.forEach(p -> { if (p != null) p.setImagePath(null); });
+
+		// 分组：一级 -> 二级 -> 名称 -> 列表
+		Map<String, Map<String, Map<String, List<Product>>>> groupedMap = products.stream()
+				.collect(Collectors.groupingBy(p -> p.getProdCat() == null ? "其他" : p.getProdCat(),
+						Collectors.groupingBy(p -> p.getProdPcat() == null ? "其他" : p.getProdPcat(),
+								Collectors.groupingBy(p -> p.getProductName() == null ? "未知商品" : p.getProductName())
+						)));
+
+		List<ProductTreeVO> result = new ArrayList<>();
+
+		for (Map.Entry<String, Map<String, Map<String, List<Product>>>> catEntry : groupedMap.entrySet()) {
+			ProductTreeVO treeVO = new ProductTreeVO();
+			treeVO.setName(catEntry.getKey()); // 一级
+
+			List<ProductTreeVO.SubCategory> subList = new ArrayList<>();
+			for (Map.Entry<String, Map<String, List<Product>>> subEntry : catEntry.getValue().entrySet()) {
+				ProductTreeVO.SubCategory subVO = new ProductTreeVO.SubCategory();
+				subVO.setName(subEntry.getKey()); // 二级
+
+				List<ProductTreeVO.ProductNameGroup> nameList = new ArrayList<>();
+				for (Map.Entry<String, List<Product>> nameEntry : subEntry.getValue().entrySet()) {
+					ProductTreeVO.ProductNameGroup groupVO = new ProductTreeVO.ProductNameGroup();
+					groupVO.setName(nameEntry.getKey()); // 名称
+					groupVO.setProducts(nameEntry.getValue()); // 列表
+					nameList.add(groupVO);
+				}
+				subVO.setProductTypes(nameList);
+				subList.add(subVO);
+			}
+			treeVO.setSubCategories(subList);
+			result.add(treeVO);
+		}
+		return result;
+	}
+
+
+	//查询所有商品树 (管理员或游客用)
 	@Override
-	public List<String> getDistinctProductNamesByFarmerIdAndStatus(String status) {
-
+	public List<ProductTreeVO> getProductTreeByStatus(String status) {
 		LambdaQueryWrapper<Product> wrapper = new LambdaQueryWrapper<>();
-
-		wrapper.select(Product::getProductName);
-
 		if (status != null) {
 			String lowerStatus = status.toLowerCase();
 			if ("active".equals(lowerStatus) || "inactive".equals(lowerStatus)) {
 				wrapper.eq(Product::getStatus, lowerStatus);
 			}
 		}
+		// 排序优化展示
+		wrapper.orderByAsc(Product::getProdCat)
+				.orderByAsc(Product::getProdPcat)
+				.orderByAsc(Product::getProductName);
 
-		wrapper.groupBy(Product::getProductName);
+		List<Product> list = this.list(wrapper);
 
-		List<Object> distinctNamesObj = this.listObjs(wrapper);
-
-		return distinctNamesObj.stream()
-				.map(Object::toString)
-				.collect(java.util.stream.Collectors.toList());
+		// 调用通用方法
+		return buildTreeFromList(list);
 	}
 
-
-
+	// 查询指定农户的商品树 (农户后台管理用)
 	@Override
-	public List<String> getDistinctProductNamesByFarmerIdAndStatus(Long farmerId, String status) {
-		if (farmerId == null) {
-			return Collections.emptyList();
-		}
-
+	public List<ProductTreeVO> getProductTreeByFarmerIdAndStatus(Long farmerId, String status) {
 		LambdaQueryWrapper<Product> wrapper = new LambdaQueryWrapper<>();
 
-		// 1. 设置聚合查询：只选择 DISTINCT productName 字段
-		wrapper.select(Product::getProductName);
-
-		// 2. 核心过滤条件：农户ID
+		// 关键点：强制加上 FarmerId 过滤
 		wrapper.eq(Product::getFarmerId, farmerId);
 
-		// 3. 状态过滤
 		if (status != null) {
 			String lowerStatus = status.toLowerCase();
 			if ("active".equals(lowerStatus) || "inactive".equals(lowerStatus)) {
@@ -440,18 +471,16 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
 			}
 		}
 
-		// 4. Group By 确保去重
-		wrapper.groupBy(Product::getProductName);
+		// 排序
+		wrapper.orderByAsc(Product::getProdCat)
+				.orderByAsc(Product::getProdPcat)
+				.orderByAsc(Product::getProductName);
 
-		// 5. 执行查询
-		// Mybatis-Plus 默认 list(wrapper) 返回 List<Product>，
-		// 但当只 select 一个字段且 groupBy 时，可以使用 listObjs() 或手动配置 Mapper 接口
-		// 这里我们使用 listObjs()，它返回 List<Object>，我们需要转换成 List<String>
-		List<Object> distinctNamesObj = this.listObjs(wrapper);
+		List<Product> list = this.list(wrapper);
 
-		// 6. 转换为 List<String>
-		return distinctNamesObj.stream()
-				.map(Object::toString)
-				.collect(java.util.stream.Collectors.toList());
+		// 调用通用方法
+		return buildTreeFromList(list);
 	}
+
+
 }
