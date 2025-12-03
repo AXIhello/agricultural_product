@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.agricultural_product.dto.ProductCreateDTO;
 import com.example.agricultural_product.dto.ProductUpdateDTO;
+import com.example.agricultural_product.dto.RecommendedProductDTO;
 import com.example.agricultural_product.pojo.Product;
 import com.example.agricultural_product.service.impl.ProductServiceImpl;
 import com.example.agricultural_product.vo.ProductTreeVO;
@@ -65,6 +66,37 @@ public interface ProductService extends IService<Product> {
 	// 添加树分类结构，按照一级分类 -> 二级分类 -> 产品名称 -> 商品列表，农户可见
 	List<ProductTreeVO> getProductTreeByFarmerIdAndStatus(Long farmerId, String status);
 
+	/**
+	 * 智能推荐商品
+	 * 基于评价统计字段的推荐算法
+	 * 
+	 * @param userId 用户ID（可选，用于个性化推荐）
+	 * @param pageNum 页码
+	 * @param pageSize 页大小
+	 * @param category 商品类别（可选过滤）
+	 * @return 推荐商品列表
+	 */
+	Page<RecommendedProductDTO> recommendProducts(Long userId, Integer pageNum, Integer pageSize, String category);
 
+	/**
+	 * 获取热销商品推荐
+	 * 基于评价数量排序
+	 * 
+	 * @param pageNum 页码
+	 * @param pageSize 页大小
+	 * @return 热销商品列表
+	 */
+	Page<RecommendedProductDTO> getHotProducts(Integer pageNum, Integer pageSize);
+
+	/**
+	 * 获取高评分商品推荐
+	 * 基于平均评分排序
+	 * 
+	 * @param pageNum 页码
+	 * @param pageSize 页大小
+	 * @param minRatingCount 最小评价数（过滤条件）
+	 * @return 高评分商品列表
+	 */
+	Page<RecommendedProductDTO> getHighRatedProducts(Integer pageNum, Integer pageSize, Integer minRatingCount);
 
 }

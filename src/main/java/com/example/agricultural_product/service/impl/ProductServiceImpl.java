@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.agricultural_product.dto.ProductUpdateDTO;
+import com.example.agricultural_product.dto.RecommendedProductDTO;
 import com.example.agricultural_product.mapper.ProductMapper;
 import com.example.agricultural_product.pojo.Product;
 import com.example.agricultural_product.service.ProductService;
@@ -482,5 +483,230 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
 		return buildTreeFromList(list);
 	}
 
+	@Override
+	public Page<RecommendedProductDTO> recommendProducts(Long userId, Integer pageNum, Integer pageSize, String category) {
+		// 查询活跃商品
+		LambdaQueryWrapper<Product> wrapper = new LambdaQueryWrapper<>();
+		wrapper.eq(Product::getStatus, "active")
+				.gt(Product::getStock, 0) // 有库存
+				.isNotNull(Product::getAverageRating) // 有评价数据
+				.gt(Product::getRatingCount, 0); // 至少有1个评价
+		
+		// 如果指定了类别，添加过滤条件
+		if (category != null && !category.trim().isEmpty()) {
+			wrapper.and(w -> w.eq(Product::getProdCat, category)
+						.or().eq(Product::getProdPcat, category));
+		}
+		
+		// 按推荐算法排序：评分权重60% + 评价数量权重40%
+		// 先按评分降序，再按评价数量降序
+		wrapper.orderByDesc(Product::getAverageRating)
+				.orderByDesc(Product::getRatingCount);
+		
+		// 分页查询
+		Page<Product> productPage = new Page<>(pageNum, pageSize);
+		productPage = this.page(productPage, wrapper);
+		
+		// 转换为推荐DTO
+		Page<RecommendedProductDTO> resultPage = convertToRecommendedPage(productPage);
+		
+		return resultPage;
+	}
+
+	@Override
+	public Page<RecommendedProductDTO> getHotProducts(Integer pageNum, Integer pageSize) {
+		// 查询热销商品（按评价数量排序）
+		LambdaQueryWrapper<Product> wrapper = new LambdaQueryWrapper<>();
+		wrapper.eq(Product::getStatus, "active")
+				.gt(Product::getStock, 0)
+				.isNotNull(Product::getRatingCount)
+				.gt(Product::getRatingCount, 0)
+				.orderByDesc(Product::getRatingCount)
+				.orderByDesc(Product::getAverageRating);
+		
+		Page<Product> productPage = new Page<>(pageNum, pageSize);
+		productPage = this.page(productPage, wrapper);
+		
+		return convertToRecommendedPage(productPage);
+	}
+
+	@Override
+	public Page<RecommendedProductDTO> getHighRatedProducts(Integer pageNum, Integer pageSize, Integer minRatingCount) {
+		// 查询高评分商品（按平均评分排序）
+		LambdaQueryWrapper<Product> wrapper = new LambdaQueryWrapper<>();
+		wrapper.eq(Product::getStatus, "active")
+				.gt(Product::getStock, 0)
+				.isNotNull(Product::getAverageRating)
+				.ge(Product::getAverageRating, 4.0) // 评分>=4.0
+				.ge(Product::getRatingCount, minRatingCount != null ? minRatingCount : 5) // 至少5个评价
+				.orderByDesc(Product::getAverageRating)
+				.orderByDesc(Product::getRatingCount);
+		
+		Page<Product> productPage = new Page<>(pageNum, pageSize);
+		productPage = this.page(productPage, wrapper);
+		
+		return convertToRecommendedPage(productPage);
+	}
+
+	/**
+	 * 将Product分页对象转换为RecommendedProductDTO分页对象
+	 */
+	private Page<RecommendedProductDTO> convertToRecommendedPage(Page<Product> productPage) {
+		Page<RecommendedProductDTO> resultPage = new Page<>();
+		resultPage.setCurrent(productPage.getCurrent());
+		resultPage.setSize(productPage.getSize());
+		resultPage.setTotal(productPage.getTotal());
+		
+		List<RecommendedProductDTO> recommendedList = productPage.getRecords().stream()
+				.map(this::convertToRecommendedDTO)
+				.collect(Collectors.toList());
+		
+		resultPage.setRecords(recommendedList);
+		return resultPage;
+	}
+
+	/**
+	 * 将Product对象转换为RecommendedProductDTO对象
+	 */
+	private RecommendedProductDTO convertToRecommendedDTO(Product product) {
+		RecommendedProductDTO dto = new RecommendedProductDTO();
+		
+		// 基本信息
+		dto.setProductId(product.getProductId());
+		dto.setProductName(product.getProductName());
+		dto.setDescription(product.getDescription());
+		dto.setPrice(product.getPrice());
+		dto.setStock(product.getStock());
+		dto.setFarmerId(product.getFarmerId());
+		dto.setStatus(product.getStatus());
+		dto.setImagePath(product.getImagePath());
+		dto.setProdCat(product.getProdCat());
+		dto.setProdPcat(product.getProdPcat());
+		dto.setPlace(product.getPlace());
+		dto.setCreateTime(product.getCreateTime());
+		
+		// 评价相关
+		dto.setAverageRating(product.getAverageRating());
+		dto.setRatingCount(product.getRatingCount());
+		
+		// 计算推荐分数
+		double recommendScore = calculateRecommendScore(product);
+		dto.setRecommendScore(recommendScore);
+		
+		// 计算热度分数（基于评价数量）
+		double popularityScore = calculatePopularityScore(product.getRatingCount());
+		dto.setPopularityScore(popularityScore);
+		
+		// 计算质量分数（基于平均评分）
+		double qualityScore = calculateQualityScore(product.getAverageRating());
+		dto.setQualityScore(qualityScore);
+		
+		// 设置推荐理由
+		String recommendReason = generateRecommendReason(product);
+		dto.setRecommendReason(recommendReason);
+		
+		// 设置评价等级描述
+		String ratingLevel = getRatingLevel(product.getAverageRating());
+		dto.setRatingLevel(ratingLevel);
+		
+		// 是否有库存
+		dto.setHasStock(product.getStock() != null && product.getStock() > 0);
+		
+		return dto;
+	}
+
+	/**
+	 * 计算综合推荐分数
+	 * 综合考虑评分和评价数量
+	 */
+	private double calculateRecommendScore(Product product) {
+		if (product.getAverageRating() == null || product.getRatingCount() == null) {
+			return 0.0;
+		}
+		
+		double avgRating = product.getAverageRating();
+		int ratingCount = product.getRatingCount();
+		
+		// 评分权重60%
+		double ratingScore = avgRating * 0.6;
+		
+		// 热度权重40%（评价数量越多越热门，但有上限）
+		double popularityFactor = Math.min(ratingCount / 100.0, 1.0); // 最多1.0分
+		double popularityScore = popularityFactor * 2.0 * 0.4; // 最多0.8分
+		
+		return ratingScore + popularityScore;
+	}
+
+	/**
+	 * 计算热度分数
+	 */
+	private double calculatePopularityScore(Integer ratingCount) {
+		if (ratingCount == null || ratingCount <= 0) {
+			return 0.0;
+		}
+		
+		// 热度分数计算：评价数越多分数越高，但递减
+		return Math.log(ratingCount + 1) * 10;
+	}
+
+	/**
+	 * 计算质量分数
+	 */
+	private double calculateQualityScore(Double averageRating) {
+		if (averageRating == null) {
+			return 0.0;
+		}
+		
+		// 质量分数：直接基于平均评分
+		return averageRating * 20; // 5星制转为100分制
+	}
+
+	/**
+	 * 生成推荐理由
+	 */
+	private String generateRecommendReason(Product product) {
+		List<String> reasons = new ArrayList<>();
+		
+		if (product.getAverageRating() != null && product.getAverageRating() >= 4.5) {
+			reasons.add("高评分商品");
+		}
+		
+		if (product.getRatingCount() != null && product.getRatingCount() >= 50) {
+			reasons.add("热销商品");
+		} else if (product.getRatingCount() != null && product.getRatingCount() >= 20) {
+			reasons.add("销量不错");
+		}
+		
+		if (product.getStock() != null && product.getStock() > 0) {
+			reasons.add("现货充足");
+		}
+		
+		if (product.getPlace() != null && !product.getPlace().trim().isEmpty()) {
+			reasons.add("产地直供");
+		}
+		
+		return reasons.isEmpty() ? "优质推荐" : String.join("，", reasons);
+	}
+
+	/**
+	 * 获取评价等级描述
+	 */
+	private String getRatingLevel(Double averageRating) {
+		if (averageRating == null) {
+			return "暂无评价";
+		}
+		
+		if (averageRating >= 4.8) {
+			return "卓越";
+		} else if (averageRating >= 4.5) {
+			return "优秀";
+		} else if (averageRating >= 4.0) {
+			return "良好";
+		} else if (averageRating >= 3.5) {
+			return "一般";
+		} else {
+			return "较差";
+		}
+	}
 
 }

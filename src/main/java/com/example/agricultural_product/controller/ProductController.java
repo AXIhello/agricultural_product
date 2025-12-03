@@ -3,6 +3,7 @@ package com.example.agricultural_product.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.agricultural_product.dto.ProductStatusDTO;
 import com.example.agricultural_product.dto.ProductUpdateDTO;
+import com.example.agricultural_product.dto.RecommendedProductDTO;
 import com.example.agricultural_product.pojo.Product;
 import com.example.agricultural_product.service.ProductService;
 import com.example.agricultural_product.utils.JwtUtil;
@@ -555,6 +556,58 @@ public class ProductController {
         List<ProductTreeVO> tree = productService.getProductTreeByFarmerIdAndStatus(farmerId, status);
 
         return ResponseEntity.ok(tree);
+    }
+
+    // ===== 商品推荐相关接口 =====
+
+    /**
+     * 智能推荐商品
+     * 基于评价统计字段的推荐算法
+     */
+    @GetMapping("/recommend")
+    public ResponseEntity<Page<RecommendedProductDTO>> recommendProducts(
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) String category) {
+        
+        // 获取用户ID（可选，用于个性化推荐）
+        Long userId = getUserIdFromToken(request);
+        
+        Page<RecommendedProductDTO> recommendedProducts = productService.recommendProducts(
+                userId, pageNum, pageSize, category);
+        
+        return ResponseEntity.ok(recommendedProducts);
+    }
+
+    /**
+     * 获取热销商品推荐
+     * 基于评价数量排序
+     */
+    @GetMapping("/hot")
+    public ResponseEntity<Page<RecommendedProductDTO>> getHotProducts(
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+        
+        Page<RecommendedProductDTO> hotProducts = productService.getHotProducts(pageNum, pageSize);
+        
+        return ResponseEntity.ok(hotProducts);
+    }
+
+    /**
+     * 获取高评分商品推荐
+     * 基于平均评分排序
+     */
+    @GetMapping("/high-rated")
+    public ResponseEntity<Page<RecommendedProductDTO>> getHighRatedProducts(
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(defaultValue = "5") Integer minRatingCount) {
+        
+        Page<RecommendedProductDTO> highRatedProducts = productService.getHighRatedProducts(
+                pageNum, pageSize, minRatingCount);
+        
+        return ResponseEntity.ok(highRatedProducts);
     }
 
 }
