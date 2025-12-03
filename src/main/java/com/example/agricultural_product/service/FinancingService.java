@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.agricultural_product.pojo.Financing;
 import com.example.agricultural_product.pojo.FinancingOffer;
 import com.example.agricultural_product.pojo.FinancingFarmer;
-
+import com.example.agricultural_product.dto.RecommendedUserDTO;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -94,4 +94,15 @@ public interface FinancingService extends IService<Financing> {
      * 查询融资下共同申请人及邀请状态
      */
     List<FinancingFarmer> listCoApplicants(Integer financingId);
+
+    /**
+     * 推荐联合融资用户
+     * 按信用分降序排列，同地区用户优先
+     * 
+     * @param currentUserId 当前用户ID
+     * @param pageNum 页码
+     * @param pageSize 页大小
+     * @return 推荐用户列表
+     */
+    Page<RecommendedUserDTO> recommendCoApplicants(Long currentUserId, Integer pageNum, Integer pageSize);
 }

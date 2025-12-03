@@ -4,14 +4,17 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.example.agricultural_product.dto.RecommendedUserDTO;
 import com.example.agricultural_product.mapper.BankProductMapper;
 import com.example.agricultural_product.mapper.FinancingFarmerMapper;
 import com.example.agricultural_product.mapper.FinancingMapper;
 import com.example.agricultural_product.mapper.FinancingOfferMapper;
+import com.example.agricultural_product.mapper.UserMapper;
 import com.example.agricultural_product.pojo.BankProduct;
 import com.example.agricultural_product.pojo.Financing;
 import com.example.agricultural_product.pojo.FinancingFarmer;
 import com.example.agricultural_product.pojo.FinancingOffer;
+import com.example.agricultural_product.pojo.User;
 import com.example.agricultural_product.service.FinancingService;
 import com.example.agricultural_product.service.UserService;
 import com.example.agricultural_product.service.UserMetricsService;
@@ -45,6 +48,9 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
 
     @Autowired
     private UserMetricsService userMetricsService;
+
+    @Autowired
+    private UserMapper userMapper;
 
     /**
      * 获取融资申请的所有参与农户ID（包括主申请人和共同申请人）
@@ -552,5 +558,118 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
         }
         
         return updated;
+    }
+
+    @Override
+    public Page<RecommendedUserDTO> recommendCoApplicants(Long currentUserId, Integer pageNum, Integer pageSize) {
+        // 获取当前用户信息
+        User currentUser = userMapper.findByUserId(currentUserId);
+        if (currentUser == null) {
+            return new Page<>();
+        }
+
+        // 查询所有农户用户（排除当前用户和非农户角色）
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getRole, "farmer") // 只查询农户
+                .ne(User::getUserId, currentUserId) // 排除当前用户
+                .isNotNull(User::getCreditScore) // 必须有信用分
+                .orderByDesc(User::getCreditScore) // 按信用分降序
+                .orderByDesc(User::getHistoricalSuccessRate); // 按历史成功率降序
+
+        // 分页查询
+        Page<User> userPage = new Page<>(pageNum, pageSize);
+        userPage = userMapper.selectPage(userPage, wrapper);
+
+        // 转换为DTO并计算推荐分数
+        Page<RecommendedUserDTO> resultPage = new Page<>();
+        resultPage.setCurrent(userPage.getCurrent());
+        resultPage.setSize(userPage.getSize());
+        resultPage.setTotal(userPage.getTotal());
+
+        List<RecommendedUserDTO> recommendedUsers = userPage.getRecords().stream()
+                .map(user -> {
+                    RecommendedUserDTO dto = new RecommendedUserDTO();
+                    dto.setUserId(user.getUserId());
+                    dto.setUserName(user.getUserName());
+                    dto.setName(user.getName());
+                    dto.setRegion(user.getRegion());
+                    dto.setCreditScore(user.getCreditScore());
+                    dto.setHistoricalSuccessRate(user.getHistoricalSuccessRate());
+                    dto.setAverageFinancingAmount(user.getAverageFinancingAmount());
+                    dto.setFinancingActivityLevel(user.getFinancingActivityLevel());
+                    
+                    // 判断是否同地区
+                    boolean sameRegion = currentUser.getRegion() != null && 
+                                       currentUser.getRegion().equals(user.getRegion());
+                    dto.setSameRegion(sameRegion);
+                    
+                    // 计算推荐分数
+                    double score = calculateRecommendScore(user, currentUser);
+                    dto.setRecommendScore(score);
+                    
+                    return dto;
+                })
+                .sorted((u1, u2) -> {
+                    // 先按同地区排序，同地区的在前
+                    int regionCompare = Boolean.compare(u2.getSameRegion(), u1.getSameRegion());
+                    if (regionCompare != 0) {
+                        return regionCompare;
+                    }
+                    // 再按信用分降序排序
+                    int creditCompare = Integer.compare(
+                        u2.getCreditScore() != null ? u2.getCreditScore() : 0,
+                        u1.getCreditScore() != null ? u1.getCreditScore() : 0
+                    );
+                    if (creditCompare != 0) {
+                        return creditCompare;
+                    }
+                    // 最后按推荐分数降序排序
+                    return Double.compare(u2.getRecommendScore(), u1.getRecommendScore());
+                })
+                .collect(Collectors.toList());
+
+        resultPage.setRecords(recommendedUsers);
+        return resultPage;
+    }
+
+    /**
+     * 计算推荐分数
+     * 综合考虑信用分、历史成功率、地区匹配等因素
+     */
+    private double calculateRecommendScore(User candidate, User currentUser) {
+        double score = 0.0;
+        
+        // 信用分权重 40%
+        if (candidate.getCreditScore() != null) {
+            score += candidate.getCreditScore() * 0.4;
+        }
+        
+        // 历史成功率权重 30%
+        if (candidate.getHistoricalSuccessRate() != null) {
+            score += candidate.getHistoricalSuccessRate().doubleValue() * 0.3;
+        }
+        
+        // 地区匹配权重 20%（同地区加分）
+        if (currentUser.getRegion() != null && 
+            currentUser.getRegion().equals(candidate.getRegion())) {
+            score += 20;
+        }
+        
+        // 融资活跃度权重 10%
+        if (candidate.getFinancingActivityLevel() != null) {
+            switch (candidate.getFinancingActivityLevel()) {
+                case "high":
+                    score += 10;
+                    break;
+                case "medium":
+                    score += 5;
+                    break;
+                case "low":
+                    score += 2;
+                    break;
+            }
+        }
+        
+        return score;
     }
 }

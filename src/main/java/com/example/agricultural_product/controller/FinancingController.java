@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.agricultural_product.pojo.Financing;
 import com.example.agricultural_product.pojo.FinancingOffer;
 import com.example.agricultural_product.dto.ApplyBankProductRequest;
+import com.example.agricultural_product.dto.RecommendedUserDTO;
 import com.example.agricultural_product.service.FinancingService;
 import com.example.agricultural_product.utils.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -317,5 +318,26 @@ public class FinancingController {
     public ResponseEntity<List<FinancingFarmer>> listCoApplicants(
             @RequestParam Integer financingId) {
         return ResponseEntity.ok(financingService.listCoApplicants(financingId));
+    }
+
+    /**
+     * 推荐联合融资用户
+     * 基于信用分降序和地区相同优先的推荐算法
+     */
+    @GetMapping("/recommend-users")
+    public ResponseEntity<Page<RecommendedUserDTO>> recommendCoApplicants(
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+        
+        Long currentUserId = getUserIdFromToken(request);
+        if (currentUserId == null) {
+            return ResponseEntity.status(401).body(new Page<>());
+        }
+
+        Page<RecommendedUserDTO> recommendedUsers = financingService.recommendCoApplicants(
+                currentUserId, pageNum, pageSize);
+        
+        return ResponseEntity.ok(recommendedUsers);
     }
 }
