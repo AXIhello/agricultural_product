@@ -6,6 +6,8 @@ import com.example.agricultural_product.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class UserServiceImpl implements UserService {
 
@@ -95,5 +97,19 @@ public class UserServiceImpl implements UserService {
         user.setCreditScore(currentScore);
         userMapper.updateById(user);
     }
-}
 
+    @Override
+    public int updateUser(User user) {
+        return userMapper.updateById(user);
+    }
+
+    @Override
+    public List<User> findAll() {
+        return userMapper.selectList(null);
+    }
+
+    @Override
+    public boolean deleteById(Long userId) {
+        return userMapper.deleteById(userId) > 0;
+    }
+}

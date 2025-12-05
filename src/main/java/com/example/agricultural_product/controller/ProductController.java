@@ -1,7 +1,6 @@
 package com.example.agricultural_product.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.example.agricultural_product.dto.ProductStatusDTO;
 import com.example.agricultural_product.dto.ProductUpdateDTO;
 import com.example.agricultural_product.dto.RecommendedProductDTO;
 import com.example.agricultural_product.pojo.Product;
@@ -9,6 +8,8 @@ import com.example.agricultural_product.service.ProductService;
 import com.example.agricultural_product.utils.JwtUtil;
 import com.example.agricultural_product.vo.ProductTreeVO;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
@@ -17,8 +18,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -59,6 +58,24 @@ public class ProductController {
             return JwtUtil.getUserId(token); // <-- 你需要确保JwtUtil中有这个方法
         }
         return null;
+    }
+
+    // 从 Token 中获取角色
+    private String getUserRoleFromToken(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return null;
+        }
+        String token = authHeader.substring(7);
+        return JwtUtil.getRole(token);
+    }
+
+    private boolean isAdmin(HttpServletRequest request) {
+        if (!checkToken(request)) {
+            return false;
+        }
+        String role = getUserRoleFromToken(request);
+        return "admin".equalsIgnoreCase(role);
     }
 
     // 获取商品列表（不返回路径）
@@ -608,6 +625,119 @@ public class ProductController {
                 pageNum, pageSize, minRatingCount);
         
         return ResponseEntity.ok(highRatedProducts);
+    }
+
+    // ========== 管理员商品管理相关接口 ==========
+
+    /**
+     * 管理员分页查看所有商品（可带状态过滤）
+     * status 可选：active / inactive / null(全部)
+     */
+    @GetMapping("/admin/list")
+    public ResponseEntity<?> adminListProducts(HttpServletRequest request,
+                                               @RequestParam(defaultValue = "1") Integer pageNum,
+                                               @RequestParam(defaultValue = "10") Integer pageSize,
+                                               @RequestParam(required = false) String status) {
+        if (!isAdmin(request)) {
+            return ResponseEntity.status(403)
+                    .body(java.util.Map.of("success", false, "message", "无权限，只有管理员可以访问该接口"));
+        }
+        Page<Product> page = productService.getAllProductsListByStatus(status, pageNum, pageSize);
+        // 管理端可以看到图片路径，这里不做 mask
+        return ResponseEntity.ok(page);
+    }
+
+    /**
+     * 管理员查看单个商品详情
+     */
+    @GetMapping("/admin/{productId}")
+    public ResponseEntity<?> adminGetProduct(HttpServletRequest request,
+                                             @PathVariable Integer productId) {
+        if (!isAdmin(request)) {
+            return ResponseEntity.status(403)
+                    .body(java.util.Map.of("success", false, "message", "无权限，只有管理员可以访问该接口"));
+        }
+        Product product = productService.getById(productId);
+        if (product == null) {
+            return ResponseEntity.status(404)
+                    .body(java.util.Map.of("success", false, "message", "商品不存在"));
+        }
+        return ResponseEntity.ok(java.util.Map.of("success", true, "product", product));
+    }
+
+    /**
+     * 管理员更新商品信息（不受 farmerId 限制）
+     * 只更新 DTO 中非空字段
+     */
+    @PutMapping("/admin/{productId}")
+    public ResponseEntity<?> adminUpdateProduct(HttpServletRequest request,
+                                                @PathVariable Integer productId,
+                                                @RequestBody ProductUpdateDTO updateDTO) {
+        if (!isAdmin(request)) {
+            return ResponseEntity.status(403)
+                    .body(java.util.Map.of("success", false, "message", "无权限，只有管理员可以访问该接口"));
+        }
+        Product existing = productService.getById(productId);
+        if (existing == null) {
+            return ResponseEntity.status(404)
+                    .body(java.util.Map.of("success", false, "message", "商品不存在"));
+        }
+        // 手动根据 DTO 非空值更新字段
+        if (updateDTO.getProductName() != null) {
+            existing.setProductName(updateDTO.getProductName());
+        }
+        if (updateDTO.getDescription() != null) {
+            existing.setDescription(updateDTO.getDescription());
+        }
+        if (updateDTO.getPrice() != null) {
+            existing.setPrice(updateDTO.getPrice());
+        }
+        if (updateDTO.getStock() != null) {
+            existing.setStock(updateDTO.getStock());
+        }
+        if (updateDTO.getStatus() != null) {
+            existing.setStatus(updateDTO.getStatus());
+        }
+        if (updateDTO.getProdCat() != null) {
+            existing.setProdCat(updateDTO.getProdCat());
+        }
+        if (updateDTO.getProdPcat() != null) {
+            existing.setProdPcat(updateDTO.getProdPcat());
+        }
+        if (updateDTO.getUnitInfo() != null) {
+            existing.setUnitInfo(updateDTO.getUnitInfo());
+        }
+        if (updateDTO.getSpecInfo() != null) {
+            existing.setSpecInfo(updateDTO.getSpecInfo());
+        }
+        if (updateDTO.getPlace() != null) {
+            existing.setPlace(updateDTO.getPlace());
+        }
+        existing.setUpdateTime(java.time.LocalDateTime.now());
+        boolean ok = productService.updateById(existing);
+        if (!ok) {
+            return ResponseEntity.internalServerError()
+                    .body(java.util.Map.of("success", false, "message", "更新失败"));
+        }
+        return ResponseEntity.ok(java.util.Map.of("success", true, "product", existing));
+    }
+
+    /**
+     * 管理员删除商品（物理删除）
+     */
+    @DeleteMapping("/admin/{productId}")
+    public ResponseEntity<?> adminDeleteProduct(HttpServletRequest request,
+                                                @PathVariable Integer productId) {
+        if (!isAdmin(request)) {
+            return ResponseEntity.status(403)
+                    .body(java.util.Map.of("success", false, "message", "无权限，只有管理员可以访问该接口"));
+        }
+        boolean ok = productService.removeById(productId);
+        if (!ok) {
+            return ResponseEntity.status(404)
+                    .body(java.util.Map.of("success", false, "message", "商品不存在或删除失败"));
+        }
+        return ResponseEntity.ok(java.util.Map.of("success", true, "message", "删除成功"));
     }
 
 }

@@ -44,6 +44,24 @@ public class UserController {
         return JwtUtil.getUserId(token);
     }
 
+    // ===== 从 Token 中获取用户角色 =====
+    private String getUserRoleFromToken(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return null;
+        }
+        String token = authHeader.substring(7);
+        return JwtUtil.getRole(token);
+    }
+
+    private boolean isAdmin(HttpServletRequest request) {
+        if (!checkToken(request)) {
+            return false;
+        }
+        String role = getUserRoleFromToken(request);
+        return role != null && "admin".equalsIgnoreCase(role);
+    }
+
     /**
      * 通过 Token 获取当前用户信息
      */
@@ -245,5 +263,103 @@ public class UserController {
         return ResponseEntity.ok(result);
     }
 
+
+    /**
+     * 管理员分页查看所有用户列表（不返回密码）
+     */
+    @GetMapping("/admin/list")
+    public ResponseEntity<?> listAllUsers(HttpServletRequest request,
+                                          @RequestParam(defaultValue = "1") int pageNum,
+                                          @RequestParam(defaultValue = "10") int pageSize) {
+        if (!isAdmin(request)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("success", false, "message", "无权限，只有管理员可以访问该接口"));
+        }
+        // 这里假设 UserService 提供分页方法，如未提供，可以先返回全部列表
+        // List<User> users = userService.findAllUsers(pageNum, pageSize);
+        // 为保持兼容性，这里先简单返回所有用户列表
+        java.util.List<User> users = userService.findAll();
+        users.forEach(u -> u.setPassword(null));
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("success", true);
+        resp.put("message", "获取用户列表成功");
+        resp.put("users", users);
+        return ResponseEntity.ok(resp);
+    }
+
+    /**
+     * 管理员根据用户ID查看单个用户详情（不返回密码）
+     */
+    @GetMapping("/admin/{userId}")
+    public ResponseEntity<?> getUserByAdmin(HttpServletRequest request, @PathVariable Long userId) {
+        if (!isAdmin(request)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("success", false, "message", "无权限，只有管理员可以访问该接口"));
+        }
+        User user = userService.findById(userId);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "message", "用户不存在"));
+        }
+        user.setPassword(null);
+        return ResponseEntity.ok(Map.of("success", true, "user", user));
+    }
+
+    /**
+     * 管理员更新用户基础信息（不处理密码修改）
+     */
+    @PutMapping("/admin/{userId}")
+    public ResponseEntity<?> updateUserByAdmin(HttpServletRequest request,
+                                               @PathVariable Long userId,
+                                               @RequestBody Map<String, Object> body) {
+        if (!isAdmin(request)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("success", false, "message", "无权限，只有管理员可以访问该接口"));
+        }
+        User user = userService.findById(userId);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "message", "用户不存在"));
+        }
+        if (body.containsKey("name")) {
+            user.setName((String) body.get("name"));
+        }
+        if (body.containsKey("email")) {
+            user.setEmail((String) body.get("email"));
+        }
+        if (body.containsKey("role")) {
+            user.setRole((String) body.get("role"));
+        }
+        if (body.containsKey("region")) {
+            user.setRegion((String) body.get("region"));
+        }
+        if (body.containsKey("creditScore")) {
+            Object cs = body.get("creditScore");
+            if (cs instanceof Number) {
+                user.setCreditScore(((Number) cs).intValue());
+            }
+        }
+        // 其他字段根据需要补充
+        userService.updateUser(user);
+        user.setPassword(null);
+        return ResponseEntity.ok(Map.of("success", true, "message", "更新成功", "user", user));
+    }
+
+    /**
+     * 管理员删除用户
+     */
+    @DeleteMapping("/admin/{userId}")
+    public ResponseEntity<?> deleteUserByAdmin(HttpServletRequest request, @PathVariable Long userId) {
+        if (!isAdmin(request)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("success", false, "message", "无权限，只有管理员可以访问该接口"));
+        }
+        boolean ok = userService.deleteById(userId);
+        if (!ok) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "message", "用户不存在或删除失败"));
+        }
+        return ResponseEntity.ok(Map.of("success", true, "message", "删除成功"));
+    }
 
 }

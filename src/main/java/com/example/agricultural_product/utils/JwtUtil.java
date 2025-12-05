@@ -67,6 +67,11 @@ public class JwtUtil {
         throw new RuntimeException("token 中未包含 userId");
     }
 
+    public static String getRole(String token) {
+        Claims claims = parseToken(token);
+        return claims.get("role", String.class);
+    }
+
     /**
      * 从 token 获取 userName
      */
