@@ -8,7 +8,8 @@
     <!-- 商品详情 -->
     <div v-else-if="currentSpec.productId" class="product-container">
       <div class="product-image">
-        <img :src="imgUrl" alt="商品图片">
+        <img :src="imgUrl" alt="商品图片" @click="showPreview = true">
+        <ImagePreview :visible="showPreview" :src="imgUrl" @close="showPreview = false" />
       </div>
 
       <div class="product-info">
@@ -84,6 +85,29 @@
           </el-button>
         </div>
       </div>
+
+      <!-- 右侧评价 -->
+      
+      <div class="review-column">
+        <h3>买家评价</h3>
+        <div v-if="reviewLoading" class="loading">评价加载中...</div>
+        <div v-else-if="!reviews.length" class="no-review">暂无评价</div>
+        <div v-else class="review-list">
+
+          <div v-for="(r, idx) in reviews" :key="idx">
+            <div v-if="r" class="review-card">
+              <div class="review-header">
+                <span class="user-nick">{{ r.isAnonymous ? '匿名用户' : '用户' + r.userId }}</span>
+                <Stars :rating="r.rating" />
+                <span class="review-time">{{ formatTime(r.updateTime) }}</span>
+              </div>
+              <div class="review-content">{{ r.content }}</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
     </div>
 
     <!-- 错误 -->
@@ -102,11 +126,14 @@ import axios from '../utils/axios'
 import placeholder from '../assets/img.png'
 import { useAuthStore } from '@/stores/authStore'
 import { storeToRefs } from 'pinia'
+import ImagePreview from '@/components/ImagePreview.vue'
+import Stars from '@/components/Stars.vue'
 
 const authStore = useAuthStore()
 const {userInfo, isLoggedIn, role} = storeToRefs(authStore)
 
 const imgUrl = ref(placeholder)
+const showPreview = ref(false)
 const route = useRoute()
 const router = useRouter()
 
@@ -117,6 +144,9 @@ const currentSpec = ref({})      // 当前选中的规格
 const quantity = ref(1)
 const loading = ref(true)
 const isAddingToCart = ref(false)
+
+//时间格式化
+const formatTime = (t) => (t ? new Date(t).toLocaleString() : '')
 
 // 加载某个规格的图片
 const loadImage = async (productId) => {
@@ -297,24 +327,35 @@ const buyNow = async (product) => {
 
 }
 
+//加载评价
+const reviews = ref([])
+const reviewLoading = ref(true)
+
+const loadReviews = async () => {
+  reviewLoading.value = true
+  try {
+    const res = await axios.get(`/orders/product/${route.params.id}/reviews`, {
+      params: { page: 1, size: 20 }   
+    })
+    reviews.value = (res.data.records || []).filter(r => r && r.rating != null)
+  } finally {
+    reviewLoading.value = false
+  }
+}
 
 onMounted(() => {
   loadProductDetail()
+  loadReviews()
 })
 </script>
 
 <style scoped>
 .product-detail-page {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: 1400px;
+  margin: 40px auto;
   padding: 20px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  color: #333;
   background-color: #f5f5f7;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial;
 }
 
 .loading-state,
@@ -328,12 +369,13 @@ onMounted(() => {
 }
 
 .product-container {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1.2fr 1.8fr 1fr; /* 图：信息：评价 */
   gap: 30px;
   background: #fff;
-  border-radius: 16px;
   padding: 30px;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+  border-radius: 16px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.05);
 }
 
 .product-image {
@@ -344,10 +386,12 @@ onMounted(() => {
 }
 
 .product-image img {
-  max-width: 100%;
-  border-radius: 12px;
-  object-fit: contain;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  width: 100%;
+  max-height: 450px;
+  border-radius: 16px;
+  object-fit: cover;
+  cursor: zoom-in;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
 }
 
 .product-info {
@@ -358,26 +402,31 @@ onMounted(() => {
 }
 
 .product-info h1 {
-  font-size: 28px;
-  font-weight: 600;
-  color: #111;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 10px;
 }
 
 .price-section {
+  padding: 15px 20px;
+  background: #f0f9f2;
+  border-left: 6px solid #2d7d4f;
+  border-radius: 12px;
   display: flex;
-  align-items: baseline;
-  gap: 20px;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .price-section .price {
-  font-size: 24px;
-  font-weight: 700;
-  color: #2d7d4f; /* 深绿色突出价格 */
+  font-size: 28px;
+  font-weight: 800;
+  color: #2d7d4f;
 }
 
 .price-section .stock {
   font-size: 14px;
-  color: #666;
+  color: #555;
 }
 
 .description, .category-info, .farmer-info {
@@ -440,31 +489,28 @@ onMounted(() => {
 }
 
 .spec-button {
-  padding: 8px 16px;
-  border-radius: 12px;
-  border: 1px solid #ccc;
-  background-color: #f5f5f7;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  background: #fafafa;
+  transition: 0.2s;
 }
 
 .spec-button.active {
-  background-color: #2d7d4f;
-  color: #fff;
+  background: #2d7d4f;
+  color: white;
   border-color: #2d7d4f;
 }
 
 .spec-button:hover {
-  background-color: #e6f4ea;
+  background: #e6f4ea;
 }
 
 .action-buttons {
   display: flex;
-  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 15px;
   align-items: center;
-  gap: 12px;
-  margin-top: 20px;
 }
 
 .contact-btn {
@@ -495,7 +541,9 @@ onMounted(() => {
 }
 
 .el-button {
-  border-radius: 12px;
+  border-radius: 8px !important;
+  padding: 10px 22px !important;
+  font-size: 16px;
   font-weight: 600;
 }
 
@@ -519,5 +567,66 @@ onMounted(() => {
 .el-button.danger:hover {
   background-color: #c0392b;
   border-color: #c0392b;
+}
+</style>
+
+/*=======评价样式=======*/
+<style scoped>
+.review-column {
+  background: #fafafa;
+  padding: 20px;
+  border-radius: 16px;
+  height: fit-content;
+  max-height: 600px;
+  overflow-y: auto;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+}
+
+.review-card {
+  background: #fff;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.review-list {
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.review-time {
+  font-size: 12px;
+  color: #999;
+}
+.review-content {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.6;
+}
+.no-review {
+  text-align: center;
+  color: #999;
+  padding: 40px 0;
+}
+.user-nick {
+  font-size: 13px;
+  color: #666;
+  margin-right: 8px;
+}
+
+@media (max-width: 1024px) {
+  .product-container {
+    grid-template-columns: 1fr;
+  }
+  .review-column {
+    max-height: none;
+  }
 }
 </style>

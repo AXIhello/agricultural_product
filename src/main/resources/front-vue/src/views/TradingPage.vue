@@ -17,59 +17,57 @@
       <div class="view-content-wrapper">
         <!-- 所有产品 -->
         <div v-if="currentView === 'products'" class="product-page">
-          <!-- 左侧分类栏 -->
-          <aside class="category-sidebar">
-            <ul style="padding-left: 0;list-style: none;">
-              <li
-                  v-for="(subCats, cat) in categoryMap"
-                  :key="cat"
-                  class="category-group"
+          
+          <div class="recommend-strip-wrapper">
+            <ProductRecommend  class="side-recommend"/>
+          </div>
+        
+          <div class="product-page">
+            <!-- 左侧分类栏 -->
+            <aside class="category-sidebar">
+              <ul style="padding-left: 0;list-style: none;">
+                <li
+                    v-for="(subCats, cat) in categoryMap"
+                    :key="cat"
+                    class="category-group"
+                >
+                  <h4 class="cat-title">{{ cat }}</h4>
+                  <ul class="subcat-list">
+                    <li
+                        v-for="sub in subCats"
+                        :key="sub"
+                        :class="['subcat-item', { active: selectedSubcat === sub }]"
+                        @click="selectCategory(sub)"
+                    >
+                      {{ sub }}
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+            </aside>
+
+            <!-- 产品展示区 -->
+            <div class="product-list">
+              <div
+                  v-for="product in products"
+                  :key="product.productId"
+                  class="product-card"
+                  @click="goToProductDetail(product)"
               >
-                <h4 class="cat-title">{{ cat }}</h4>
-                <ul class="subcat-list">
-                  <li
-                      v-for="sub in subCats"
-                      :key="sub"
-                      :class="['subcat-item', { active: selectedSubcat === sub }]"
-                      @click="selectCategory(sub)"
-                  >
-                    {{ sub }}
-                  </li>
-                </ul>
-              </li>
-            </ul>
-          </aside>
+                <div class="product-image">
+                  <img :src="product.imageUrl" :alt="product.productName" @error="handleImageError" />
+                </div>
 
-          <!-- 产品展示区 -->
-          <div class="product-list">
-            <div
-                v-for="product in products"
-                :key="product.productId"
-                class="product-card"
-                @click="goToProductDetail(product)"
-            >
-              <div class="product-image">
-                <img :src="product.imageUrl" :alt="product.productName" @error="handleImageError" />
+                <div class="product-info">
+                  <h3 class="product-name">{{ product.productName }}</h3>
+                  <p class="product-price">¥{{ product.price }} / {{ product.unitInfo }}</p>
+                  <p class="product-stock">库存: {{ product.stock }} {{ product.unitInfo }}</p>
+                </div>
+
               </div>
-
-              <div class="product-info">
-                <h3 class="product-name">{{ product.productName }}</h3>
-                <p class="product-price">¥{{ product.price }} / {{ product.unitInfo }}</p>
-                <p class="product-stock">库存: {{ product.stock }} {{ product.unitInfo }}</p>
-              </div>
-
-<!--              <div class="action-buttons">-->
-<!--                <button class="view-btn" @click="goToProductDetail(product)">查看详情</button>-->
-<!--                <button-->
-<!--                    v-if="role !== 'farmer'"-->
-<!--                    class="add-to-cart-btn"-->
-<!--                    @click="addToCart(product)"-->
-<!--                >-->
-<!--                  加入购物车-->
-<!--                </button>-->
-<!--              </div>-->
             </div>
           </div>
+
         </div>
 
         <!-- 价格预测 -->
@@ -488,6 +486,7 @@ import axios from '../utils/axios'
 import router from "@/router/index.js";
 import HeaderComponent from '../components/HeaderComponent.vue';
 import MyOrders from '@/components/MyOrders.vue'
+import ProductRecommend from '@/components/ProductRecommend.vue'
 import placeholder from "@/assets/img.png";
 import {useAuthStore} from '@/stores/authStore'
 import {storeToRefs} from 'pinia'
@@ -2468,4 +2467,26 @@ color: #fff;
   width: 78%;
 }
 
+</style>
+
+/*========智能推荐========*/
+<style scoped>
+.products-wrapper {
+  display: block;          /* 默认块级，纵向排列 */
+}
+.product-page {
+  display: flex;           /* 仅分类+产品区域 flex */
+  gap: 16px;
+  margin-top: 12px;        /* 与推荐条留点间距 */
+}
+.recommend-strip-wrapper {
+  width: 100%;             /* 横向撑满 */
+}
+.side-recommend {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
 </style>
