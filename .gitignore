@@ -44,3 +44,10 @@ src/main/resources/application-*.properties
 /src/main/resources/application.properties
 
 src/main/python/LSTM50/data50/lstm_data_collection.pkl
+interview.md
+resume.md
+COUPON_SYSTEM_API.md
+coupon_system_design.sql
+COUPON_USAGE_GUIDE.md
+.gitignore
+uploads/products/5815c05585ee4962917900e7ab474c4e.jpg

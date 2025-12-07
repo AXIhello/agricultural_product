@@ -10,6 +10,7 @@ import com.example.agricultural_product.mapper.ProductMapper;
 import com.example.agricultural_product.pojo.Order;
 import com.example.agricultural_product.pojo.OrderItem;
 import com.example.agricultural_product.pojo.Product;
+import com.example.agricultural_product.service.CouponService;
 import com.example.agricultural_product.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -32,18 +33,21 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
+    @Autowired
+    private CouponService couponService;
+
     private String buildStockKey(Integer productId) {
         return "seckill:stock:" + productId;
     }
 
     @Override
     @Transactional
-    public Integer createOrder(Long userId, Integer addressId, List<OrderItem> orderItems) {
+    public Integer createOrder(Long userId, Integer addressId, List<OrderItem> orderItems, Long userCouponId) {
         if (userId == null || addressId == null || orderItems == null || orderItems.isEmpty()) {
             return null;
         }
         // 计算总金额并验证商品（使用 Redis 预减库存防超卖）
-        BigDecimal totalAmount = BigDecimal.ZERO;
+        BigDecimal originalAmount = BigDecimal.ZERO;
         for (OrderItem item : orderItems) {
             Integer productId = item.getProductId();
             String stockKey = buildStockKey(productId);
@@ -69,18 +73,49 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
                 throw new RuntimeException("商品不存在或已下架");
             }
             BigDecimal itemTotal = product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
-            totalAmount = totalAmount.add(itemTotal);
+            originalAmount = originalAmount.add(itemTotal);
             item.setUnitPrice(product.getPrice());
         }
+        
+        // 处理优惠券
+        BigDecimal couponDiscount = BigDecimal.ZERO;
+        if (userCouponId != null) {
+            try {
+                // 锁定优惠券
+                couponService.lockCoupon(userCouponId);
+            } catch (Exception e) {
+                throw new RuntimeException("优惠券锁定失败：" + e.getMessage());
+            }
+        }
+        
+        // 创建订单
         Order order = new Order();
         order.setUserId(userId);
         order.setOrderDate(LocalDateTime.now());
-        order.setTotalAmount(totalAmount);
+        order.setOriginalAmount(originalAmount);
+        order.setUserCouponId(userCouponId);
+        order.setCouponDiscount(couponDiscount);
+        order.setTotalAmount(originalAmount.subtract(couponDiscount));
         order.setStatus("pending");
         order.setShippingAddressId(addressId);
         order.setCreateTime(LocalDateTime.now());
         order.setUpdateTime(LocalDateTime.now());
+        
         if (this.save(order)) {
+            // 如果使用了优惠券，使用优惠券并更新订单优惠金额
+            if (userCouponId != null) {
+                try {
+                    couponDiscount = couponService.useCoupon(userId, userCouponId, order.getOrderId(), originalAmount);
+                    order.setCouponDiscount(couponDiscount);
+                    order.setTotalAmount(originalAmount.subtract(couponDiscount));
+                    this.updateById(order);
+                } catch (Exception e) {
+                    // 使用失败，解锁优惠券
+                    couponService.unlockCoupon(userCouponId);
+                    throw new RuntimeException("优惠券使用失败：" + e.getMessage());
+                }
+            }
+            
             for (OrderItem item : orderItems) {
                 item.setOrderId(order.getOrderId());
                 item.setCreateTime(LocalDateTime.now());
@@ -164,6 +199,17 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         if (!"pending".equals(order.getStatus()) && !"paid".equals(order.getStatus())) {
             return false;
         }
+        
+        // 如果使用了优惠券，解锁优惠券
+        if (order.getUserCouponId() != null) {
+            try {
+                couponService.unlockCoupon(order.getUserCouponId());
+            } catch (Exception e) {
+                // 记录日志但不影响取消订单
+                System.err.println("解锁优惠券失败：" + e.getMessage());
+            }
+        }
+        
         // 仅在已支付时回补库存（因为扣减发生在支付阶段）
         if ("paid".equals(order.getStatus())) {
             List<OrderItem> orderItems = getOrderItemsByOrderId(orderId);

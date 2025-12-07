@@ -38,7 +38,12 @@
       <!-- 总价与支付 -->
       <div class="order-summary">
         <div class="order-info">
-          <div class="price">总价：¥{{ totalPrice }}</div>
+          <div class="price-detail" v-if="order.couponDiscount > 0">
+            <div>商品原价：¥{{ originalPrice }}</div>
+            <div class="discount-text">优惠券优惠：-¥{{ order.couponDiscount?.toFixed(2) }}</div>
+            <div class="final-price">实付金额：¥{{ order.totalAmount?.toFixed(2) }}</div>
+          </div>
+          <div class="price" v-else>总价：¥{{ order.totalAmount?.toFixed(2) }}</div>
 
           <div class="status" v-if="order?.status === 'completed'">
             已支付
@@ -169,10 +174,13 @@ const fullAddress = computed(() => {
   return `${province}${city}${district}${streetAddress}`
 })
 
-// 计算总价
-const totalPrice = computed(() =>
+// 计算商品原价（用于显示优惠前的价格）
+const originalPrice = computed(() =>
     orderItems.value.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2)
 )
+
+// 使用后端返回的实付金额（已扣除优惠券）
+const totalPrice = computed(() => order.value?.totalAmount?.toFixed(2) || '0.00')
 
 // 时间格式化
 const formatTime = (t) => (t ? new Date(t).toLocaleString() : '')
@@ -305,6 +313,32 @@ function goToTrading() {
 .price {
   font-size: 20px;
   font-weight: bold;
+}
+
+.price-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 16px;
+}
+
+.price-detail > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.discount-text {
+  color: #ff5722;
+  font-weight: bold;
+}
+
+.final-price {
+  font-size: 20px;
+  font-weight: bold;
+  color: #4caf50;
+  padding-top: 8px;
+  border-top: 1px dashed #ddd;
 }
 
 .status {

@@ -24,11 +24,20 @@ public class Order {
 	@TableField("total_amount")
 	private BigDecimal totalAmount;
 
+	@TableField("original_amount")
+	private BigDecimal originalAmount;
+
 	@TableField("status")
 	private String status;
 
 	@TableField("shipping_address_id")
 	private Integer shippingAddressId;
+
+	@TableField("user_coupon_id")
+	private Long userCouponId;
+
+	@TableField("coupon_discount")
+	private BigDecimal couponDiscount;
 
 	@TableField("create_time")
 	private LocalDateTime createTime;

@@ -251,12 +251,16 @@ CREATE TABLE IF NOT EXISTS `tb_order` (
   `user_id` bigint NOT NULL COMMENT '下单用户ID',
   `order_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '订单日期',
   `total_amount` decimal(10, 2) NOT NULL COMMENT '总金额',
+  `original_amount` DECIMAL(10,2) NULL COMMENT '订单原价（使用优惠券前）',
   `status` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '订单状态',
   `shipping_address_id` int NULL COMMENT '收货地址ID，关联tb_addresses',
+  `user_coupon_id` BIGINT NULL COMMENT '使用的优惠券ID',
+  `coupon_discount` DECIMAL(10,2) DEFAULT 0.00 COMMENT '优惠券优惠金额',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`order_id`) USING BTREE,
   INDEX `idx_user_id` (`user_id`),
+  INDEX `idx_user_coupon` (`user_coupon_id`),
   CONSTRAINT `fk_order_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_order_address` FOREIGN KEY (`shipping_address_id`) REFERENCES `tb_addresses` (`address_id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE = InnoDB AUTO_INCREMENT = 100004 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '订单表';
@@ -443,5 +447,159 @@ CREATE TABLE IF NOT EXISTS `tb_auto_reply_rules` (
   KEY `idx_seller` (`seller_id`),
   CONSTRAINT `fk_auto_reply_seller` FOREIGN KEY (`seller_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='聊天自动回复规则（卖家端）';
+
+-- ----------------------------
+-- 优惠券系统表结构
+-- ----------------------------
+
+-- 优惠券模板表（定义优惠券规则）
+CREATE TABLE IF NOT EXISTS `tb_coupon_template` (
+  `template_id` INT NOT NULL AUTO_INCREMENT COMMENT '优惠券模板ID',
+  `template_name` VARCHAR(100) NOT NULL COMMENT '优惠券名称',
+  `coupon_type` ENUM('full_reduction','discount','fixed_amount','free_shipping') NOT NULL COMMENT '优惠券类型：满减/折扣/固定金额/免运费',
+  `discount_value` DECIMAL(10,2) NOT NULL COMMENT '优惠值（满减金额/折扣率/固定金额等）',
+  `min_order_amount` DECIMAL(10,2) DEFAULT 0.00 COMMENT '最低使用金额（满XX元可用）',
+  `max_discount_amount` DECIMAL(10,2) DEFAULT NULL COMMENT '最大优惠金额（折扣券用）',
+  
+  -- 适用范围
+  `applicable_scope` ENUM('all','category','product','farmer') NOT NULL DEFAULT 'all' COMMENT '适用范围：全场/指定类别/指定商品/指定农户',
+  `applicable_values` TEXT NULL COMMENT '适用范围的值（JSON格式存储ID列表）',
+  
+  -- 发放设置
+  `total_quantity` INT NOT NULL COMMENT '发行总量（-1表示无限制）',
+  `issued_quantity` INT NOT NULL DEFAULT 0 COMMENT '已发放数量',
+  `per_user_limit` INT NOT NULL DEFAULT 1 COMMENT '每人限领数量',
+  
+  -- 有效期设置
+  `validity_type` ENUM('fixed','relative') NOT NULL DEFAULT 'fixed' COMMENT '有效期类型：固定日期/相对天数',
+  `validity_start` DATETIME NULL COMMENT '固定有效期开始时间',
+  `validity_end` DATETIME NULL COMMENT '固定有效期结束时间',
+  `validity_days` INT NULL COMMENT '相对有效天数（领取后N天内有效）',
+  
+  -- 状态与描述
+  `status` ENUM('draft','active','inactive','expired') NOT NULL DEFAULT 'draft' COMMENT '状态：草稿/启用/停用/过期',
+  `description` TEXT NULL COMMENT '优惠券使用说明',
+  `issuer_id` BIGINT NULL COMMENT '发放者ID（管理员或农户）',
+  `issuer_type` ENUM('admin','farmer') NOT NULL DEFAULT 'admin' COMMENT '发放者类型',
+  
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  
+  PRIMARY KEY (`template_id`) USING BTREE,
+  INDEX `idx_status` (`status`) USING BTREE,
+  INDEX `idx_issuer` (`issuer_id`, `issuer_type`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='优惠券模板表';
+
+-- 用户优惠券表（用户领取的优惠券）
+CREATE TABLE IF NOT EXISTS `tb_user_coupon` (
+  `user_coupon_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '用户优惠券ID',
+  `user_id` BIGINT NOT NULL COMMENT '用户ID',
+  `template_id` INT NOT NULL COMMENT '优惠券模板ID',
+  
+  -- 优惠券信息（冗余便于查询）
+  `coupon_code` VARCHAR(32) NOT NULL COMMENT '优惠券券码（唯一）',
+  `coupon_name` VARCHAR(100) NOT NULL COMMENT '优惠券名称',
+  `coupon_type` ENUM('full_reduction','discount','fixed_amount','free_shipping') NOT NULL COMMENT '优惠券类型',
+  `discount_value` DECIMAL(10,2) NOT NULL COMMENT '优惠值',
+  `min_order_amount` DECIMAL(10,2) DEFAULT 0.00 COMMENT '最低使用金额',
+  
+  -- 使用状态
+  `status` ENUM('unused','used','expired','locked') NOT NULL DEFAULT 'unused' COMMENT '状态：未使用/已使用/已过期/已锁定',
+  `receive_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '领取时间',
+  `valid_start` DATETIME NOT NULL COMMENT '有效期开始',
+  `valid_end` DATETIME NOT NULL COMMENT '有效期结束',
+  
+  -- 使用记录
+  `used_time` DATETIME NULL COMMENT '使用时间',
+  `order_id` INT NULL COMMENT '使用的订单ID',
+  `discount_amount` DECIMAL(10,2) NULL COMMENT '实际优惠金额',
+  
+  -- 获取方式
+  `acquire_type` ENUM('manual','auto','activity','share') NOT NULL DEFAULT 'manual' COMMENT '获取方式：手动领取/自动发放/活动赠送/分享获得',
+  
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  
+  PRIMARY KEY (`user_coupon_id`) USING BTREE,
+  UNIQUE KEY `uk_coupon_code` (`coupon_code`) USING BTREE,
+  INDEX `idx_user_status` (`user_id`, `status`) USING BTREE,
+  INDEX `idx_template` (`template_id`) USING BTREE,
+  INDEX `idx_valid_end` (`valid_end`) USING BTREE,
+  INDEX `idx_order` (`order_id`) USING BTREE,
+  
+  CONSTRAINT `fk_user_coupon_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_user_coupon_template` FOREIGN KEY (`template_id`) REFERENCES `tb_coupon_template` (`template_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_user_coupon_order` FOREIGN KEY (`order_id`) REFERENCES `tb_order` (`order_id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户优惠券表';
+
+-- 优惠券发放记录表
+CREATE TABLE IF NOT EXISTS `tb_coupon_issue_log` (
+  `log_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '日志ID',
+  `template_id` INT NOT NULL COMMENT '优惠券模板ID',
+  `user_id` BIGINT NOT NULL COMMENT '用户ID',
+  `user_coupon_id` BIGINT NULL COMMENT '生成的用户优惠券ID',
+  `issue_type` ENUM('manual','batch','auto','activity') NOT NULL COMMENT '发放类型：手动/批量/自动/活动',
+  `issue_status` ENUM('success','failed') NOT NULL COMMENT '发放状态',
+  `fail_reason` TEXT NULL COMMENT '失败原因',
+  `operator_id` BIGINT NULL COMMENT '操作人ID（管理员）',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  
+  PRIMARY KEY (`log_id`) USING BTREE,
+  INDEX `idx_template` (`template_id`) USING BTREE,
+  INDEX `idx_user` (`user_id`) USING BTREE,
+  INDEX `idx_create_time` (`create_time`) USING BTREE,
+  
+  CONSTRAINT `fk_issue_log_template` FOREIGN KEY (`template_id`) REFERENCES `tb_coupon_template` (`template_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_issue_log_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='优惠券发放记录表';
+
+-- 优惠券活动表（营销活动配置）
+CREATE TABLE IF NOT EXISTS `tb_coupon_activity` (
+  `activity_id` INT NOT NULL AUTO_INCREMENT COMMENT '活动ID',
+  `activity_name` VARCHAR(100) NOT NULL COMMENT '活动名称',
+  `activity_type` ENUM('new_user','order_complete','purchase_amount','share','sign_in','birthday') NOT NULL COMMENT '活动类型：新用户/订单完成/消费满额/分享/签到/生日',
+  
+  -- 活动触发条件
+  `trigger_condition` TEXT NULL COMMENT '触发条件（JSON格式）',
+  
+  -- 关联的优惠券模板
+  `template_ids` TEXT NOT NULL COMMENT '优惠券模板ID列表（JSON格式）',
+  
+  -- 活动时间
+  `start_time` DATETIME NOT NULL COMMENT '活动开始时间',
+  `end_time` DATETIME NOT NULL COMMENT '活动结束时间',
+  
+  -- 活动状态
+  `status` ENUM('pending','active','ended','cancelled') NOT NULL DEFAULT 'pending' COMMENT '状态：待开始/进行中/已结束/已取消',
+  `priority` INT NOT NULL DEFAULT 100 COMMENT '优先级（数字越小优先级越高）',
+  
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  
+  PRIMARY KEY (`activity_id`) USING BTREE,
+  INDEX `idx_status_time` (`status`, `start_time`, `end_time`) USING BTREE,
+  INDEX `idx_activity_type` (`activity_type`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='优惠券活动表';
+
+-- 优惠券使用记录表
+CREATE TABLE IF NOT EXISTS `tb_coupon_usage_log` (
+  `usage_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '使用记录ID',
+  `user_coupon_id` BIGINT NOT NULL COMMENT '用户优惠券ID',
+  `user_id` BIGINT NOT NULL COMMENT '用户ID',
+  `order_id` INT NOT NULL COMMENT '订单ID',
+  `original_amount` DECIMAL(10,2) NOT NULL COMMENT '订单原价',
+  `discount_amount` DECIMAL(10,2) NOT NULL COMMENT '优惠金额',
+  `final_amount` DECIMAL(10,2) NOT NULL COMMENT '最终金额',
+  `use_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '使用时间',
+  
+  PRIMARY KEY (`usage_id`) USING BTREE,
+  INDEX `idx_user_coupon` (`user_coupon_id`) USING BTREE,
+  INDEX `idx_user` (`user_id`) USING BTREE,
+  INDEX `idx_order` (`order_id`) USING BTREE,
+  
+  CONSTRAINT `fk_usage_user_coupon` FOREIGN KEY (`user_coupon_id`) REFERENCES `tb_user_coupon` (`user_coupon_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_usage_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_usage_order` FOREIGN KEY (`order_id`) REFERENCES `tb_order` (`order_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='优惠券使用记录表';
 
 SET FOREIGN_KEY_CHECKS = 1; -- 重新启用外键检查

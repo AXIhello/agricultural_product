@@ -15,9 +15,10 @@ public interface OrderService extends IService<Order> {
      * @param userId 用户ID
      * @param addressId 收货地址ID
      * @param orderItems 订单项列表
+     * @param userCouponId 使用的优惠券ID（可为空）
      * @return 订单ID，失败返回null
      */
-    Integer createOrder(Long userId, Integer addressId, List<OrderItem> orderItems);
+    Integer createOrder(Long userId, Integer addressId, List<OrderItem> orderItems, Long userCouponId);
     
     // /**
     //  * 根据用户ID分页查询订单

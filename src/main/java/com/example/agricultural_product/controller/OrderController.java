@@ -45,10 +45,14 @@ public class OrderController {
      * 创建订单
      */
     @PostMapping
-    public ResponseEntity<Integer> createOrder(HttpServletRequest request,
+    public ResponseEntity<?> createOrder(HttpServletRequest request,
                                                @RequestBody CreateOrderRequest req) {
         try {
             Long userId = getUserIdFromToken(request);
+            System.out.println("创建订单 - 用户ID: " + userId);
+            System.out.println("创建订单 - 地址ID: " + req.getAddressId());
+            System.out.println("创建订单 - 优惠券ID: " + req.getUserCouponId());
+            System.out.println("创建订单 - 商品列表: " + req.getOrderItems());
 
             // 转换请求数据
             List<OrderItem> orderItems = req.getOrderItems().stream()
@@ -59,14 +63,18 @@ public class OrderController {
                         return orderItem;
                     }).toList();
 
-            Integer orderId = orderService.createOrder(userId, req.getAddressId(), orderItems);
+            Integer orderId = orderService.createOrder(userId, req.getAddressId(), orderItems, req.getUserCouponId());
             if (orderId != null) {
+                System.out.println("订单创建成功，订单ID: " + orderId);
                 return ResponseEntity.ok(orderId);
             } else {
-                return ResponseEntity.badRequest().build();
+                System.err.println("订单创建失败：返回null");
+                return ResponseEntity.badRequest().body("订单创建失败");
             }
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+            System.err.println("订单创建异常：" + e.getClass().getName() + " - " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("订单创建失败：" + e.getMessage());
         }
     }
 

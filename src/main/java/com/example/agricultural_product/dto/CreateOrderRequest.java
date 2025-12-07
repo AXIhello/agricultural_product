@@ -8,6 +8,7 @@ import java.util.List;
 public class CreateOrderRequest {
     private Integer addressId;
     private List<OrderItemRequest> orderItems;
+    private Long userCouponId; // 使用的优惠券ID（可选）
     
     @Data
     public static class OrderItemRequest {
