@@ -408,17 +408,31 @@
         <!-- 求购需求列表 -->
         <div v-if="currentView === 'demands'">
           <div class="request-list">
-            <div v-for="request in demands" :key="request.demandId" class="request-card">
-              <p><strong>用户 {{ request.buyerId }}：</strong> 想要 {{ request.productNameDesired }}</p>
-              <p>需求量：{{ request.quantityDesired }} {{ request.unitDesired }}</p>
-              <p>需求描述：{{ request.details }}</p>
+            <div
+              v-for="request in demands"
+              :key="request.demandId"
+              class="request-card"
+            >
+              <div class="request-header">
+                <div class="request-user">用户 {{ request.buyerId }}</div>
+                <div class="request-product">{{ request.productNameDesired }}</div>
+              </div>
+
+              <div class="request-quantity">
+                需求量：{{ request.quantityDesired }} {{ request.unitDesired }}
+              </div>
+
+              <div class="request-details">
+                说明：{{ request.details }}
+              </div>
             </div>
+
             <p v-if="!demands.length" class="empty-state">暂无求购需求</p>
-            <!-- 买家可以发布求购需求 -->
+
             <button
-                v-if="role !== 'farmer'"
-                class="create-btn"
-                @click="showCreateDemand = true"
+              v-if="role !== 'farmer'"
+              class="create-btn"
+              @click="showCreateDemand = true"
             >
               + 发布求购需求
             </button>
@@ -466,6 +480,7 @@
               </form>
             </div>
           </div>
+
         </div>
 
         <!-- 我的订单（农户 + 买家） -->
@@ -473,6 +488,8 @@
           <!-- 直接使用组件，无需传参，组件内部会自己从 Store 获取用户ID -->
           <MyOrders />
         </div>
+
+
       </div>
     </section>
   </div>
@@ -1556,60 +1573,86 @@ async function createOrder() {
 .form-group input,.form-group select{ flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
 .form-group textarea { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
 
-
 .request-list {
   display: flex;
   flex-direction: column;
-  gap: 8px; /* 卡片间距稍微小一点 */
-  align-items: center;
+  gap: 14px; /* 更舒适的卡片间距 */
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 .request-card {
+  width: 100%;
+  padding: 16px 20px;
+  border-radius: 14px;
+  background: #ffffff;
+  border: 1px solid #eef0f3;
+
   display: flex;
   flex-direction: column;
-  justify-content: center; /* 上下居中 */
-  align-items: flex-start; /* 左对齐 */
-  border: 1px solid #e9e9e9;
-  border-radius: 8px;
-  padding: 12px 16px; /* 内边距缩小 */
-  height: 80px; /* 总高度小一点 */
-  background-color: #fafafa;
-  transition: box-shadow 0.3s;
-  line-height: 0.8; /* 行间距小一点 */
+  gap: 6px;
+
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .request-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
 }
 
-.request-title {
+/* 第一行：用户 + 商品标题 */
+.request-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* 用户头像样式（如果你未来要加头像也兼容） */
+.request-user {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #333;
+}
+
+/* 商品名突出显示 */
+.request-product {
   font-weight: bold;
-  margin-bottom: 0;
+  color: #2a7bf6;
+  font-size: 1.05rem;
 }
 
+/* 第二行：需求量 */
 .request-quantity {
-  font-size: 0.9rem;
-  margin-bottom: 0;
+  font-size: 0.95rem;
+  color: #333;
+  margin-top: 4px;
 }
 
+/* 需求描述 */
 .request-details {
-  font-size: 0.8rem;
-  color: #555;
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.4;
 }
 
-
-.add-demand-btn {
-  max-width:  250px;
-  margin-top: 16px;
-  border-radius: 12px;
-  background-color: #52c41a;
+/* 发布按钮 */
+.create-btn {
+  margin: 20px auto 0;
+  padding: 10px 24px;
+  border-radius: 20px;
+  background: #2a7bf6;
   color: #fff;
+  font-size: 1rem;
+  border: none;
   cursor: pointer;
+  transition: 0.2s;
 }
 
-.add-demand-btn:hover {
-  background-color: #52c41a;
+.create-btn:hover {
+  background: #1f63c5;
 }
+
 
 .cart-view {
   padding: 20px;
