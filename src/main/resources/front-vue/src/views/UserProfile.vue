@@ -5,11 +5,14 @@
     <div class="top-info-bar">
       <div class="info">
         <p><label>用户名：</label>{{ userInfo.userName }}</p>
+        <p><label>昵称：</label>{{ userInfo.name }}</p>
         <p><label>邮箱：</label>{{ userInfo.email }}</p>
         <p><label>身份：</label>{{ role }}</p>
+        <p><label>地区：</label>{{ userInfo.region }}</p>
       </div>
-      <div>
-        <button @click="exit()">退出登录</button>
+      <div class="user-actions">
+        <button class="edit-btn" @click="openEditProfile">编辑资料</button>
+        <button class="exit-btn" @click="exit()">退出登录</button>
       </div>
     </div>
     <section
@@ -20,11 +23,11 @@
       >
       <!-- 统一顶部导航 -->
       <nav v-if="role === 'farmer' || role === 'buyer' || role === 'expert' "
-           :style="{ top: '180px'}"
+           :style="{ top: '65px'}"
            class="main-nav">
           <button v-if="role === 'farmer' || role === 'buyer'" @click="switchView('address')" :class="{ active: currentView === 'address' }">我的地址</button>
           <button v-if="role === 'farmer'" @click="switchView('appointments')" :class="{ active: currentView === 'appointments' }">我的预约</button>
-        <button v-if="role === 'farmer' || role === 'buyer'" @click="switchView('message')" :class="{ active: currentView === 'message' }">我的消息</button>
+          <button v-if="role === 'farmer' || role === 'buyer'" @click="switchView('message')" :class="{ active: currentView === 'message' }">我的消息</button>
           <button v-if="role === 'expert'" @click="switchView('profile')" :class="{ active: currentView === 'profile' }">个人档案</button>
           <button v-if="role === 'expert'" @click="switchView('knowledgeManage')" :class="{ active: currentView === 'knowledgeManage' }">知识管理</button>
           <button v-if="role === 'expert'" @click="switchView('availability')" :class="{ active: currentView === 'availability' }">可预约时间</button>
@@ -139,6 +142,42 @@
           </div>
 
 
+        </div>
+
+        <!--编辑个人资料-->
+        <div v-if="showEditProfileModal" class="modal-overlay">
+          <div class="modal-container">
+            <!-- 右上角关闭按钮 -->
+            <button class="close-btn" @click="closeEditProfile">×</button>
+
+            <h2 class="modal-title">编辑个人资料</h2>
+
+            <div class="modal-body">
+              <!-- 昵称 -->
+              <div class="modal-form-group row-layout">
+                <label>昵称：</label>
+                <input v-model="editProfileForm.name" type="text" placeholder="请输入新昵称" />
+              </div>
+
+              <!-- 地区 - 省份 -->
+              <div class="modal-form-group row-layout">
+                <label>省份：</label>
+                <input v-model="editProfileForm.province" type="text" placeholder="例如：广东省" />
+              </div>
+
+              <!-- 地区 - 城市 -->
+              <div class="modal-form-group row-layout">
+                <label>城市：</label>
+                <input v-model="editProfileForm.city" type="text" placeholder="例如：广州市" />
+              </div>
+            </div>
+
+            <!-- 底部按钮 -->
+            <div class="modal-footer">
+              <button class="cancel-btn" @click="closeEditProfile">取消</button>
+              <button class="save-btn" @click="saveUserProfile">保存修改</button>
+            </div>
+          </div>
         </div>
 
         <!-- ======================== 农户：我的预约 ======================== -->
@@ -496,6 +535,67 @@ async function setDefault(id) {
   }
 }
 
+// === 编辑个人资料相关状态 ===
+const showEditProfileModal = ref(false)
+const editProfileForm = ref({
+  name: '',
+  province: '',
+  city: ''
+})
+
+// 打开编辑资料弹窗
+function openEditProfile() {
+  // 回显当前数据
+  editProfileForm.value.name = userInfo.value.name || '';
+  
+  // 尝试解析当前的 region 字段 (假设格式为 "省份 城市" 或 "省份城市")
+  // 如果后端存的是简单字符串，这里做简单分割，或者让用户重新填
+  const region = userInfo.value.region || '';
+  // 这里做个简单的处理，实际可能需要更复杂的解析或让用户自己填
+  editProfileForm.value.province = ''; 
+  editProfileForm.value.city = ''; 
+  
+  showEditProfileModal.value = true;
+}
+
+// 关闭编辑资料弹窗
+function closeEditProfile() {
+  showEditProfileModal.value = false;
+}
+
+// 保存个人资料
+async function saveUserProfile() {
+  if (!editProfileForm.value.name) {
+    alert("昵称不能为空");
+    return;
+  }
+
+  // 拼接地区字段
+  const regionStr = `${editProfileForm.value.province || ''}${editProfileForm.value.city || ''}`;
+
+  try {
+    // 假设后端有一个更新用户信息的接口 /user/update
+    // 你需要确认后端是否有这个接口，如果没有，需要后端加一个
+    await axios.post('/user/update/profile', {
+      userId: userInfo.value.userId, // 传 ID 确保后端知道改谁
+      name: editProfileForm.value.name,
+      region: regionStr
+    });
+
+    alert("资料修改成功！");
+    
+    // 更新本地 Store 中的用户信息，以便页面即时刷新
+    // authStore.setUserInfo 是假设你 Store 里有这个 update 方法，或者直接改 userInfo
+    userInfo.value.name = editProfileForm.value.name;
+    userInfo.value.region = regionStr;
+    
+    closeEditProfile();
+  } catch (err) {
+    console.error("修改资料失败", err);
+    alert("修改失败，请稍后重试");
+  }
+}
+
 // 专家视图标签页切换
 async function switchExpertView(view) {
   currentExpertView.value = view;
@@ -511,6 +611,7 @@ async function fetchExpertProfile() {
   try {
     const res = await axios.get('/expert/profile');
     const profile = res.data.data;
+    console.log('后端原始返回：', res.data);
 
     if (!profile) {
       expertProfile.value = null;
@@ -883,6 +984,10 @@ function exit(){
   authStore.logout();
 }
 
+function editProfile(){
+
+}
+
 
 const sessions = ref([]);
 const isLoading = ref(true);
@@ -966,6 +1071,8 @@ function formatTime(dateTimeStr) {
   border-radius: 10px;          /* 圆角 */
   box-shadow: 0 2px 6px rgba(0,0,0,0.08); /* 微阴影增加高级感 */
   border-bottom: 1px solid #e0e0e0; /* 下方分割线 */
+  margin-left: 220px; 
+  width: calc(100% - 240px);
 }
 
 .top-info-bar .info p {
@@ -1447,5 +1554,54 @@ function formatTime(dateTimeStr) {
   padding: 3rem 0;
   color: #888;
 }
+
+/* 修改 .top-info-bar 相关的样式 */
+
+.top-info-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  margin-bottom: 20px;
+}
+
+/* 右侧操作区 */
+.user-actions {
+  display: flex;
+  gap: 12px; /* 按钮之间的间距 */
+}
+
+/* 编辑按钮样式 */
+.edit-btn {
+  background-color: #3498db; /* 蓝色 */
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.edit-btn:hover {
+  background-color: #2980b9;
+}
+
+/* 退出按钮样式 */
+.exit-btn {
+  background-color: #e74c3c; /* 红色 */
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.exit-btn:hover {
+  background-color: #c0392b;
+}
+
+/* 弹窗通用样式复用之前的即可，确保 .modal-overlay, .modal-container 等类名存在 */
 
 </style>

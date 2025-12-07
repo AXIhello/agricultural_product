@@ -110,4 +110,14 @@ public class OrderItemReviewServiceImpl implements OrderItemReviewService {
         orderItemReviewMapper.selectPage(page, wrapper);
         return page;
     }
+
+    @Override
+    public OrderItemReview getByItemId(Integer itemId) {
+        // 使用 MyBatis-Plus 的 LambdaQueryWrapper 根据 item_id 精确查询
+        LambdaQueryWrapper<OrderItemReview> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(OrderItemReview::getItemId, itemId);
+        
+        // selectOne 返回单条记录
+        return orderItemReviewMapper.selectOne(wrapper);
+    }
 }

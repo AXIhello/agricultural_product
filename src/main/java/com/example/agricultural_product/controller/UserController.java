@@ -263,6 +263,34 @@ public class UserController {
         return ResponseEntity.ok(result);
     }
 
+    /**
+     * 用户自行更新基础资料（昵称、地区等）
+     */
+    @PostMapping("/update/profile")
+    public ResponseEntity<Boolean> updateProfile(
+            HttpServletRequest request,
+            @RequestBody User userParams) { // 这里直接接收 User 对象或 Map 都可以
+
+        Long userId = getUserIdFromToken(request);
+        
+        // 构造要更新的数据
+        User userToUpdate = new User();
+        userToUpdate.setUserId(userId);
+        
+        // 允许修改的字段
+        if (userParams.getName() != null) {
+            userToUpdate.setName(userParams.getName());
+        }
+        if (userParams.getRegion() != null) {
+            userToUpdate.setRegion(userParams.getRegion());
+        }
+        
+        // 调用 Service 更新（MyBatis Plus 的 updateById 会自动忽略 null 字段）
+        boolean result = userService.updateById(userToUpdate);
+        
+        return ResponseEntity.ok(result);
+    }
+
 
     /**
      * 管理员分页查看所有用户列表（不返回密码）

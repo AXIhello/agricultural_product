@@ -165,6 +165,7 @@ import AgriKnowledge from "@/components/AgriculturalKnowledgeList.vue";
 
 // ---------------- 用户信息与登录状态 ----------------
 const authStore = useAuthStore();// 使用 Pinia 的认证存储
+const { userInfo: user, isLoggedIn } = storeToRefs(authStore);
 
 const { role } = storeToRefs(authStore);//从 store 中解构出响应式的数据
 
@@ -183,6 +184,8 @@ const totalItems = ref(0);
 const totalPages = computed(() => Math.ceil(totalItems.value / pageSize.value));
 const newAnswers = ref({});
 const answerMessages = ref({});
+
+
 
 // 格式化日期
 const formatDate = (dateTimeString) => {

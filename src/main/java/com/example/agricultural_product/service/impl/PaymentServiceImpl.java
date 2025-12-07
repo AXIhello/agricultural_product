@@ -45,26 +45,32 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public String createAlipayUrl(String orderId, String orderName, BigDecimal amount) throws Exception {
-        AlipayClient alipayClient = getAlipayClient();
-        AlipayTradePagePayRequest request = new AlipayTradePagePayRequest();
-        request.setReturnUrl(returnUrl);
-        request.setNotifyUrl(notifyUrl);
+public String createAlipayUrl(String orderId, String orderName, BigDecimal amount) throws Exception {
+    AlipayClient alipayClient = getAlipayClient();
+    AlipayTradePagePayRequest request = new AlipayTradePagePayRequest();
+    request.setReturnUrl(returnUrl);
+    request.setNotifyUrl(notifyUrl);
 
-        // 构建支付请求参数
-        String bizContent = String.format(
-            "{\"out_trade_no\":\"%s\"," +
-            "\"total_amount\":\"%.2f\"," +
-            "\"subject\":\"%s\"," +
-            "\"product_code\":\"FAST_INSTANT_TRADE_PAY\"}",
-            orderId,
-            amount,
-            orderName
-        );
-        request.setBizContent(bizContent);
+    // 使用官方 Model 对象构建参数，避免手动拼接 JSON 的转义错误
+    com.alipay.api.domain.AlipayTradePagePayModel model = new com.alipay.api.domain.AlipayTradePagePayModel();
+    
+    // 1. 订单号：确保唯一
+    model.setOutTradeNo(orderId);
+    
+    // 2. 金额：确保是字符串格式，且大于0
+    model.setTotalAmount(amount.stripTrailingZeros().toPlainString());
+    
+    // 3. 标题：如果包含特殊字符可能会报错，测试时可以先写死为 "Test Order" 排除干扰
+    model.setSubject(orderName);
+    
+    // 4. 产品码：固定
+    model.setProductCode("FAST_INSTANT_TRADE_PAY");
 
-        return alipayClient.pageExecute(request).getBody();
-    }
+    request.setBizModel(model);
+
+    // 发起请求
+    return alipayClient.pageExecute(request).getBody();
+}
 
     @Override
     public boolean handleAlipayCallback(Map<String, String> params) {

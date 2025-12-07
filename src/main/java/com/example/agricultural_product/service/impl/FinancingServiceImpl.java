@@ -114,12 +114,34 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
         financingMapper.insert(financing);
         Integer financingId = financing.getFinancingId();
 
-        // 主申请人
+        // 插入主申请人
         FinancingFarmer mainFarmer = new FinancingFarmer();
         mainFarmer.setFinancingId(financingId);
         mainFarmer.setFarmerId(userId);
         mainFarmer.setRoleInFinancing("主申请人");
+        mainFarmer.setInvitationStatus("accepted"); // 设置默认接受
+        mainFarmer.setInvitedBy(userId);
+        mainFarmer.setDecisionTime(LocalDateTime.now());
         financingFarmerMapper.insert(mainFarmer);
+
+        // 插入共同申请人 
+        if (coApplicantIds != null && !coApplicantIds.isEmpty()) {
+            for (Long coApplicantId : coApplicantIds) {
+                // 防重复检查
+                LambdaQueryWrapper<FinancingFarmer> existsQ = new LambdaQueryWrapper<>();
+                existsQ.eq(FinancingFarmer::getFinancingId, financingId)
+                       .eq(FinancingFarmer::getFarmerId, coApplicantId);
+                if (financingFarmerMapper.selectCount(existsQ) > 0) continue;
+
+                FinancingFarmer coFarmer = new FinancingFarmer();
+                coFarmer.setFinancingId(financingId);
+                coFarmer.setFarmerId(coApplicantId);
+                coFarmer.setRoleInFinancing("共同申请人");
+                coFarmer.setInvitationStatus("pending"); // 默认待处理
+                coFarmer.setInvitedBy(userId);
+                financingFarmerMapper.insert(coFarmer);
+            }
+        }
 
         return financingId;
     }
@@ -245,10 +267,8 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
     @Override
     public Page<Financing> listUserFinancings(Long userId, Integer pageNum, Integer pageSize) {
         Page<Financing> page = new Page<>(pageNum, pageSize);
-        LambdaQueryWrapper<Financing> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Financing::getInitiatingFarmerId, userId)
-                .orderByDesc(Financing::getCreateTime);
-        return financingMapper.selectPage(page, wrapper);
+
+        return financingOfferMapper.selectMyRelatedFinancing(page, userId);
     }
 
     @Override
@@ -335,6 +355,25 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
             return false;
         }
 
+         // 检查该银行是否已经报过价
+    LambdaQueryWrapper<FinancingOffer> queryWrapper = new LambdaQueryWrapper<>();
+    queryWrapper.eq(FinancingOffer::getFinancingId, financingId)
+                .eq(FinancingOffer::getBankUserId, bankUserId);
+    
+    FinancingOffer existingOffer = financingOfferMapper.selectOne(queryWrapper);
+
+    if (existingOffer != null) {
+        // === 情况 1: 已存在，执行更新操作 ===
+        existingOffer.setOfferedAmount(offeredAmount);
+        existingOffer.setOfferedInterestRate(interestRate);
+        existingOffer.setBankNotes(bankNotes);
+        existingOffer.setOfferTime(LocalDateTime.now()); // 更新时间
+        // 重新置为 pending 防止修改已拒绝的报价
+        existingOffer.setOfferStatus("pending"); 
+        
+        financingOfferMapper.updateById(existingOffer);
+    } else {
+        // === 情况 2: 不存在，执行插入操作 ===
         FinancingOffer offer = new FinancingOffer();
         offer.setFinancingId(financingId);
         offer.setBankUserId(bankUserId);
@@ -343,15 +382,15 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
         offer.setBankNotes(bankNotes);
         offer.setOfferStatus("pending");
         offer.setOfferTime(LocalDateTime.now());
+        
+        financingOfferMapper.insert(offer);
+    }
 
-        boolean ok = financingOfferMapper.insert(offer) > 0;
+    // 更新融资申请的更新时间
+    financing.setUpdateTime(LocalDateTime.now());
+    financingMapper.updateById(financing);
 
-        if (ok) {
-            financing.setUpdateTime(LocalDateTime.now());
-            financingMapper.updateById(financing);
-        }
-
-        return ok;
+    return true;
     }
 
     @Override
@@ -672,4 +711,42 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
         
         return score;
     }
+    
+
+    @Override
+    public List<Financing> listInvitedFinancings(Long userId) {
+        // 查关联表，找到该用户作为共同申请人的记录
+        LambdaQueryWrapper<FinancingFarmer> fw = new LambdaQueryWrapper<>();
+        fw.eq(FinancingFarmer::getFarmerId, userId)
+          .eq(FinancingFarmer::getRoleInFinancing, "共同申请人")
+          .orderByDesc(FinancingFarmer::getId);
+        
+        List<FinancingFarmer> relations = financingFarmerMapper.selectList(fw);
+        if (relations.isEmpty()) return List.of();
+
+        List<Integer> financingIds = relations.stream()
+                .map(FinancingFarmer::getFinancingId)
+                .distinct()
+                .toList();
+
+        // 查融资详情
+        LambdaQueryWrapper<Financing> financingWrapper = new LambdaQueryWrapper<>();
+        financingWrapper.in(Financing::getFinancingId, financingIds)
+                        .orderByDesc(Financing::getCreateTime);
+        List<Financing> financings = financingMapper.selectList(financingWrapper);
+
+        // 把邀请状态塞写入
+        for (Financing f : financings) {
+            // 找到对应的关系记录
+            relations.stream()
+                    .filter(r -> r.getFinancingId().equals(f.getFinancingId()))
+                    .findFirst()
+                    .ifPresent(r -> {
+                        f.setMyInvitationStatus(r.getInvitationStatus());
+                    });
+        }
+        return financings;
+    }
+
+
 }

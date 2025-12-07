@@ -97,4 +97,9 @@ public interface OrderService extends IService<Order> {
      * 卖家审核某个订单明细的退款申请（通过/拒绝）。
      */
     boolean reviewRefundForItem(Integer orderId, Integer itemId, Long sellerId, boolean approve, String rejectReason);
+
+     /**
+     * 获取农户（卖家）的销售订单列表
+     */
+    List<OrderDTO> getSellerOrders(Long farmerId);
 }
