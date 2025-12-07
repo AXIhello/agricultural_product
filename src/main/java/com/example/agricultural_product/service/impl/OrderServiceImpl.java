@@ -118,22 +118,37 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             return false;
         }
         // 支付阶段：从 pending -> paid 时，从数据库正式扣减库存
-        if ("paid".equals(status) && !"paid".equals(order.getStatus())) {
+         if ("paid".equalsIgnoreCase(status)) {
+            
+            // 防止重复支付扣库存 (如果已经是 paid，直接返回成功)
+            if ("paid".equalsIgnoreCase(order.getStatus())) {
+                return true;
+            }
+
+            // 获取所有子项
             List<OrderItem> orderItems = getOrderItemsByOrderId(orderId);
+            
             for (OrderItem item : orderItems) {
+                // 扣减库存逻辑
                 Product product = productMapper.selectById(item.getProductId());
                 if (product == null || !"active".equals(product.getStatus())) {
-                    throw new RuntimeException("商品不存在或已下架");
+                    throw new RuntimeException("商品 " + item.getProductId() + " 不存在或已下架");
                 }
                 if (product.getStock() < item.getQuantity()) {
-                    throw new RuntimeException("商品库存不足，支付失败");
+                    throw new RuntimeException("商品 " + product.getProductName() + " 库存不足");
                 }
                 product.setStock(product.getStock() - item.getQuantity());
                 product.setUpdateTime(LocalDateTime.now());
                 productMapper.updateById(product);
+
+                // 同步更新子项状态为 PAID
+                item.setStatus("PAID");
+                orderItemMapper.updateById(item);
             }
         }
-        order.setStatus(status);
+
+        // 更新主订单状态
+        order.setStatus(status); // 确保传入的是 "paid"
         order.setUpdateTime(LocalDateTime.now());
         return this.updateById(order);
     }
@@ -303,4 +318,11 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         orderItemMapper.updateById(item);
         return true;
     }
+
+    @Override
+    public List<OrderDTO> getSellerOrders(Long farmerId) {
+        // 直接调用
+        return this.baseMapper.findOrdersBySellerId(farmerId);
+    }
+
 }

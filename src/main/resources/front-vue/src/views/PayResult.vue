@@ -18,11 +18,32 @@
 </template>
 <script setup>
 import { useRoute } from 'vue-router'
+import { onMounted, ref } from 'vue'
+import axios from '../utils/axios'
+import {ElMessage} from 'element-plus'
+
 const route = useRoute()
 
 const result = route.query.result || 'fail'
 const orderId = Number(route.query.orderId) || 0
 const amount = route.query.amount || '0.00'
+
+// 页面加载时，如果支付结果是 success，则通知后端修改状态
+onMounted(async () => {
+  if (result === 'success' && orderId) {
+    try {
+     
+      await axios.put(`/orders/${orderId}/status`, null, {
+        params: { status: 'paid' }
+      })
+      console.log('订单状态已同步更新为已支付')
+      
+    } catch (err) {
+      console.error('状态同步失败', err)
+      ElMessage.warning('支付回调处理异常，请检查订单状态')
+    }
+  }
+})
 </script>
 
 <style scoped>

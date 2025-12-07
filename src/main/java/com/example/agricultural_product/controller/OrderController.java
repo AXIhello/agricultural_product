@@ -120,6 +120,15 @@ public class OrderController {
     }
 
     /**
+     * 农户查看自己的销售订单
+     */
+    @GetMapping("/seller")
+    public ResponseEntity<List<OrderDTO>> getSellerOrders(HttpServletRequest request) {
+        Long userId = getUserIdFromToken(request);
+        return ResponseEntity.ok(orderService.getSellerOrders(userId));
+    }
+
+    /**
      * 取消订单（用户）
      */
     @PutMapping("/{orderId}/cancel")
@@ -250,5 +259,22 @@ public class OrderController {
         private Integer rating; // 1-5
         private String content;
         private Boolean isAnonymous;
+    }
+
+    /**
+     * 获取单个订单项的评价详情
+     */
+    @GetMapping("/items/{itemId}/review")
+    public ResponseEntity<OrderItemReview> getReviewByItemId(HttpServletRequest request,
+                                                             @PathVariable Integer itemId) {
+        Long userId = getUserIdFromToken(request);
+        
+        OrderItemReview review = orderItemReviewService.getByItemId(itemId);
+        
+        if (review != null) {
+            return ResponseEntity.ok(review);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

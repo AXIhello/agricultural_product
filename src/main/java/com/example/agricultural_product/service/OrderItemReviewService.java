@@ -16,4 +16,6 @@ public interface OrderItemReviewService {
      * 分页查询某个商品的评价列表（只返回已发布的评价）。
      */
     Page<OrderItemReview> listProductReviews(Integer productId, long pageNum, long pageSize);
+
+    OrderItemReview getByItemId(Integer itemId);
 }
