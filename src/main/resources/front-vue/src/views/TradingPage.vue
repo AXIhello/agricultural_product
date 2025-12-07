@@ -10,7 +10,7 @@
         <button @click="switchView('demands')" :class="{ active: currentView === 'demands' }">求购需求</button>
         <button v-if="role === 'farmer'" @click="switchView('myProducts')" :class="{ active: currentView === 'myProducts' }">我的产品</button>
         <button v-if="role === 'buyer'" @click="switchView('cart')" :class="{ active: currentView === 'cart' }">我的购物车</button>
-        <button v-if="role === 'buyer'" @click="switchView('myOrders')" :class="{ active: currentView === 'myOrders' }">我的订单</button>
+        <button v-if="role === 'buyer'||'farmer'" @click="switchView('myOrders')" :class="{ active: currentView === 'myOrders' }">我的订单</button>
       </nav>
 
       <!-- 内容区域 -->
@@ -405,7 +405,6 @@
             </div>
             <button class="submit-btn" @click="createOrder()">提交订单</button>
           </div>
-          <p v-else class="empty-state">购物车是空的。</p>
         </div>
 
         <!-- 求购需求列表 -->
@@ -472,45 +471,9 @@
         </div>
 
         <!-- 我的订单（农户 + 买家） -->
-        <div v-if="role === 'buyer' && currentView === 'myOrders'">
-          <div class="order-list">
-            <p v-if="!myOrders.length" class="empty-state">暂无订单</p>
-            <template v-if="myOrders && myOrders.length > 0">
-              <div v-for="order in myOrders" :key="order.orderId" class="order-card">
-                <div class="order-header">
-                  <span>订单号: {{ order.orderId }}</span>
-                  <span class="order-date">下单时间: {{ new Date(order.orderDate).toLocaleString() }}</span>
-                  <span class="order-status" :class="getStatusClass(order.status)">
-                    {{ getStatusText(order.status) }}
-                  </span>
-                </div>
-
-                <div class="order-body">
-                  <div v-if="order.orderItems?.length">
-                    <div v-for="item in order.orderItems" :key="item.itemId" class="order-item-container">
-                      <span class="item-name">{{ item.productName || '产品名未知' }}</span>
-                      <span>数量: {{ item.quantity }}</span>
-                      <span>单价: ¥{{ item.unitPrice }}</span>
-<!--                      <button v-if="role !== 'farmer'" class="contact-btn" @click="goToChat(item.farmerId)">联系卖家</button>-->
-                    </div>
-                  </div>
-                  <div v-else><p>此订单无产品详情</p></div>
-                </div>
-
-                <div class="order-footer">
-                  <p><strong>总金额:</strong> ¥{{ order.totalAmount.toFixed(2) }}</p>
-
-                  <div class="order-actions">
-                    <button v-if="order.status === 'pending'" class="pay-btn" @click="goToPay(order.orderId)">立即支付</button>
-                    <button v-if="order.status === 'pending'" class="cancel-btn" @click="cancelOrder(order.orderId)">取消订单</button>
-                    <button v-if="order.status === 'completed'" class="view-btn" @click="viewDetail(order.orderId)">查看详情</button>
-                    <span v-if="order.status === 'cancelled'" class="cancel-text">订单已取消</span>
-                  </div>
-                </div>
-              </div>
-            </template>
-            <p v-else class="empty-state">您还没有任何订单。</p>
-          </div>
+        <div v-if="(role === 'buyer'|| role === 'farmer')&& currentView === 'myOrders'">
+          <!-- 直接使用组件，无需传参，组件内部会自己从 Store 获取用户ID -->
+          <MyOrders />
         </div>
       </div>
     </section>
@@ -524,6 +487,7 @@ import * as echarts from "echarts";
 import axios from '../utils/axios'
 import router from "@/router/index.js";
 import HeaderComponent from '../components/HeaderComponent.vue';
+import MyOrders from '@/components/MyOrders.vue'
 import placeholder from "@/assets/img.png";
 import {useAuthStore} from '@/stores/authStore'
 import {storeToRefs} from 'pinia'
@@ -546,7 +510,7 @@ onMounted(async () => {
   if (isLoggedIn.value) {
     await loadAddresses();
     await loadCart();
-    await loadMyOrders();
+  
     if (role.value === 'farmer') {
       await loadMyProducts();
     }
@@ -563,10 +527,6 @@ watch(currentView, (val) => {
   }
   if(val === 'demands') {
     loadDemands()
-  }
-
-  if (val === 'myOrders') {
-    loadMyOrders()
   }
 
   if(val === 'myProducts'&& role.value === 'farmer') {
@@ -1224,84 +1184,6 @@ async function handleAddDemand() {
   }
 }
 
-//加载我的订单
-async function loadMyOrders() {
-  if (!isLoggedIn.value) {
-    console.log("用户未登录，无法加载订单");
-    return;
-  }
-
-  try {
-
-    const res = await axios.get('/orders');
-
-    if (res.data && Array.isArray(res.data)) {
-      myOrders.value = res.data;
-      console.log("加载到的订单:", myOrders.value);
-    } else {
-      myOrders.value = [];
-      console.log("未查询到订单或返回数据格式不正确");
-    }
-  } catch (error) {
-    console.error("加载我的订单失败:", error);
-    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      alert("登录已过期，请重新登录。");
-      // 这里可以添加跳转到登录页的逻辑
-      router.push('/login');
-    } else {
-      alert("加载订单失败，请稍后重试。");
-    }
-    myOrders.value = [];
-  }finally {
-    loading.value = false
-  }
-}
-
-// 状态中文映射
-const getStatusText = (status) => {
-  switch (status) {
-    case 'pending':
-      return '待支付'
-    case 'completed':
-      return '已完成'
-    case 'cancelled':
-      return '已取消'
-    default:
-      return status || '未知状态'
-  }
-}
-
-// 状态样式类（用于颜色）
-const getStatusClass = (status) => {
-  switch (status) {
-    case 'pending':
-      return 'status-pending'
-    case 'completed':
-      return 'status-completed'
-    case 'cancelled':
-      return 'status-cancelled'
-    default:
-      return ''
-  }
-}
-
-// 取消订单
-const cancelOrder = async (orderId) => {
-  try {
-    const res = await axios.put(`/orders/${orderId}/cancel`)
-    if (res.data) {
-      ElMessage.success('订单已取消')
-      myOrders.value = myOrders.value.map(o =>
-          o.orderId === orderId ? { ...o, status: 'cancelled' } : o
-      )
-    } else {
-      ElMessage.warning('取消订单失败')
-    }
-  } catch (err) {
-    console.error('取消订单出错:', err)
-    ElMessage.error('取消失败')
-  }
-}
 
 // 查看详情
 const viewDetail = (orderId) => {
@@ -1445,6 +1327,7 @@ async function removeFromCart(productId) {
   }
 }
 
+//创建订单
 async function createOrder() {
 
   if (!isLoggedIn.value) {
@@ -1468,18 +1351,26 @@ async function createOrder() {
 
     console.log('即将发送到后端的订单数据:', JSON.stringify(reqBody, null, 2));
 
+    // 1. 提交订单
     const res = await axios.post('/orders', reqBody);
 
     if (res.data) {
-      const orderId = res.data;
-      alert(`订单提交成功！`)
+      const orderId = res.data; // 获取订单ID
+
+      // 2. 订单成功后，调用后端接口清空购物车
+      // 【修改点1】这里改成 delete，并移到 if 内部
+      await axios.delete('/cart/clear'); 
+
+      // 3. 清空前端状态
       cartItems.value = []
+      
+      alert(`订单提交成功！`)
+
+      // 4. 跳转页面
       await router.push(`/orders/${orderId}`)
     } else {
       alert('提交失败，请稍后再试')
     }
-
-    await axios.post('/cart/clear');
 
   } catch (err) {
     console.error('提交订单失败:', err)

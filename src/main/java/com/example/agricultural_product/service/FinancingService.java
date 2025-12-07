@@ -105,4 +105,9 @@ public interface FinancingService extends IService<Financing> {
      * @return 推荐用户列表
      */
     Page<RecommendedUserDTO> recommendCoApplicants(Long currentUserId, Integer pageNum, Integer pageSize);
+
+    /**
+     * 查询用户作为共同申请人参与的融资列表
+     */
+    List<Financing> listInvitedFinancings(Long userId);
 }

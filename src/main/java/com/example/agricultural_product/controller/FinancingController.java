@@ -340,4 +340,13 @@ public class FinancingController {
         
         return ResponseEntity.ok(recommendedUsers);
     }
+
+    /**
+     * 农户查看自己被邀请参与的融资申请（作为共同申请人）
+     */
+    @GetMapping("/invited")
+    public ResponseEntity<List<Financing>> listInvitedFinancings(HttpServletRequest request) {
+        Long userId = getUserIdFromToken(request);
+        return ResponseEntity.ok(financingService.listInvitedFinancings(userId));
+    }
 }

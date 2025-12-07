@@ -43,4 +43,8 @@ public class Financing {
     // 非数据库字段：参与农户列表（用于返回详情）
     @TableField(exist = false)
     private List<FinancingFarmer> farmers;
+   
+    //非数据库字段，用于前端展示当前用户邀请状态
+    @TableField(exist = false)
+    private String myInvitationStatus; 
 }

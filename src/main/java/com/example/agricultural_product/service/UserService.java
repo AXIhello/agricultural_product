@@ -1,6 +1,8 @@
 package com.example.agricultural_product.service;
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.agricultural_product.pojo.User;
-public interface UserService {
+import com.baomidou.mybatisplus.extension.service.IService; 
+public interface UserService extends IService<User>{
     User findByUserName(String userName);
     int registerUser(User newUser);
     Long getUserIdByUserName(String userName);
