@@ -390,4 +390,45 @@ public class UserController {
         return ResponseEntity.ok(Map.of("success", true, "message", "删除成功"));
     }
 
+    /**
+     * 用户修改密码（从 Token 解析 userId，无额外请求 DTO）
+     */
+    @PostMapping("/change-password")
+    public ResponseEntity<Map<String, Object>> changePassword(HttpServletRequest request,
+                                                              @RequestBody Map<String, String> body) {
+        Map<String, Object> response = new HashMap<>();
+        if (!checkToken(request)) {
+            response.put("success", false);
+            response.put("message", "未授权，请先登录！");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+
+        Long userId = getUserIdFromToken(request);
+        if (userId == null) {
+            response.put("success", false);
+            response.put("message", "Token 解析失败！");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+
+        String newPassword = body.get("newPassword");
+        if (newPassword == null || newPassword.isEmpty()) {
+            response.put("success", false);
+            response.put("message", "新密码不能为空！");
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        User user = userService.findById(userId);
+        if (user == null) {
+            response.put("success", false);
+            response.put("message", "用户不存在！");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+
+        user.setPassword(encoder.encode(newPassword));
+        userService.updateById(user);
+
+        response.put("success", true);
+        response.put("message", "密码修改成功！");
+        return ResponseEntity.ok(response);
+    }
 }
