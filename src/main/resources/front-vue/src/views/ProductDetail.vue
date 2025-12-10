@@ -39,12 +39,17 @@
           <h3>农户信息</h3>
           <div class="farmer-info-row">
             <p>农户ID: {{ currentSpec.farmerId }}</p>
-            <button v-if="role !== 'farmer'" class="contact-btn" @click="contactSeller(currentSpec)">
+
+            <!-- 只有当当前用户不是该商品的农户才显示“联系卖家” -->
+            <button
+                v-if="currentUserId !== currentSpec.farmerId"
+                class="contact-btn"
+                @click="contactSeller(currentSpec)"
+            >
               联系卖家
             </button>
           </div>
         </div>
-
 
         <!-- 规格选择 -->
         <div v-if="productSpecs.length > 1" class="spec-section">
@@ -56,14 +61,16 @@
                 :class="['spec-button', { active: spec.productId === currentSpec.productId }]"
                 @click="selectSpec(spec)"
             >
-              ¥{{ spec.specInfo }}
+              {{ spec.specInfo }}
             </button>
           </div>
         </div>
 
-
-        <div v-if="role !== 'farmer'" class="action-buttons">
-
+        <!-- 购买区域：只有当当前用户不是该农户才显示 -->
+        <div
+            v-if="currentUserId !== currentSpec.farmerId"
+            class="action-buttons"
+        >
           <div class="quantity-control">
             <label>数量:</label>
             <el-input-number
@@ -84,6 +91,7 @@
             立即购买
           </el-button>
         </div>
+
       </div>
 
       <!-- 右侧评价 -->
@@ -131,6 +139,7 @@ import Stars from '@/components/Stars.vue'
 
 const authStore = useAuthStore()
 const {userInfo, isLoggedIn, role} = storeToRefs(authStore)
+const currentUserId = userInfo.value.userId
 
 const imgUrl = ref(placeholder)
 const showPreview = ref(false)
@@ -175,7 +184,8 @@ const loadProductDetail = async () => {
 
     // 第2步：获取同名所有规格
     const specRes = await axios.get('/products/productName', {
-      params: { name: base.productName }
+      params: { name: base.productName,
+                createTime:base.createTime}
     })
 
     // 后端可能返回 Page，也可能返回 List

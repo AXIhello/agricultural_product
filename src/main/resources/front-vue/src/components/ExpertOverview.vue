@@ -1,6 +1,6 @@
 <template>
   <div class="expert-overview-container">
-    <div v-if="!experts.length">当前暂无专家！</div>
+    <div class="empty-state" v-if="!experts.length">当前暂无专家！</div>
 
     <div 
       class="expert" 

@@ -60,8 +60,8 @@
 
                 <div class="product-info">
                   <h3 class="product-name">{{ product.productName }}</h3>
+<!--                  <p class="product-description"> {{ product.description }}</p>-->
                   <p class="product-price">¥{{ product.price }} / {{ product.unitInfo }}</p>
-                  <p class="product-stock">库存: {{ product.stock }} {{ product.unitInfo }}</p>
                 </div>
 
               </div>
@@ -526,7 +526,7 @@ onMounted(async () => {
   if (isLoggedIn.value) {
     await loadAddresses();
     await loadCart();
-  
+
     if (role.value === 'farmer') {
       await loadMyProducts();
     }
@@ -684,6 +684,7 @@ async function handleAddProduct() {
     imageFile.value = null
     newProduct.value = { productName: '', prodCat: '', prodPcat: '', unitInfo: '', imagePath: '' }
     specs.value = [{ specInfo: '', price: null, stock: null }]
+    await loadMyProducts()
     currentView.value = 'myProducts'
     closeAddModal()
   } catch (err) {
@@ -766,7 +767,8 @@ async function loadAllProducts() {
     console.error('加载产品失败', err)
   }
 }
-// 分类结构：{ 大类: [小类1, 小类2, ...] }
+
+//分类结构：{ 大类: [小类1, 小类2, ...] }
 const categoryMap = computed(() => {
   const map = {}
   for (const p of products.value) {
@@ -1038,6 +1040,7 @@ async function pollPredictionStatus(product) {
         }));
         completed = true;
         drawChart(product.productName);
+        console.log("结果已绘制")
       } else if (status === "FAILED") {
         alert("预测失败: " + res.data.message);
         completed = true;
@@ -1054,7 +1057,16 @@ async function pollPredictionStatus(product) {
 }
 
 function drawChart(productName) {
-  if (!chartRef.value || !chartData.value.length) return;
+  console.log(chartRef.value,chartData.value);
+
+  if (!chartRef.value ){
+    console.log('chartRef为空');
+    return;
+  }
+  if ( !chartData.value.length){
+    console.log('chartData为空');
+    return;
+  }
 
   const myChart = echarts.init(chartRef.value);
   chartData.value = [];
@@ -1374,12 +1386,11 @@ async function createOrder() {
       const orderId = res.data; // 获取订单ID
 
       // 2. 订单成功后，调用后端接口清空购物车
-      // 【修改点1】这里改成 delete，并移到 if 内部
-      await axios.delete('/cart/clear'); 
+      await axios.delete('/cart/clear');
 
       // 3. 清空前端状态
       cartItems.value = []
-      
+
       alert(`订单提交成功！`)
 
       // 4. 跳转页面
@@ -1387,6 +1398,8 @@ async function createOrder() {
     } else {
       alert('提交失败，请稍后再试')
     }
+
+    await axios.delete('/cart/clear');
 
   } catch (err) {
     console.error('提交订单失败:', err)
@@ -1519,11 +1532,12 @@ async function createOrder() {
 
 .product-price {
   color: #e91e63;
+  font-size: 20px;
   font-weight: bold;
   margin: 2px 0;
 }
 
-.product-stock {
+.product-description {
   color: #777;
   font-size: 12px;
 }

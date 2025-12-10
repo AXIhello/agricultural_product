@@ -15,16 +15,18 @@ import java.util.List;
 public interface ProductMapper extends BaseMapper<Product> {
     // 返回按 product_name 去重后的 Product 列表（每个名字只保留一条代表性记录）
 
-    @Select("SELECT * FROM tb_product p " +
-            "INNER JOIN (" +
-            "  SELECT product_name, MAX(update_time) AS max_time " +
-            "  FROM tb_product " +
-            "  WHERE status = #{status} " +
-            "  GROUP BY product_name" +
-            ") t " +
-            "ON p.product_name = t.product_name AND p.update_time = t.max_time " +
-            "ORDER BY p.update_time DESC " +
-            "LIMIT #{offset}, #{pageSize}")
+    @Select("""
+        SELECT *
+        FROM (
+            SELECT *,
+                   ROW_NUMBER() OVER (PARTITION BY product_name ORDER BY update_time DESC, product_id DESC) AS rn
+            FROM tb_product
+            WHERE status = #{status}
+        ) t
+        WHERE t.rn = 1
+        ORDER BY update_time DESC
+        LIMIT #{offset}, #{pageSize}
+        """)
     List<Product> selectDistinctProductsByStatus(@Param("status") String status,
                                                  @Param("offset") int offset,
                                                  @Param("pageSize") int pageSize);
@@ -34,16 +36,21 @@ public interface ProductMapper extends BaseMapper<Product> {
             ") temp")
     int countDistinctProductsByStatus(@Param("status") String status);
 
-    @Select("SELECT * FROM tb_product p " +
-            "INNER JOIN (" +
-            "  SELECT product_name, MAX(update_time) AS max_time " +
-            "  FROM tb_product " +
-            "  WHERE farmer_id = #{farmerId} AND status = #{status} " +
-            "  GROUP BY product_name" +
-            ") t " +
-            "ON p.product_name = t.product_name AND p.update_time = t.max_time " +
-            "ORDER BY p.update_time DESC " +
-            "LIMIT #{offset}, #{pageSize}")
+    @Select("""
+        SELECT *
+        FROM (
+            SELECT *,
+                   ROW_NUMBER() OVER (
+                       PARTITION BY product_name 
+                       ORDER BY update_time DESC, product_id DESC
+                   ) AS rn
+            FROM tb_product
+            WHERE farmer_id = #{farmerId} AND status = #{status}
+        ) t
+        WHERE t.rn = 1
+        ORDER BY update_time DESC
+        LIMIT #{offset}, #{pageSize}
+        """)
     List<Product> selectDistinctProductsByFarmerIdAndStatus(@Param("farmerId") Long farmerId,
                                                             @Param("status") String status,
                                                             @Param("offset") int offset,

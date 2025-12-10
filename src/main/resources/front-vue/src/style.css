@@ -147,7 +147,7 @@ nav a:hover {
     text-align: center;
     color: #888;
     padding: 2rem;
-    background-color: #F0F9F4;
+    /*background-color: #F0F9F4;*/
     border-radius: 8px;
     margin-top: 1rem;
 }
@@ -248,7 +248,8 @@ button {
 .modal-body {
     flex: 1;
     overflow-y: auto;
-    padding-right: 5px;
+    max-height: 60vh;
+    padding-right: 10px;
 }
 
 .modal-form-group {
@@ -275,6 +276,15 @@ button {
     border-radius: 6px;
     outline: none;
 }
+
+/* 美化滚动条 */
+.modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+.modal-body::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+}
+
 
 /* 行布局 */
 .row-layout {
@@ -324,4 +334,46 @@ button {
 .modal-body::-webkit-scrollbar-thumb {
     background-color: rgba(0,0,0,0.2);
     border-radius: 3px;
+}
+
+/*表格*/
+
+.table-header, .table-row {
+    text-align: center;
+    display: grid;
+    grid-template-columns: 60px 120px 150px 1fr 100px 160px;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.table-header {
+    font-weight: bold;
+    background-color: #f7f7f7;
+    border-radius: 6px;
+}
+
+.table-row {
+    background-color: #fff;
+    margin-bottom: 6px;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: 0.2s;
+}
+
+.table-row:hover {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.table-row .col {
+    padding: 6px 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.col.action-col {
+    display: flex;
+    gap: 10px;   /* 按钮之间的间距 */
+    justify-content: center; /* 可选：让它们在格子里居中 */
 }

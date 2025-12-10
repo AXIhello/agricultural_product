@@ -28,6 +28,7 @@
           <button v-if="role === 'farmer' || role === 'buyer'" @click="switchView('address')" :class="{ active: currentView === 'address' }">我的地址</button>
           <button v-if="role === 'farmer'" @click="switchView('appointments')" :class="{ active: currentView === 'appointments' }">我的预约</button>
           <button v-if="role === 'farmer' || role === 'buyer'" @click="switchView('message')" :class="{ active: currentView === 'message' }">我的消息</button>
+          <button v-if="role === 'farmer'" @click="switchView('autoReply')" :class="{ active: currentView === 'autoReply' }">自动回复设置</button>
           <button v-if="role === 'expert'" @click="switchView('profile')" :class="{ active: currentView === 'profile' }">个人档案</button>
           <button v-if="role === 'expert'" @click="switchView('knowledgeManage')" :class="{ active: currentView === 'knowledgeManage' }">知识管理</button>
           <button v-if="role === 'expert'" @click="switchView('availability')" :class="{ active: currentView === 'availability' }">可预约时间</button>
@@ -41,7 +42,7 @@
         <div v-if="currentView === 'address'" class="address-view">
 
           <!-- 地址列表表头 -->
-          <div class="address-list-header">
+          <div class="table-header">
             <div class="col default-col">默认</div>
             <div class="col name-col">{{ role === 'buyer' ? '收货人' : '发货人' }}</div>
             <div class="col phone-col">电话</div>
@@ -51,8 +52,8 @@
           </div>
 
           <!-- 地址列表 -->
-          <div class="address-list">
-            <div class="address-row" v-for="addr in addresses" :key="addr.addressId">
+          <div class="table">
+            <div class="table-row" v-for="addr in addresses" :key="addr.addressId">
               <div class="col default-col">
                 <span v-if="addr.isDefault">🌟</span>
               </div>
@@ -214,6 +215,110 @@
           </div>
 
           <p v-else class="empty-state">暂无预约记录。</p>
+        </div>
+
+        <!-- ======================== 农户：自动回复设置 ======================== -->
+        <div v-if="currentView === 'autoReply'" class="auto-reply-view">
+
+          <!-- 规则列表表头 -->
+          <div class="table-header">
+            <div class="col enabled-col">启用</div>
+            <div class="col keyword-col">关键词</div>
+            <div class="col match-col">匹配方式</div>
+            <div class="col reply-col">回复内容</div>
+            <div class="col priority-col">优先级</div>
+            <div class="col action-col">操作</div>
+          </div>
+
+          <!-- 规则列表 -->
+          <div class="table">
+            <div class="table-row" v-for="rule in rules" :key="rule.ruleId">
+              <div class="col enabled-col">
+                <input type="checkbox" :checked="rule.enabled" @change="toggleRule(rule.ruleId, !rule.enabled)" />
+              </div>
+              <div class="col keyword-col">{{ rule.keyword }}</div>
+              <div class="col match-col">
+                {{ matchTypeLabel(rule.matchType) }}
+              </div>
+              <div class="col reply-col">{{ rule.replyText }}</div>
+              <div class="col priority-col">{{ rule.priority }}</div>
+
+
+              <div class="col action-col">
+                <button class="rule-edit-btn" @click="openEdit(rule)">编辑</button>
+                <button class="rule-delete-btn" @click="deleteRule(rule.ruleId)">删除</button>
+              </div>
+            </div>
+
+
+            <p v-if="!rules.length" class="empty-state">暂无自动回复规则，请添加新的规则。</p>
+          </div>
+
+          <!-- 新增规则按钮 -->
+          <button class="add-btn" @click="openAdd">＋ 新增规则</button>
+
+          <!-- ================= 弹窗（新增/编辑） ================= -->
+          <div v-if="showPopup" class="modal-overlay">
+            <div class="modal-container">
+
+
+              <button class="close-btn" @click="closePopup">×</button>
+
+
+              <h2 class="modal-title">{{ editingRule ? '编辑规则' : '新增规则' }}</h2>
+
+
+              <div class="modal-body">
+
+
+                <!-- 关键词 -->
+                <div class="modal-form-group row-layout">
+                  <label>关键词：</label>
+                  <input v-model="form.keyword" type="text" placeholder="请输入关键词" />
+                </div>
+
+
+                <!-- 匹配方式 -->
+                <div class="modal-form-group row-layout">
+                  <label>匹配方式：</label>
+                  <select v-model="form.matchType">
+                    <option value="contains">包含匹配</option>
+                    <option value="exact">完全匹配</option>
+                    <option value="regex">正则匹配</option>
+                  </select>
+                </div>
+
+
+                <!-- 回复文本 -->
+                <div class="modal-form-group">
+                  <label>回复内容：</label>
+                  <textarea v-model="form.replyText" rows="2" placeholder="请输入自动回复内容"></textarea>
+                </div>
+
+
+<!--                &lt;!&ndash; 启用开关 &ndash;&gt;-->
+<!--                <div class="modal-form-group row-layout">-->
+<!--                  <label>启用：</label>-->
+<!--                  <input type="checkbox" v-model="form.enabled" />-->
+<!--                </div>-->
+
+
+                <!-- 优先级 -->
+                <div class="modal-form-group row-layout">
+                  <label>优先级：</label>
+                  <input type="number" v-model="form.priority" placeholder="数字越大优先级越高" />
+                </div>
+              </div>
+
+
+              <div class="modal-footer">
+                <button class="cancel-btn" @click="closePopup">取消</button>
+                <button class="save-btn" @click="saveRule">保存</button>
+              </div>
+
+
+            </div>
+          </div>
         </div>
 
         <!-- ======================== 买家/农户：我的消息 ======================== -->
@@ -596,6 +701,86 @@ async function saveUserProfile() {
   }
 }
 
+// ======自动回复=====
+const rules = ref([])
+const showPopup = ref(false)
+const editingRule = ref(null)
+
+
+const form = ref({
+  ruleId: null,
+  keyword: '',
+  matchType: 'contains',
+  replyText: '',
+  enabled: true,
+  priority: 1,
+})
+
+
+// 获取我的规则
+async function loadRules() {
+  const res = await axios.get('/chat/auto-replies')
+  rules.value = res.data
+}
+
+
+function matchTypeLabel(type) {
+  return {
+    contains: '包含',
+    exact: '完全匹配',
+    regex: '正则',
+  }[type] || type
+}
+
+
+// 打开新增
+function openAdd() {
+  editingRule.value = null
+  form.value = {
+    keyword: '',
+    matchType: 'contains',
+    replyText: '',
+    enabled: true,
+    priority: 1,
+  }
+  showPopup.value = true
+}
+
+
+// 打开编辑
+function openEdit(rule) {
+  editingRule.value = rule
+  form.value = { ...rule }
+  showPopup.value = true
+}
+
+
+// 保存规则
+async function saveRule() {
+  await axios.post('/chat/auto-replies', form.value)
+  showPopup.value = false
+  loadRules()
+}
+
+
+// 删除规则
+async function deleteRule(id) {
+  await axios.delete(`/chat/auto-replies/${id}`)
+  loadRules()
+}
+
+
+// 切换启用状态
+async function toggleRule(id, enabled) {
+  await axios.put(`/chat/auto-replies/${id}/toggle?enabled=${enabled}`)
+  loadRules()
+}
+
+
+function closePopup() {
+  showPopup.value = false
+}
+
 // 专家视图标签页切换
 async function switchExpertView(view) {
   currentExpertView.value = view;
@@ -972,6 +1157,7 @@ async function loadDataForRole(currentRole) {
     } else if (currentRole === 'buyer' || currentRole === 'farmer') {
       console.log("角色确认为买家/农户，开始加载地址...");
       await loadAddresses();
+      await loadRules();
     } else {
       console.log(`未知的用户角色: ${currentRole}，不执行额外加载操作。`);
     }
@@ -999,7 +1185,7 @@ const isLoading = ref(true);
  */
 async function loadSessions() {
   try {
-    // API: GET /api/chat/sessions
+    // API: GET /chat/auto-replies/chat/sessions
     const response = await axios.get('/chat/sessions');
     // 按最后消息时间降序排序
     sessions.value = (response.data || []).sort((a, b) =>
@@ -1104,38 +1290,6 @@ function formatTime(dateTimeStr) {
   background-color: #246a3d; /* 悬停深色 */
 }
 
-.address-list-header, .address-row {
-  display: grid;
-  grid-template-columns: 60px 120px 150px 1fr 100px 160px;
-  align-items: center;
-  padding: 8px 12px;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.address-list-header {
-  font-weight: bold;
-  background-color: #f7f7f7;
-  border-radius: 6px;
-}
-
-.address-row {
-  background-color: #fff;
-  margin-bottom: 6px;
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  transition: 0.2s;
-}
-
-.address-row:hover {
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
-
-.address-row .col {
-  padding: 6px 8px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
 .set-default-btn, .delete-btn {
   padding: 4px 10px;
@@ -1600,6 +1754,34 @@ function formatTime(dateTimeStr) {
 }
 .exit-btn:hover {
   background-color: #c0392b;
+}
+
+/* 按钮通用样式 */
+.rule-edit-btn,
+.rule-delete-btn {
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s;
+  font-size: 14px;
+}
+
+/* 编辑按钮（绿色） */
+.rule-edit-btn {
+  background-color: #2D7D4F;   /* 清爽绿色 */
+}
+.rule-edit-btn:hover {
+  background-color: #246a3d;   /* 深一点，更稳重 */
+}
+
+/* 删除按钮（柔和红色） */
+.rule-delete-btn {
+  background-color: #e57373;   /* 柔和红色，比纯红更好看 */
+}
+.rule-delete-btn:hover {
+  background-color: #d32f2f;   /* 稍深一点 */
 }
 
 /* 弹窗通用样式复用之前的即可，确保 .modal-overlay, .modal-container 等类名存在 */

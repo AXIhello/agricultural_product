@@ -447,33 +447,30 @@ public class ProductController {
      * 允许参数 status="active", "inactive", 或不传（查询全部）
      */
     @GetMapping("/productName")
-    public ResponseEntity<Page<Product>> getProductsByStatus(HttpServletRequest request,
-                                                   @RequestParam(value = "status", required = false) String status,
-                                                   @RequestParam(value = "name", required = false) String productName,
-                                                   @RequestParam(defaultValue = "1") Integer pageNum,
-                                                   @RequestParam(defaultValue = "10") Integer pageSize) {
-
+    public ResponseEntity<Page<Product>> getProductsByStatus(
+            HttpServletRequest request,
+            @RequestParam(value = "status", required = false) String status,
+            @RequestParam(value = "name", required = false) String productName,
+            @RequestParam(value = "createTime", required = false) String createTime,
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
 
         if (status == null) status = "active";
 
         Page<Product> page;
 
-        // --- 阶段一：未传入名字，返回去重商品名称分页列表 ---
-        if (productName == null || productName.trim().isEmpty()) {
+        if ((productName == null || productName.trim().isEmpty()) &&
+                (createTime == null || createTime.trim().isEmpty())) {
+            // 阶段一：无名称与时间 → 返回名称去重列表
             page = productService.selectDistinctProductsByStatusPage(status, pageNum, pageSize);
-        }
-        // --- 阶段二：传入名字，返回带分页的商品实体列表 ---
-        else {
-            log.info("【查询】状态:{}，商品名:{}，请求分页商品实体列表。",  status, productName);
+        } else {
+            // 阶段二：传入名称或时间 → 返回筛选结果
+            log.info("【查询】状态:{}，商品名:{}，时间:{}，分页商品实体列表。", status, productName, createTime);
 
-            // 调用修改后的 Service 方法，该方法现在支持 status 和 productName 过滤
-            page = productService.getProductsByStatusPage(status, productName, pageNum, pageSize);
-
+            page = productService.getProductsByStatusPage(status, productName, createTime, pageNum, pageSize);
         }
-        // 屏蔽图片路径
+
         maskImagePath(page.getRecords());
-
-        // 返回 Page<Product>
         return ResponseEntity.ok(page);
     }
 
@@ -488,38 +485,34 @@ public class ProductController {
             HttpServletRequest request,
             @RequestParam(value = "status", required = false) String status,
             @RequestParam(value = "name", required = false) String productName,
+            @RequestParam(value = "createTime", required = false) String createTime,
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize) {
 
-        // 1. 权限校验
         Long farmerId = getUserIdFromToken(request);
-        if (farmerId == null) {
-            return ResponseEntity.status(401).build();
-        }
+        if (farmerId == null) return ResponseEntity.status(401).build();
 
         if (status == null) status = "active";
 
         Page<Product> page;
 
-        // --- 阶段一：未传入名字，返回去重商品名称分页列表 ---
-        if (productName == null || productName.trim().isEmpty()) {
-            log.info("【查询】农户:{}，状态:{}，请求去重商品名称列表。", farmerId, status);
+        if ((productName == null || productName.trim().isEmpty()) &&
+                (createTime == null || createTime.trim().isEmpty())) {
 
+            log.info("【查询】农户:{} 状态:{} 请求去重商品名称列表", farmerId, status);
             page = productService.selectDistinctProductsByFarmerIdAndStatusPage(farmerId, status, pageNum, pageSize);
-        }
-        // --- 阶段二：传入名字，返回带分页的商品实体列表 ---
-        else {
-            log.info("【查询】农户:{}，状态:{}，商品名:{}，请求分页商品实体列表。", farmerId, status, productName);
 
-            page = productService.getProductsByFarmerIdAndStatusPage(farmerId, status, productName, pageNum, pageSize);
+        } else {
+
+            log.info("【查询】农户:{} 状态:{} 名称:{} 时间:{} 请求实体列表",
+                    farmerId, status, productName, createTime);
+
+            page = productService.getProductsByFarmerIdAndStatusPage(farmerId, status, productName, createTime, pageNum, pageSize);
         }
 
-        // 屏蔽图片路径
         maskImagePath(page.getRecords());
-
         return ResponseEntity.ok(page);
     }
-
 
 
     /*

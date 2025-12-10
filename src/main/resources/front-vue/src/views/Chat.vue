@@ -38,6 +38,176 @@
   </div>
 </template>
 
+
+<script setup>
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
+import { useRoute } from 'vue-router';
+import axios from '../utils/axios';
+import { useAuthStore } from '@/stores/authStore';
+import { storeToRefs } from 'pinia';
+import router from "@/router/index.js";
+
+// --- Reactive State ---
+const route = useRoute();
+const receiverId = ref(null);        // 聊天对象ID
+const currentSession = ref(null);    // 当前会话
+const messages = ref([]);            // 消息列表
+const newMessageContent = ref('');   // 输入框内容
+const isLoading = ref(true);         // 加载状态
+const messageContainer = ref(null);  // DOM引用，用于滚动
+
+// --- SSE 连接对象 ---
+let eventSource = null;
+
+const authStore = useAuthStore();
+const { userInfo: currentUser, isLoggedIn, token } = storeToRefs(authStore);
+
+// --- Lifecycle Hooks ---
+onMounted(() => {
+  if (!isLoggedIn.value) {
+    alert('请先登录后再进行聊天！');
+    router.push('/login');
+    return;
+  }
+
+  // 初始化聊天
+  receiverId.value = parseInt(route.params.receiverId, 10);
+  if (receiverId.value) {
+    initializeChat(receiverId.value);
+    setupSseConnection();
+  }
+});
+
+onUnmounted(() => {
+  if (eventSource) {
+    eventSource.close();
+    console.log('SSE connection closed.');
+  }
+});
+
+// 监听路由变化，切换聊天对象
+watch(
+    () => route.params.receiverId,
+    (newId) => {
+      if (newId && parseInt(newId, 10) !== receiverId.value) {
+        receiverId.value = parseInt(newId, 10);
+        messages.value = [];
+        currentSession.value = null;
+        initializeChat(receiverId.value);
+      }
+    }
+);
+
+// ------------------- Methods -------------------
+
+/**
+ * 初始化聊天
+ */
+async function initializeChat(peerId) {
+  isLoading.value = true;
+  try {
+    const sessionRes = await axios.post(`/chat/session/${peerId}`);
+    currentSession.value = sessionRes.data;
+
+    if (currentSession.value && currentSession.value.sessionId) {
+      const messagesRes = await axios.get(`/chat/messages/${currentSession.value.sessionId}`);
+
+      // 按时间升序（早 -> 晚）
+      messages.value = messagesRes.data.sort((a, b) => new Date(a.sendTime) - new Date(b.sendTime));
+    }
+  } catch (error) {
+    console.error('初始化聊天失败:', error);
+    alert('无法加载聊天记录，请稍后重试。');
+  } finally {
+    isLoading.value = false;
+    await scrollToBottom();
+  }
+}
+
+/**
+ * 发送消息
+ */
+async function sendMessage() {
+  if (!newMessageContent.value.trim() || !currentSession.value) return;
+
+  const messageData = {
+    sessionId: currentSession.value.sessionId,
+    content: newMessageContent.value,
+    msgType: 'text',
+  };
+
+  try {
+    await axios.post('/chat/messages', messageData);
+    newMessageContent.value = '';
+    // 不手动 push，新消息通过 SSE 推送
+  } catch (error) {
+    console.error('发送消息失败:', error);
+    alert('消息发送失败！');
+  }
+}
+
+/**
+ * SSE 实时消息
+ */
+function setupSseConnection() {
+  if (!token.value) return;
+
+  const url = `/api/chat/stream?token=${token.value}`;
+  eventSource = new EventSource(url);
+
+  eventSource.onopen = () => console.log('SSE connection established.');
+
+  eventSource.onmessage = async (event) => {
+    const newMessage = JSON.parse(event.data);
+    if (currentSession.value && newMessage.sessionId === currentSession.value.sessionId) {
+      // 最新消息追加到末尾
+      messages.value.push(newMessage);
+      await scrollToBottom();
+    }
+  };
+
+  eventSource.onerror = (error) => {
+    console.error('SSE Error:', error);
+    eventSource.close();
+    // 可加重连逻辑
+  };
+}
+
+/**
+ * 格式化消息时间
+ */
+function formatMessageTime(dateTimeStr) {
+  if (!dateTimeStr) return '';
+  const messageDate = new Date(dateTimeStr);
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterdayStart = new Date(todayStart.getTime() - 86400000);
+  const thisYearStart = new Date(now.getFullYear(), 0, 1);
+
+  const fmtTime = (d) => `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+
+  if (messageDate >= todayStart) return fmtTime(messageDate);
+  if (messageDate >= yesterdayStart) return `昨天 ${fmtTime(messageDate)}`;
+  if (messageDate >= thisYearStart) return `${(messageDate.getMonth()+1).toString().padStart(2,'0')}-${messageDate.getDate().toString().padStart(2,'0')} ${fmtTime(messageDate)}`;
+  return `${messageDate.getFullYear()}-${(messageDate.getMonth()+1).toString().padStart(2,'0')}-${messageDate.getDate().toString().padStart(2,'0')} ${fmtTime(messageDate)}`;
+}
+
+/**
+ * 滚动到底部
+ */
+async function scrollToBottom() {
+  await nextTick();
+  if (messageContainer.value) {
+    messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
+  }
+}
+
+function goBack() {
+  router.back();
+}
+</script>
+
+
 <style scoped>
 /* ================== 容器 ================== */
 .chat-container {
@@ -217,173 +387,3 @@
   box-shadow: none;
 }
 </style>
-
-
-<script setup>
-import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
-import { useRoute } from 'vue-router';
-import axios from '../utils/axios';
-import { useAuthStore } from '@/stores/authStore';
-import { storeToRefs } from 'pinia';
-import router from "@/router/index.js";
-
-// --- Reactive State ---
-const route = useRoute();
-const receiverId = ref(null);        // 聊天对象ID
-const currentSession = ref(null);    // 当前会话
-const messages = ref([]);            // 消息列表
-const newMessageContent = ref('');   // 输入框内容
-const isLoading = ref(true);         // 加载状态
-const messageContainer = ref(null);  // DOM引用，用于滚动
-
-// --- SSE 连接对象 ---
-let eventSource = null;
-
-const authStore = useAuthStore();
-const { userInfo: currentUser, isLoggedIn, token } = storeToRefs(authStore);
-
-// --- Lifecycle Hooks ---
-onMounted(() => {
-  if (!isLoggedIn.value) {
-    alert('请先登录后再进行聊天！');
-    router.push('/login');
-    return;
-  }
-
-  // 初始化聊天
-  receiverId.value = parseInt(route.params.receiverId, 10);
-  if (receiverId.value) {
-    initializeChat(receiverId.value);
-    setupSseConnection();
-  }
-});
-
-onUnmounted(() => {
-  if (eventSource) {
-    eventSource.close();
-    console.log('SSE connection closed.');
-  }
-});
-
-// 监听路由变化，切换聊天对象
-watch(
-    () => route.params.receiverId,
-    (newId) => {
-      if (newId && parseInt(newId, 10) !== receiverId.value) {
-        receiverId.value = parseInt(newId, 10);
-        messages.value = [];
-        currentSession.value = null;
-        initializeChat(receiverId.value);
-      }
-    }
-);
-
-// ------------------- Methods -------------------
-
-/**
- * 初始化聊天
- */
-async function initializeChat(peerId) {
-  isLoading.value = true;
-  try {
-    const sessionRes = await axios.post(`/chat/session/${peerId}`);
-    currentSession.value = sessionRes.data;
-
-    if (currentSession.value && currentSession.value.sessionId) {
-      const messagesRes = await axios.get(`/chat/messages/${currentSession.value.sessionId}`);
-
-      // 按时间升序（早 -> 晚）
-      messages.value = messagesRes.data.sort((a, b) => new Date(a.sendTime) - new Date(b.sendTime));
-    }
-  } catch (error) {
-    console.error('初始化聊天失败:', error);
-    alert('无法加载聊天记录，请稍后重试。');
-  } finally {
-    isLoading.value = false;
-    await scrollToBottom();
-  }
-}
-
-/**
- * 发送消息
- */
-async function sendMessage() {
-  if (!newMessageContent.value.trim() || !currentSession.value) return;
-
-  const messageData = {
-    sessionId: currentSession.value.sessionId,
-    content: newMessageContent.value,
-    msgType: 'text',
-  };
-
-  try {
-    await axios.post('/chat/messages', messageData);
-    newMessageContent.value = '';
-    // 不手动 push，新消息通过 SSE 推送
-  } catch (error) {
-    console.error('发送消息失败:', error);
-    alert('消息发送失败！');
-  }
-}
-
-/**
- * SSE 实时消息
- */
-function setupSseConnection() {
-  if (!token.value) return;
-
-  const url = `/api/chat/stream?token=${token.value}`;
-  eventSource = new EventSource(url);
-
-  eventSource.onopen = () => console.log('SSE connection established.');
-
-  eventSource.onmessage = async (event) => {
-    const newMessage = JSON.parse(event.data);
-    if (currentSession.value && newMessage.sessionId === currentSession.value.sessionId) {
-      // 最新消息追加到末尾
-      messages.value.push(newMessage);
-      await scrollToBottom();
-    }
-  };
-
-  eventSource.onerror = (error) => {
-    console.error('SSE Error:', error);
-    eventSource.close();
-    // 可加重连逻辑
-  };
-}
-
-/**
- * 格式化消息时间
- */
-function formatMessageTime(dateTimeStr) {
-  if (!dateTimeStr) return '';
-  const messageDate = new Date(dateTimeStr);
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const yesterdayStart = new Date(todayStart.getTime() - 86400000);
-  const thisYearStart = new Date(now.getFullYear(), 0, 1);
-
-  const fmtTime = (d) => `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
-
-  if (messageDate >= todayStart) return fmtTime(messageDate);
-  if (messageDate >= yesterdayStart) return `昨天 ${fmtTime(messageDate)}`;
-  if (messageDate >= thisYearStart) return `${(messageDate.getMonth()+1).toString().padStart(2,'0')}-${messageDate.getDate().toString().padStart(2,'0')} ${fmtTime(messageDate)}`;
-  return `${messageDate.getFullYear()}-${(messageDate.getMonth()+1).toString().padStart(2,'0')}-${messageDate.getDate().toString().padStart(2,'0')} ${fmtTime(messageDate)}`;
-}
-
-/**
- * 滚动到底部
- */
-async function scrollToBottom() {
-  await nextTick();
-  if (messageContainer.value) {
-    messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
-  }
-}
-
-function goBack() {
-  router.back();
-}
-</script>
-

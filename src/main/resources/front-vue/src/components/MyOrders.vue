@@ -1,8 +1,8 @@
 <template>
   <div class="my-orders-container">
-    <div class="page-header">
-      <h2>我的订单</h2>
-    </div>
+<!--    <div class="page-header">-->
+<!--      <h2>我的订单</h2>-->
+<!--    </div>-->
 
     <div class="order-list">
       <div v-if="loading" class="loading-state">
@@ -520,7 +520,7 @@ const openViewReviewModal = async (itemId) => {
   max-width: 1000px;
   margin: 0 auto;
   padding: 20px;
-  background-color: #f4f6f8; /* 整个页面的浅灰背景 */
+  /*  background-color: #f4f6f8; 整个页面的浅灰背景 */
   min-height: 100vh;
 }
 

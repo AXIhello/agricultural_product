@@ -338,7 +338,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
 
 
 	@Override
-	public Page<Product> getProductsByStatusPage(String status, String productName, Integer pageNum, Integer pageSize) {
+	public Page<Product> getProductsByStatusPage(String status, String productName, String createTime, Integer pageNum, Integer pageSize) {
 		Page<Product> page = new Page<>(pageNum, pageSize);
 		LambdaQueryWrapper<Product> wrapper = new LambdaQueryWrapper<>();
 
@@ -365,7 +365,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
 
 
 	@Override
-	public Page<Product> getProductsByFarmerIdAndStatusPage(Long farmerId, String status, String productName, Integer pageNum, Integer pageSize) {
+	public Page<Product> getProductsByFarmerIdAndStatusPage(Long farmerId, String status, String productName, String createTime, Integer pageNum, Integer pageSize) {
 		Page<Product> page = new Page<>(pageNum, pageSize);
 		LambdaQueryWrapper<Product> wrapper = new LambdaQueryWrapper<>();
 

@@ -25,7 +25,7 @@
       <div v-if="currentView === 'products'" class="view-wrapper product-table">
 
           <!-- 表格头 -->
-          <div class="items-table-header">
+          <div class="table-header">
             <span>产品名称</span>
             <span>银行</span>
             <span>期限</span>
@@ -36,7 +36,7 @@
 
           <!-- 产品行 -->
           <div
-              class="items-table-row"
+              class="table-row"
               v-for="p in products"
               :key="p.productId"
           >
@@ -202,7 +202,7 @@
         
 
         <!-- 表格头 -->
-        <div class="items-table-header">
+        <div class="table-header">
           <span>申请编号</span>         
           <span>角色</span>
           <span>发起人</span>
@@ -214,7 +214,7 @@
 
         <!-- 申请列表 -->
         <div
-            class="items-table-row"
+            class="table-row"
             v-for="app in applications"
             :key="app.financingId"
         >
@@ -287,7 +287,7 @@
 
       <!-- 合作邀请视图 -->
       <div v-if="currentView === 'invitations'" class="view-wrapper invite-table">
-        <div class="items-table-header">
+        <div class="table-header">
           <span>申请ID</span>
           <span>发起人</span>
           <span>金额</span>
@@ -296,7 +296,7 @@
           <span>操作</span>
         </div>
 
-        <div class="items-table-row" v-for="invite in invitations" :key="invite.financingId">
+        <div class="table-row" v-for="invite in invitations" :key="invite.financingId">
           <span>#{{ invite.financingId }}</span>
           <span>{{ invite.initiatorName || '加载中...' }}</span>
           <span>{{ invite.amount }} 元</span>
@@ -1341,26 +1341,9 @@ watch(currentView, val => {
 
 /* ================= 表格整体布局 ================= */
 <style scoped>
-/* ================= 1. 公共基础样式 (保持不变) ================= */
-.items-table-header,
-.items-table-row {
-  display: flex;
-  align-items: center;
-  padding: 12px 10px;
-  gap: 10px;
-}
-.items-table-header {
-  background: #f5f5f5;
-  border-radius: 8px;
-  font-weight: bold;
-  color: #333;
-}
-.items-table-row {
-  border-bottom: 1px solid #eee;
-}
 /* 通用单元格设置 */
-.items-table-header span,
-.items-table-row span {
+.table-header span,
+.table-row span {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1373,13 +1356,13 @@ watch(currentView, val => {
 /* 
    列: [ID, 角色, 发起人, 金额, 期限, 状态, 操作]
 */
-.app-table .items-table-header span:nth-child(1), .app-table .items-table-row span:nth-child(1) { flex: 0 0 80px; }
-.app-table .items-table-header span:nth-child(2), .app-table .items-table-row span:nth-child(2) { flex: 0 0 110px; }
-.app-table .items-table-header span:nth-child(3), .app-table .items-table-row span:nth-child(3) { flex: 0 0 100px; }
-.app-table .items-table-header span:nth-child(4), .app-table .items-table-row span:nth-child(4) { flex: 1; }
-.app-table .items-table-header span:nth-child(5), .app-table .items-table-row span:nth-child(5) { flex: 0 0 60px; }
-.app-table .items-table-header span:nth-child(6), .app-table .items-table-row span:nth-child(6) { flex: 0 0 80px; }
-.app-table .items-table-header span:nth-child(7), .app-table .items-table-row span:nth-child(7) { flex: 0 0 180px; gap: 8px; }
+.app-table .table-header span:nth-child(1), .app-table .table-row span:nth-child(1) { flex: 0 0 80px; }
+.app-table .table-header span:nth-child(2), .app-table .table-row span:nth-child(2) { flex: 0 0 110px; }
+.app-table .table-header span:nth-child(3), .app-table .table-row span:nth-child(3) { flex: 0 0 100px; }
+.app-table .table-header span:nth-child(4), .app-table .table-row span:nth-child(4) { flex: 1; }
+.app-table .table-header span:nth-child(5), .app-table .table-row span:nth-child(5) { flex: 0 0 60px; }
+.app-table .table-header span:nth-child(6), .app-table .table-row span:nth-child(6) { flex: 0 0 80px; }
+.app-table .table-header span:nth-child(7), .app-table .table-row span:nth-child(7) { flex: 0 0 180px; gap: 8px; }
 
 
 /* ================= 3. 融资产品表格 (6列) - 修复布局 ================= */
@@ -1387,36 +1370,36 @@ watch(currentView, val => {
    列: [产品名称, 银行, 期限, 利率, 额度范围, 操作]
 */
 /* 名称：自适应 */
-.product-table .items-table-header span:nth-child(1), .product-table .items-table-row span:nth-child(1) { flex: 1; }
+.product-table .table-header span:nth-child(1), .product-table .table-row span:nth-child(1) { flex: 1; }
 /* 银行：自适应 */
-.product-table .items-table-header span:nth-child(2), .product-table .items-table-row span:nth-child(2) { flex: 1; }
+.product-table .table-header span:nth-child(2), .product-table .table-row span:nth-child(2) { flex: 1; }
 /* 期限：固定 */
-.product-table .items-table-header span:nth-child(3), .product-table .items-table-row span:nth-child(3) { flex: 0 0 60px; }
+.product-table .table-header span:nth-child(3), .product-table .table-row span:nth-child(3) { flex: 0 0 60px; }
 /* 利率：固定 */
-.product-table .items-table-header span:nth-child(4), .product-table .items-table-row span:nth-child(4) { flex: 0 0 80px; }
+.product-table .table-header span:nth-child(4), .product-table .table-row span:nth-child(4) { flex: 0 0 80px; }
 /* 额度范围：宽一点 */
-.product-table .items-table-header span:nth-child(5), .product-table .items-table-row span:nth-child(5) { flex: 1.5; }
+.product-table .table-header span:nth-child(5), .product-table .table-row span:nth-child(5) { flex: 1.5; }
 /* 操作：固定 */
-.product-table .items-table-header span:nth-child(6), .product-table .items-table-row span:nth-child(6) { flex: 0 0 120px; gap: 8px; }
+.product-table .table-header span:nth-child(6), .product-table .table-row span:nth-child(6) { flex: 0 0 120px; gap: 8px; }
 
 
 /* ================= 4. 共同融资邀请表格 (6列) - 修复丑陋的绿色条 ================= */
 /* 
    列: [申请ID, 发起人, 金额, 用途, 邀请状态, 操作]
 */
-.invite-table .items-table-header span:nth-child(1), .invite-table .items-table-row span:nth-child(1) { flex: 0 0 80px; }
-.invite-table .items-table-header span:nth-child(2), .invite-table .items-table-row span:nth-child(2) { flex: 1; }
-.invite-table .items-table-header span:nth-child(3), .invite-table .items-table-row span:nth-child(3) { flex: 1; }
-.invite-table .items-table-header span:nth-child(4), .invite-table .items-table-row span:nth-child(4) { flex: 1.5; } /* 用途长一点 */
+.invite-table .table-header span:nth-child(1), .invite-table .table-row span:nth-child(1) { flex: 0 0 80px; }
+.invite-table .table-header span:nth-child(2), .invite-table .table-row span:nth-child(2) { flex: 1; }
+.invite-table .table-header span:nth-child(3), .invite-table .table-row span:nth-child(3) { flex: 1; }
+.invite-table .table-header span:nth-child(4), .invite-table .table-row span:nth-child(4) { flex: 1.5; } /* 用途长一点 */
 
 /* 第5列：邀请状态 - 修复绿色长条的关键 */
-.invite-table .items-table-header span:nth-child(5), .invite-table .items-table-row span:nth-child(5) { flex: 0 0 120px; }
+.invite-table .table-header span:nth-child(5), .invite-table .table-row span:nth-child(5) { flex: 0 0 120px; }
 
 /* 
    【关键修复】针对邀请表格里的状态 span 
    让它变成胶囊状，而不是撑满整行
 */
-.invite-table .items-table-row span:nth-child(5) span {
+.invite-table .table-row span:nth-child(5) span {
     display: inline-block;
     width: fit-content;    /* 关键：随字走 */
     padding: 4px 12px;
@@ -1424,7 +1407,7 @@ watch(currentView, val => {
     font-size: 12px;
 }
 
-.invite-table .items-table-header span:nth-child(6), .invite-table .items-table-row span:nth-child(6) { flex: 0 0 150px; gap: 8px; }
+.invite-table .table-header span:nth-child(6), .invite-table .table-row span:nth-child(6) { flex: 0 0 150px; gap: 8px; }
 
 
 /* ================= 邀请状态的颜色定义 ================= */
