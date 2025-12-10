@@ -11,6 +11,7 @@
         <p><label>地区：</label>{{ userInfo.region }}</p>
       </div>
       <div class="user-actions">
+        <button class="change-pass-btn" @click="openChangePassword">修改密码</button>
         <button class="edit-btn" @click="openEditProfile">编辑资料</button>
         <button class="exit-btn" @click="exit()">退出登录</button>
       </div>
@@ -37,6 +38,75 @@
 
       <!-- 内容区域 -->
       <div class="view-content-wrapper">
+
+        <!--编辑个人资料-->
+        <div v-if="showEditProfileModal" class="modal-overlay">
+          <div class="modal-container">
+            <!-- 右上角关闭按钮 -->
+            <button class="close-btn" @click="closeEditProfile">×</button>
+
+            <h2 class="modal-title">编辑个人资料</h2>
+
+            <div class="modal-body">
+              <!-- 昵称 -->
+              <div class="modal-form-group row-layout">
+                <label>昵称：</label>
+                <input v-model="editProfileForm.name" type="text" placeholder="请输入新昵称" />
+              </div>
+
+              <!-- 地区 - 省份 -->
+              <div class="modal-form-group row-layout">
+                <label>省份：</label>
+                <input v-model="editProfileForm.province" type="text" placeholder="例如：广东省" />
+              </div>
+
+              <!-- 地区 - 城市 -->
+              <div class="modal-form-group row-layout">
+                <label>城市：</label>
+                <input v-model="editProfileForm.city" type="text" placeholder="例如：广州市" />
+              </div>
+            </div>
+
+            <!-- 底部按钮 -->
+            <div class="modal-footer">
+              <button class="cancel-btn" @click="closeEditProfile">取消</button>
+              <button class="save-btn" @click="saveUserProfile">保存修改</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 修改密码弹窗 -->
+        <div v-if="showChangePass" class="modal-overlay">
+          <div class="modal-container">
+
+            <!-- 标题 -->
+            <h3 class="modal-title">修改密码</h3>
+
+            <!-- Body 可滚动 -->
+            <div class="modal-body">
+
+              <div class="modal-form-group">
+                <label>新密码</label>
+                <input v-model="newPassword" type="password" placeholder="请输入新密码" />
+              </div>
+
+              <div class="modal-form-group">
+                <label>确认密码</label>
+                <input v-model="confirmPassword" type="password" placeholder="再次输入新密码" />
+              </div>
+
+              <p v-if="errMsg" class="error">{{ errMsg }}</p>
+            </div>
+
+            <!-- 底部按钮 -->
+            <div class="modal-footer">
+              <button class="modal-btn confirm" @click="submitChangePassword">确定</button>
+              <button class="modal-btn cancel" @click="showChangePass = false">取消</button>
+            </div>
+
+          </div>
+        </div>
+
 
         <!-- ======================== 买家/农户：我的地址 ======================== -->
         <div v-if="currentView === 'address'" class="address-view">
@@ -145,41 +215,6 @@
 
         </div>
 
-        <!--编辑个人资料-->
-        <div v-if="showEditProfileModal" class="modal-overlay">
-          <div class="modal-container">
-            <!-- 右上角关闭按钮 -->
-            <button class="close-btn" @click="closeEditProfile">×</button>
-
-            <h2 class="modal-title">编辑个人资料</h2>
-
-            <div class="modal-body">
-              <!-- 昵称 -->
-              <div class="modal-form-group row-layout">
-                <label>昵称：</label>
-                <input v-model="editProfileForm.name" type="text" placeholder="请输入新昵称" />
-              </div>
-
-              <!-- 地区 - 省份 -->
-              <div class="modal-form-group row-layout">
-                <label>省份：</label>
-                <input v-model="editProfileForm.province" type="text" placeholder="例如：广东省" />
-              </div>
-
-              <!-- 地区 - 城市 -->
-              <div class="modal-form-group row-layout">
-                <label>城市：</label>
-                <input v-model="editProfileForm.city" type="text" placeholder="例如：广州市" />
-              </div>
-            </div>
-
-            <!-- 底部按钮 -->
-            <div class="modal-footer">
-              <button class="cancel-btn" @click="closeEditProfile">取消</button>
-              <button class="save-btn" @click="saveUserProfile">保存修改</button>
-            </div>
-          </div>
-        </div>
 
         <!-- ======================== 农户：我的预约 ======================== -->
         <div v-if="currentView === 'appointments'" class="appointments-view">
@@ -700,6 +735,53 @@ async function saveUserProfile() {
     alert("修改失败，请稍后重试");
   }
 }
+// 修改密码弹窗相关
+const showChangePass = ref(false);
+const newPassword = ref("");
+const confirmPassword = ref("");
+const errMsg = ref("");
+
+// 打开修改密码弹窗
+const openChangePassword = () => {
+  newPassword.value = "";
+  confirmPassword.value = "";
+  errMsg.value = "";
+  showChangePass.value = true;
+};
+
+// 提交密码修改
+const submitChangePassword = async () => {
+  errMsg.value = "";
+
+  if (!newPassword.value || !confirmPassword.value) {
+    errMsg.value = "密码不能为空";
+    return;
+  }
+  if (newPassword.value.length < 6) {
+    errMsg.value = "密码至少 6 位";
+    return;
+  }
+  if (newPassword.value !== confirmPassword.value) {
+    errMsg.value = "两次输入不一致";
+    return;
+  }
+
+  try {
+    const res = await axios.post("/user/change-password", {
+      newPassword: newPassword.value
+    });
+
+    if (res.data.success) {
+      alert("密码修改成功，请重新登录！");
+      authStore.logout(); // 清理 token
+      router.push("/login");
+    } else {
+      errMsg.value = res.data.message || "修改失败";
+    }
+  } catch (e) {
+    errMsg.value = "服务器错误，请稍后再试";
+  }
+};
 
 // ======自动回复=====
 const rules = ref([])

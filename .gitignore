@@ -51,3 +51,5 @@ coupon_system_design.sql
 COUPON_USAGE_GUIDE.md
 .gitignore
 uploads/products/5815c05585ee4962917900e7ab474c4e.jpg
+
+/node_modules
