@@ -47,7 +47,7 @@
               <div class="product-info">
                 <div class="info-row-main">
                   <span class="product-name">{{ item.productName || '未知商品' }}</span>
-                  <span class="product-price">¥{{ item.unitPrice }}</span>
+                  <span class="product-price">¥{{ item.unitPrice.toFixed(2)  }}</span>
                 </div>
                 <div class="info-row-sub">
                    <span>数量: x{{ item.quantity }}</span>
@@ -109,7 +109,7 @@
           <div class="card-footer">
             <div class="total-price-section">
               <span>总金额:</span>
-              <span class="price-large">¥{{ order.totalAmount }}</span>
+              <span class="price-large">¥{{ order.totalAmount.toFixed(2)  }}</span>
             </div>
             
             <div class="main-actions">

@@ -1355,57 +1355,38 @@ async function removeFromCart(productId) {
   }
 }
 
-//创建订单
-async function createOrder() {
 
+// 从购物车提交订单（不直接创建）
+const createOrder = () => {
   if (!isLoggedIn.value) {
     alert('请先登录！');
     return;
   }
 
-  if (!selectedAddressId.value) {
-    alert('请先选择收货地址')
-    return
+  if (!cartItems.value.length) {
+    alert('购物车为空！');
+    return;
   }
 
-  try {
-    const reqBody = {
-      addressId: selectedAddressId.value,
-      orderItems: cartItems.value.map(item => ({
-        productId: item.productId,
-        quantity: item.quantity
-      }))
-    }
+// 构建订单预览对象
+  const orderPreview = {
+    addressId: selectedAddressId.value || null,
+    orderItems: cartItems.value.map(item => ({
+      productId: item.productId,
+      specInfo: item.specInfo,
+      quantity: item.quantity
+    }))
+  };
 
-    console.log('即将发送到后端的订单数据:', JSON.stringify(reqBody, null, 2));
+// 保存到 localStorage，保证刷新页面不会丢失
+  localStorage.setItem('orderPreview', JSON.stringify(orderPreview));
 
-    // 1. 提交订单
-    const res = await axios.post('/orders', reqBody);
+// 跳转到订单确认页面
+  router.push({ path: '/order/confirm' });
 
-    if (res.data) {
-      const orderId = res.data; // 获取订单ID
+  console.log('跳转到订单确认页面，传递参数:', orderPreview);
 
-      // 2. 订单成功后，调用后端接口清空购物车
-      await axios.delete('/cart/clear');
-
-      // 3. 清空前端状态
-      cartItems.value = []
-
-      alert(`订单提交成功！`)
-
-      // 4. 跳转页面
-      await router.push(`/orders/${orderId}`)
-    } else {
-      alert('提交失败，请稍后再试')
-    }
-
-    await axios.delete('/cart/clear');
-
-  } catch (err) {
-    console.error('提交订单失败:', err)
-    alert('提交失败，请检查登录状态或网络')
-  }
-}
+};
 
 
 </script>

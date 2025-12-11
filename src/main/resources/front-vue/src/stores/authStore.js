@@ -88,14 +88,24 @@ export const useAuthStore = defineStore('auth', () => {
         }
     }
 
-    // 将 state, getters, actions 返回，以便组件中使用
-    return { 
-        userInfo, 
-        token, 
-        isLoggedIn, 
-        role, 
-        login, 
-        logout, 
-        tryAutoLogin 
+    /**
+     * 更新用户信息
+     * @param {Object} newInfo - 需要更新的字段
+     */
+    function setUserInfo(newInfo) {
+        if (!userInfo.value) return;
+        userInfo.value = { ...userInfo.value, ...newInfo };
+        localStorage.setItem('userInfo', JSON.stringify(userInfo.value));
+    }
+
+    return {
+        userInfo,
+        token,
+        isLoggedIn,
+        role,
+        login,
+        logout,
+        tryAutoLogin,
+        setUserInfo   // ✅ 新增方法
     };
 });

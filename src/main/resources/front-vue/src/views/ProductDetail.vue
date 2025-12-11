@@ -7,9 +7,33 @@
 
     <!-- 商品详情 -->
     <div v-else-if="currentSpec.productId" class="product-container">
-      <div class="product-image">
-        <img :src="imgUrl" alt="商品图片" @click="showPreview = true">
-        <ImagePreview :visible="showPreview" :src="imgUrl" @close="showPreview = false" />
+      <div class="product-left">
+        <div class="product-image">
+          <img :src="imgUrl" alt="商品图片" @click="showPreview = true">
+          <ImagePreview :visible="showPreview" :src="imgUrl" @close="showPreview = false" />
+        </div>
+
+        <!-- 下方评价 -->
+        <div class="review-column">
+          <h3>买家评价</h3>
+          <div v-if="reviewLoading" class="loading">评价加载中...</div>
+          <div v-else-if="!reviews.length" class="no-review">暂无评价</div>
+          <div v-else class="review-list">
+
+            <div v-for="(r, idx) in reviews" :key="idx">
+              <div v-if="r" class="review-card">
+                <div class="review-header">
+                  <span class="user-nick">{{ r.isAnonymous ? '匿名用户' : '用户' + r.userId }}</span>
+                  <Stars :rating="r.rating" />
+                  <span class="review-time">{{ formatTime(r.updateTime) }}</span>
+                </div>
+                <div class="review-content">{{ r.content }}</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
       </div>
 
       <div class="product-info">
@@ -92,28 +116,6 @@
           </el-button>
         </div>
 
-      </div>
-
-      <!-- 右侧评价 -->
-      
-      <div class="review-column">
-        <h3>买家评价</h3>
-        <div v-if="reviewLoading" class="loading">评价加载中...</div>
-        <div v-else-if="!reviews.length" class="no-review">暂无评价</div>
-        <div v-else class="review-list">
-
-          <div v-for="(r, idx) in reviews" :key="idx">
-            <div v-if="r" class="review-card">
-              <div class="review-header">
-                <span class="user-nick">{{ r.isAnonymous ? '匿名用户' : '用户' + r.userId }}</span>
-                <Stars :rating="r.rating" />
-                <span class="review-time">{{ formatTime(r.updateTime) }}</span>
-              </div>
-              <div class="review-content">{{ r.content }}</div>
-            </div>
-          </div>
-
-        </div>
       </div>
 
     </div>
@@ -284,58 +286,26 @@ const handleAddToCart = async (product) => {
 }
 
 // 立即购买
-const buyNow = async (product) => {
-
+const buyNow = (product) => {
   if (!isLoggedIn.value) {
     alert('请先登录！');
     return;
   }
-  const defaultAddress = ref();
 
-  try {
+  const orderPreview = {
+    addressId: null,
+    orderItems: [{
+      productId: product.productId,
+      specInfo: product.specInfo,
+      quantity: quantity.value
+    }]
+  };
+  localStorage.setItem('orderPreview', JSON.stringify(orderPreview));
 
-    try {
-      const res = await axios.get('/address/default')
-      if (res.status === 200 && res.data) {
-        defaultAddress.value = res.data
-        console.log('默认地址:', defaultAddress.value)
-      } else {
-        defaultAddress.value = null
-        console.warn('未找到默认地址')
-        return
-      }
-    } catch (err) {
-      console.error('获取默认地址失败', err)
-      ElMessage.error('请先到个人信息添加地址！')
-    }
+  router.push({ path: '/order/confirm' });
 
-    const reqBody = {
-      addressId: defaultAddress.value.addressId,
-      orderItems: [{
-        productId: product.productId,
-        quantity: quantity.value
-      }]
-    }
-
-    console.log('即将发送到后端的订单数据:', JSON.stringify(reqBody, null, 2));
-
-    const res = await axios.post('/orders', reqBody);
-
-    if (res.data) {
-      const orderId = res.data;
-      alert(`订单提交成功！`)
-      currentSpec.value = []
-      await router.push(`/orders/${orderId}`)
-    } else {
-      alert('提交失败，请稍后再试')
-    }
-
-  } catch (err) {
-    console.error('提交订单失败:', err)
-    alert('提交失败，请检查登录状态或网络')
-  }
-
-}
+  console.log('跳转到订单确认页面，传递参数:', orderPreview);
+};
 
 //加载评价
 const reviews = ref([])
@@ -360,36 +330,37 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* 整个页面背景：纯白 */
 .product-detail-page {
-  max-width: 1400px;
-  margin: 40px auto;
-  padding: 20px;
-  background-color: #f5f5f7;
+  width: 100%;
+  padding: 40px 60px;
+  min-height: 100vh;
+  background: #ffffff; /* 白底 */
+  box-sizing: border-box;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial;
 }
 
-.loading-state,
-.error-state {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 300px;
-  color: #888;
-  font-size: 16px;
-}
-
+/* 商品内容整体布局：左右两栏 */
 .product-container {
-  display: grid;
-  grid-template-columns: 1.2fr 1.8fr 1fr; /* 图：信息：评价 */
-  gap: 30px;
-  background: #fff;
-  padding: 30px;
-  border-radius: 16px;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 40px;
+  width: 100%;
 }
 
+/* 左半部分（产品图片 + 评论） */
+.product-left {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  width: 50%;
+  box-sizing: border-box;
+}
+
+/* 图片保持你的样式 */
 .product-image {
-  flex: 1;
+  padding-top: 40px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -404,8 +375,18 @@ onMounted(() => {
   box-shadow: 0 5px 15px rgba(0,0,0,0.08);
 }
 
+/* 右半部分固定，字不溢出 */
 .product-info {
-  flex: 2;
+  padding: 40px;
+  background: #ffffff;
+  width: 50%;            /* 占一半宽度 */
+  max-width: 600px;      /* 限制最大宽度，防止溢出 */
+  height:calc(100vh - 40px);
+  position: fixed;
+  right: 60px;
+  top: 40px;
+  box-sizing: border-box;
+
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -415,7 +396,18 @@ onMounted(() => {
   font-size: 30px;
   font-weight: 700;
   line-height: 1.2;
-  margin-bottom: 10px;
+}
+
+
+/* loading / error 和整体风格一致 */
+.loading-state,
+.error-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+  color: #666;
+  font-size: 16px;
 }
 
 .price-section {
@@ -582,15 +574,16 @@ onMounted(() => {
 
 /*=======评价样式=======*/
 <style scoped>
+/* 评论区 */
 .review-column {
   background: #fafafa;
   padding: 20px;
   border-radius: 16px;
-  height: fit-content;
   max-height: 600px;
   overflow-y: auto;
   box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
 }
+
 
 .review-card {
   background: #fff;
@@ -639,4 +632,5 @@ onMounted(() => {
     max-height: none;
   }
 }
+
 </style>

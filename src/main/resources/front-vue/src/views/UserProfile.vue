@@ -54,17 +54,22 @@
                 <input v-model="editProfileForm.name" type="text" placeholder="请输入新昵称" />
               </div>
 
-              <!-- 地区 - 省份 -->
               <div class="modal-form-group row-layout">
-                <label>省份：</label>
-                <input v-model="editProfileForm.province" type="text" placeholder="例如：广东省" />
+                <label>地区：</label>
+                <input v-model="editProfileForm.region" type="text" placeholder="例如：广东省潮汕市" />
               </div>
 
-              <!-- 地区 - 城市 -->
-              <div class="modal-form-group row-layout">
-                <label>城市：</label>
-                <input v-model="editProfileForm.city" type="text" placeholder="例如：广州市" />
-              </div>
+<!--              &lt;!&ndash; 地区 - 省份 &ndash;&gt;-->
+<!--              <div class="modal-form-group row-layout">-->
+<!--                <label>省份：</label>-->
+<!--                <input v-model="editProfileForm.province" type="text" placeholder="例如：广东省" />-->
+<!--              </div>-->
+
+<!--              &lt;!&ndash; 地区 - 城市 &ndash;&gt;-->
+<!--              <div class="modal-form-group row-layout">-->
+<!--                <label>城市：</label>-->
+<!--                <input v-model="editProfileForm.city" type="text" placeholder="例如：广州市" />-->
+<!--              </div>-->
             </div>
 
             <!-- 底部按钮 -->
@@ -690,7 +695,7 @@ function openEditProfile() {
   
   // 尝试解析当前的 region 字段 (假设格式为 "省份 城市" 或 "省份城市")
   // 如果后端存的是简单字符串，这里做简单分割，或者让用户重新填
-  const region = userInfo.value.region || '';
+  editProfileForm.value.region = userInfo.value.region || '';
   // 这里做个简单的处理，实际可能需要更复杂的解析或让用户自己填
   editProfileForm.value.province = ''; 
   editProfileForm.value.city = ''; 
@@ -711,7 +716,7 @@ async function saveUserProfile() {
   }
 
   // 拼接地区字段
-  const regionStr = `${editProfileForm.value.province || ''}${editProfileForm.value.city || ''}`;
+  // const regionStr = `${editProfileForm.value.province || ''}${editProfileForm.value.city || ''}`;
 
   try {
     // 假设后端有一个更新用户信息的接口 /user/update
@@ -719,16 +724,17 @@ async function saveUserProfile() {
     await axios.post('/user/update/profile', {
       userId: userInfo.value.userId, // 传 ID 确保后端知道改谁
       name: editProfileForm.value.name,
-      region: regionStr
+      region: editProfileForm.value.region
     });
 
     alert("资料修改成功！");
-    
-    // 更新本地 Store 中的用户信息，以便页面即时刷新
-    // authStore.setUserInfo 是假设你 Store 里有这个 update 方法，或者直接改 userInfo
-    userInfo.value.name = editProfileForm.value.name;
-    userInfo.value.region = regionStr;
-    
+
+    // 使用 store 的方法更新状态
+    authStore.setUserInfo({
+      name: editProfileForm.value.name,
+      region: editProfileForm.value.region
+    });
+
     closeEditProfile();
   } catch (err) {
     console.error("修改资料失败", err);
