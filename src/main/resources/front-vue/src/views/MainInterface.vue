@@ -10,7 +10,10 @@
         </div>
 
         <!--金融产品展示-->
-        <div class="financial-products">
+         <div 
+          class="financial-products" 
+          v-if="['bank', 'farmer', 'admin'].includes(role)"
+        >
           <h3>金融产品</h3>
           <FinanceProducts />
         </div>
@@ -25,6 +28,12 @@
         <div class="expert-qa">
           <h3>专家问答</h3>
           <ExpertQA />
+        </div>
+
+        <!-- 专业知识展示 -->
+        <div class="expert-knowledge">
+          <h3>专业知识</h3>
+          <ExpertKnowledge />
         </div>
 
         <!-- 助农电商 -->
@@ -47,6 +56,15 @@ import ExpertOverview from '../components/ExpertOverview.vue';
 import ExpertQA from '../components/ExpertQA.vue';
 import ECommerce from '../components/ECommerce.vue';
 import HeaderComponent from '../components/HeaderComponent.vue';
+import ExpertKnowledge from '../components/ExpertKnowledge.vue';
+
+//判断角色
+import { useAuthStore } from '@/stores/authStore'
+import { storeToRefs } from 'pinia'
+
+const authStore = useAuthStore()
+const { role } = storeToRefs(authStore)
+
 
 </script>
 
@@ -68,6 +86,7 @@ import HeaderComponent from '../components/HeaderComponent.vue';
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   background-color: #f9f9f9;
+  margin-bottom: 20px;
 }
 
 .home-content h3 {
