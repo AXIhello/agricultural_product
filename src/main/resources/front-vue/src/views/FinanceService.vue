@@ -1,5 +1,5 @@
 <template>
-  <div class="main-bg">
+  <div class="main-bg financing-app">
     <HeaderComponent />
 
     <section class="content">
@@ -25,7 +25,7 @@
       <div v-if="currentView === 'products'" class="view-wrapper product-table">
 
           <!-- 表格头 -->
-          <div class="table-header">
+          <div class="table-header-f">
             <span>产品名称</span>
             <span>银行</span>
             <span>期限</span>
@@ -36,7 +36,7 @@
 
           <!-- 产品行 -->
           <div
-              class="table-row"
+              class="table-row-f"
               v-for="p in products"
               :key="p.productId"
           >
@@ -202,7 +202,7 @@
         
 
         <!-- 表格头 -->
-        <div class="table-header">
+        <div class="table-header-f ">
           <span>申请编号</span>         
           <span>角色</span>
           <span>发起人</span>
@@ -214,7 +214,7 @@
 
         <!-- 申请列表 -->
         <div
-            class="table-row"
+            class="table-row-f "
             v-for="app in applications"
             :key="app.financingId"
         >
@@ -287,7 +287,7 @@
 
       <!-- 合作邀请视图 -->
       <div v-if="currentView === 'invitations'" class="view-wrapper invite-table">
-        <div class="table-header">
+        <div class="table-header-f">
           <span>申请ID</span>
           <span>发起人</span>
           <span>金额</span>
@@ -296,7 +296,7 @@
           <span>操作</span>
         </div>
 
-        <div class="table-row" v-for="invite in invitations" :key="invite.financingId">
+        <div class="table-row-f" v-for="invite in invitations" :key="invite.financingId">
           <span>#{{ invite.financingId }}</span>
           <span>{{ invite.initiatorName || '加载中...' }}</span>
           <span>{{ invite.amount }} 元</span>
@@ -447,7 +447,9 @@ import axios from '../utils/axios'
 import { useAuthStore } from '@/stores/authStore'
 import { storeToRefs } from 'pinia'
 import HeaderComponent from '../components/HeaderComponent.vue';
+import {useRoute} from 'vue-router'
 
+const route = useRoute()
 
 const authStore = useAuthStore()
 const { role,userInfo } = storeToRefs(authStore)
@@ -921,6 +923,22 @@ const openCreateModal = () => {
 onMounted(async () => {
   await loadProducts()
   await loadApplications()
+
+   //检查 URL 是否带有 openId
+  const openId = route.query.openId
+  
+  if (openId) {
+
+    currentView.value = 'products'
+
+    const targetProduct = products.value.find(p => String(p.productId) === String(openId))
+
+    if (targetProduct) {
+      console.log("自动打开产品详情:", targetProduct.productName)
+
+      viewProduct(targetProduct)
+    }
+  }
 })
 
 watch(currentView, val => {
@@ -1341,94 +1359,168 @@ watch(currentView, val => {
 
 /* ================= 表格整体布局 ================= */
 <style scoped>
-/* 通用单元格设置 */
-.table-header span,
-.table-row span {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  /* 通用 */
+.financing-app .table-header-f span,
+.financing-app .table-row-f span {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
 }
 
-/* ================= 2. 融资申请表格 (7列) - 之前的完美版 ================= */
-/* 
-   列: [ID, 角色, 发起人, 金额, 期限, 状态, 操作]
-*/
-.app-table .table-header span:nth-child(1), .app-table .table-row span:nth-child(1) { flex: 0 0 80px; }
-.app-table .table-header span:nth-child(2), .app-table .table-row span:nth-child(2) { flex: 0 0 110px; }
-.app-table .table-header span:nth-child(3), .app-table .table-row span:nth-child(3) { flex: 0 0 100px; }
-.app-table .table-header span:nth-child(4), .app-table .table-row span:nth-child(4) { flex: 1; }
-.app-table .table-header span:nth-child(5), .app-table .table-row span:nth-child(5) { flex: 0 0 60px; }
-.app-table .table-header span:nth-child(6), .app-table .table-row span:nth-child(6) { flex: 0 0 80px; }
-.app-table .table-header span:nth-child(7), .app-table .table-row span:nth-child(7) { flex: 0 0 180px; gap: 8px; }
-
-
-/* ================= 3. 融资产品表格 (6列) - 修复布局 ================= */
-/* 
-   列: [产品名称, 银行, 期限, 利率, 额度范围, 操作]
-*/
-/* 名称：自适应 */
-.product-table .table-header span:nth-child(1), .product-table .table-row span:nth-child(1) { flex: 1; }
-/* 银行：自适应 */
-.product-table .table-header span:nth-child(2), .product-table .table-row span:nth-child(2) { flex: 1; }
-/* 期限：固定 */
-.product-table .table-header span:nth-child(3), .product-table .table-row span:nth-child(3) { flex: 0 0 60px; }
-/* 利率：固定 */
-.product-table .table-header span:nth-child(4), .product-table .table-row span:nth-child(4) { flex: 0 0 80px; }
-/* 额度范围：宽一点 */
-.product-table .table-header span:nth-child(5), .product-table .table-row span:nth-child(5) { flex: 1.5; }
-/* 操作：固定 */
-.product-table .table-header span:nth-child(6), .product-table .table-row span:nth-child(6) { flex: 0 0 120px; gap: 8px; }
-
-
-/* ================= 4. 共同融资邀请表格 (6列) - 修复丑陋的绿色条 ================= */
-/* 
-   列: [申请ID, 发起人, 金额, 用途, 邀请状态, 操作]
-*/
-.invite-table .table-header span:nth-child(1), .invite-table .table-row span:nth-child(1) { flex: 0 0 80px; }
-.invite-table .table-header span:nth-child(2), .invite-table .table-row span:nth-child(2) { flex: 1; }
-.invite-table .table-header span:nth-child(3), .invite-table .table-row span:nth-child(3) { flex: 1; }
-.invite-table .table-header span:nth-child(4), .invite-table .table-row span:nth-child(4) { flex: 1.5; } /* 用途长一点 */
-
-/* 第5列：邀请状态 - 修复绿色长条的关键 */
-.invite-table .table-header span:nth-child(5), .invite-table .table-row span:nth-child(5) { flex: 0 0 120px; }
-
-/* 
-   【关键修复】针对邀请表格里的状态 span 
-   让它变成胶囊状，而不是撑满整行
-*/
-.invite-table .table-row span:nth-child(5) span {
-    display: inline-block;
-    width: fit-content;    /* 关键：随字走 */
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 12px;
+  /* 表格容器基础样式  */
+.table-header-f,
+.table-row-f {
+  display: flex;              /* 关键：开启弹性布局，让子元素横向排布 */
+  align-items: center;        /* 垂直居中 */
+  justify-content: space-between; 
+  padding: 12px 10px;         /* 给每一行加点内边距 */
+  border-bottom: 1px solid #ebeef5; /*底部分割线 */
 }
 
-.invite-table .table-header span:nth-child(6), .invite-table .table-row span:nth-child(6) { flex: 0 0 150px; gap: 8px; }
+/* 表头特别样式 */
+.table-header-f {
+  background-color: #f5f7fa;  /* 表头浅灰色背景 */
+  font-weight: bold;
+  color: #606266;
+  border-radius: 4px 4px 0 0; /* 顶部圆角 */
+}
 
+/* 数据行鼠标悬停效果 */
+.table-row-f:hover {
+  background-color: #f5f7fa;
+}
 
-/* ================= 邀请状态的颜色定义 ================= */
-/* 待确认 */
-.status-pending { 
-  background: #fffbe6; 
-  color: #faad14; 
-  border: 1px solid #ffe58f;
+/* 外层包裹容器，防止表格太宽溢出 */
+.view-wrapper {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
-/* 已接受 */
-.status-accepted { 
-  background: #f6ffed; 
-  color: #52c41a; 
-  border: 1px solid #b7eb8f;
+
+/* ================== 融资申请表格 ================== */
+/* 列: [ID, 角色, 发起人, 金额, 期限, 状态, 操作] */
+
+.financing-app .app-table .table-header-f span:nth-child(1),
+.financing-app .app-table .table-row-f span:nth-child(1) { flex: 0 0 80px !important; }
+
+.financing-app .app-table .table-header-f span:nth-child(2),
+.financing-app .app-table .table-row-f span:nth-child(2) { flex: 0 0 110px !important; }
+
+.financing-app .app-table .table-header-f span:nth-child(3),
+.financing-app .app-table .table-row-f span:nth-child(3) { flex: 0 0 100px !important; }
+
+.financing-app .app-table .table-header-f span:nth-child(4),
+.financing-app .app-table .table-row-f span:nth-child(4) { flex: 0 0 100px !important; }
+
+.financing-app .app-table .table-header-f span:nth-child(5),
+.financing-app .app-table .table-row-f span:nth-child(5) { flex: 0 0 60px !important; }
+
+.financing-app .app-table .table-header-f span:nth-child(6),
+.financing-app .app-table .table-row-f span:nth-child(6) { flex: 0 0 80px !important; }
+
+.financing-app .app-table .table-header-f span:nth-child(7),
+.financing-app .app-table .table-row-f span:nth-child(7) { 
+  flex: 0 0 180px !important; 
+  gap: 8px !important;
 }
-/* 已拒绝 */
-.status-rejected { 
-  background: #fff1f0; 
-  color: #ff4d4f; 
-  border: 1px solid #ffa39e;
+
+/* ================== 融资产品表格  ================== */
+/* 列: [产品名称, 银行, 期限, 利率, 额度范围, 操作] */
+
+/* 1. 产品名称：给予较多空间 */
+.financing-app .product-table .table-header-f span:nth-child(1),
+.financing-app .product-table .table-row-f span:nth-child(1) { 
+  flex: 1.5 !important;  /* 修正了这里的类名 */
+  justify-content: center; /* 如果你想左对齐名字，改成 flex-start */
 }
+
+/* 2. 银行 */
+.financing-app .product-table .table-header-f span:nth-child(2),
+.financing-app .product-table .table-row-f span:nth-child(2) { 
+  flex: 1 !important; 
+}
+
+/* 3. 期限 (固定宽度，防止过宽) */
+.financing-app .product-table .table-header-f span:nth-child(3),
+.financing-app .product-table .table-row-f span:nth-child(3) { 
+  flex: 0 0 80px !important; 
+}
+
+/* 4. 利率 (固定宽度) */
+.financing-app .product-table .table-header-f span:nth-child(4),
+.financing-app .product-table .table-row-f span:nth-child(4) { 
+  flex: 0 0 80px !important; 
+}
+
+/* 5. 额度范围 (最宽的内容) */
+.financing-app .product-table .table-header-f span:nth-child(5),
+.financing-app .product-table .table-row-f span:nth-child(5) { 
+  flex: 2 !important; 
+}
+
+/* 6. 操作 (固定宽度，右侧按钮) */
+.financing-app .product-table .table-header-f span:nth-child(6),
+.financing-app .product-table .table-row-f span:nth-child(6) { 
+  flex: 0 0 120px !important; 
+  gap: 8px !important; 
+}
+
+/* ================== 邀请表格  ================== */
+
+/* 第 1 列: 申请ID */
+.financing-app .invite-table .table-header-f span:nth-child(1),
+.financing-app .invite-table .table-row-f span:nth-child(1) { flex: 0 0 80px !important; }
+
+/* 第 2 列: 发起人 */
+.financing-app .invite-table .table-header-f span:nth-child(2),
+.financing-app .invite-table .table-row-f span:nth-child(2) { flex: 1 !important; }
+
+/* 第 3 列: 金额  */
+.financing-app .invite-table .table-header-f span:nth-child(3),
+.financing-app .invite-table .table-row-f span:nth-child(3) { 
+  flex: 0 0 100px !important; /* 固定 100px，不让它拉伸 */
+}
+
+/* 第 4 列: 用途  */
+.financing-app .invite-table .table-header-f span:nth-child(4),
+.financing-app .invite-table .table-row-f span:nth-child(4) { 
+  flex: 3 !important;                 /* 保持宽度较大 */
+  justify-content: center !important; /* 这里改成 center 即居中 */
+  padding-left: 0 !important;         /* 去掉左对齐时的缩进 */
+}
+
+/* 第 5 列: 邀请状态 */
+.financing-app .invite-table .table-header-f span:nth-child(5),
+.financing-app .invite-table .table-row-f span:nth-child(5) { flex: 0 0 120px !important; }
+
+/* 第 6 列: 操作  */
+.financing-app .invite-table .table-header-f span:nth-child(6),
+.financing-app .invite-table .table-row-f span:nth-child(6) { 
+  flex: 0 0 150px !important; 
+  gap: 8px !important;
+}
+
+/* 邀请状态颜色 */
+.financing-app .status-pending { 
+  background: #fffbe6 !important; 
+  color: #faad14 !important; 
+  border: 1px solid #ffe58f !important;
+}
+.financing-app .status-accepted { 
+  background: #f6ffed !important; 
+  color: #52c41a !important; 
+  border: 1px solid #b7eb8f !important;
+}
+.financing-app .status-rejected { 
+  background: #fff1f0 !important; 
+  color: #ff4d4f !important; 
+  border: 1px solid #ffa39e !important;
+}
+
 </style>
 
 

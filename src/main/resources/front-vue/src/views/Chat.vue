@@ -1,43 +1,73 @@
 <template>
-  <div class="chat-container">
-    <div class="chat-window">
+  <div class="chat-wrapper">
+    <div class="chat-container">
+      
+      <!-- 头部 -->
       <div class="chat-header">
-        <h3>正在与 用户 {{ receiverId }} 聊天</h3>
-        <button @click="goBack()" class="back-btn">返回</button>
+        <button @click="goBack()" class="icon-btn back-btn" title="返回">
+          <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <div class="header-info">
+          <h3>用户 {{ receiverId }}</h3>
+        </div>
+        
       </div>
 
+      <!-- 消息列表 -->
       <div class="messages" ref="messageContainer">
-        <div v-if="isLoading" class="loading-state">正在加载消息...</div>
-        <div v-else-if="messages.length === 0" class="empty-state">还没有消息，开始聊天吧！</div>
+        <div v-if="isLoading" class="state-text">
+          <div class="spinner"></div> 正在加载消息...
+        </div>
+        
+        <div v-else-if="messages.length === 0" class="state-text empty">
+          <img src="https://cdn-icons-png.flaticon.com/512/2665/2665038.png" alt="Empty" width="60" style="opacity: 0.5; margin-bottom: 10px;">
+          <p>还没有消息，打个招呼吧 </p>
+        </div>
 
-        <div v-else v-for="message in messages" :key="message.messageId"
-             :class="['message-item', message.senderId === currentUser?.userId ? 'sent' : 'received']">
-          <div class="message-bubble">
-            <p class="message-content">{{ message.content }}</p>
-            <span class="message-time">{{ formatMessageTime(message.sendTime) }}</span>
-            <div class="bubble-tail"></div>
+        <div v-else class="message-group">
+          <div 
+            v-for="(message, index) in messages" 
+            :key="message.messageId"
+            :class="['message-row', message.senderId === currentUser?.userId ? 'row-sent' : 'row-received']"
+          >
+            <!-- 头像 (这里用首字母或图标模拟) -->
+            <div class="avatar">
+              {{ message.senderId === currentUser?.userId ? '我' : 'Ta' }}
+            </div>
+
+            <div class="message-content-wrapper">
+              <div class="message-bubble">
+                <p class="text">{{ message.content }}</p>
+                <div class="meta-info">
+                  <span class="time">{{ formatMessageTime(message.sendTime) }}</span>
+                  <!-- 已读未读勾勾 (仅发送方显示，模拟) -->
+                  <span v-if="message.senderId === currentUser?.userId" class="check-icon">✓</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
+      <!-- 输入区域 -->
       <div class="chat-input-area">
-        <form @submit.prevent="sendMessage" class="message-form">
+        <form @submit.prevent="sendMessage" class="input-box">
           <input
               type="text"
               v-model="newMessageContent"
-              placeholder="输入消息..."
+              placeholder="发送消息..."
               class="message-input"
               :disabled="!currentSession"
           />
-          <button type="submit" class="send-button" :disabled="!newMessageContent.trim() || !currentSession">
-            发送
+          <button type="submit" class="send-btn" :disabled="!newMessageContent.trim() || !currentSession">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
           </button>
         </form>
       </div>
+
     </div>
   </div>
 </template>
-
 
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
@@ -49,28 +79,25 @@ import router from "@/router/index.js";
 
 // --- Reactive State ---
 const route = useRoute();
-const receiverId = ref(null);        // 聊天对象ID
-const currentSession = ref(null);    // 当前会话
-const messages = ref([]);            // 消息列表
-const newMessageContent = ref('');   // 输入框内容
-const isLoading = ref(true);         // 加载状态
-const messageContainer = ref(null);  // DOM引用，用于滚动
+const receiverId = ref(null);
+const currentSession = ref(null);
+const messages = ref([]);
+const newMessageContent = ref('');
+const isLoading = ref(true);
+const messageContainer = ref(null);
 
-// --- SSE 连接对象 ---
 let eventSource = null;
 
 const authStore = useAuthStore();
 const { userInfo: currentUser, isLoggedIn, token } = storeToRefs(authStore);
 
-// --- Lifecycle Hooks ---
+// --- Lifecycle ---
 onMounted(() => {
   if (!isLoggedIn.value) {
     alert('请先登录后再进行聊天！');
     router.push('/login');
     return;
   }
-
-  // 初始化聊天
   receiverId.value = parseInt(route.params.receiverId, 10);
   if (receiverId.value) {
     initializeChat(receiverId.value);
@@ -79,13 +106,9 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  if (eventSource) {
-    eventSource.close();
-    console.log('SSE connection closed.');
-  }
+  if (eventSource) eventSource.close();
 });
 
-// 监听路由变化，切换聊天对象
 watch(
     () => route.params.receiverId,
     (newId) => {
@@ -98,11 +121,7 @@ watch(
     }
 );
 
-// ------------------- Methods -------------------
-
-/**
- * 初始化聊天
- */
+// --- Methods ---
 async function initializeChat(peerId) {
   isLoading.value = true;
   try {
@@ -111,90 +130,88 @@ async function initializeChat(peerId) {
 
     if (currentSession.value && currentSession.value.sessionId) {
       const messagesRes = await axios.get(`/chat/messages/${currentSession.value.sessionId}`);
-
-      // 按时间升序（早 -> 晚）
       messages.value = messagesRes.data.sort((a, b) => new Date(a.sendTime) - new Date(b.sendTime));
     }
   } catch (error) {
-    console.error('初始化聊天失败:', error);
-    alert('无法加载聊天记录，请稍后重试。');
+    console.error('初始化失败:', error);
   } finally {
     isLoading.value = false;
     await scrollToBottom();
   }
 }
 
-/**
- * 发送消息
- */
 async function sendMessage() {
   if (!newMessageContent.value.trim() || !currentSession.value) return;
-
   const messageData = {
     sessionId: currentSession.value.sessionId,
     content: newMessageContent.value,
     msgType: 'text',
   };
-
   try {
     await axios.post('/chat/messages', messageData);
     newMessageContent.value = '';
-    // 不手动 push，新消息通过 SSE 推送
   } catch (error) {
-    console.error('发送消息失败:', error);
-    alert('消息发送失败！');
+    console.error('发送失败:', error);
   }
 }
 
-/**
- * SSE 实时消息
- */
 function setupSseConnection() {
   if (!token.value) return;
-
   const url = `/api/chat/stream?token=${token.value}`;
   eventSource = new EventSource(url);
-
-  eventSource.onopen = () => console.log('SSE connection established.');
-
   eventSource.onmessage = async (event) => {
     const newMessage = JSON.parse(event.data);
     if (currentSession.value && newMessage.sessionId === currentSession.value.sessionId) {
-      // 最新消息追加到末尾
       messages.value.push(newMessage);
       await scrollToBottom();
     }
   };
-
-  eventSource.onerror = (error) => {
-    console.error('SSE Error:', error);
-    eventSource.close();
-    // 可加重连逻辑
-  };
+  eventSource.onerror = () => eventSource.close();
 }
 
-/**
- * 格式化消息时间
- */
 function formatMessageTime(dateTimeStr) {
   if (!dateTimeStr) return '';
-  const messageDate = new Date(dateTimeStr);
+  
+  const date = new Date(dateTimeStr);
   const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const yesterdayStart = new Date(todayStart.getTime() - 86400000);
-  const thisYearStart = new Date(now.getFullYear(), 0, 1);
+  
+  // 获取时间部分 HH:mm
+  const timePart = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+  
+  // 判断是否是今天
+  const isToday = date.getDate() === now.getDate() &&
+                  date.getMonth() === now.getMonth() &&
+                  date.getFullYear() === now.getFullYear();
+                  
+  if (isToday) {
+    return timePart;
+  }
 
-  const fmtTime = (d) => `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+  // 判断是否是昨天
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const isYesterday = date.getDate() === yesterday.getDate() &&
+                      date.getMonth() === yesterday.getMonth() &&
+                      date.getFullYear() === yesterday.getFullYear();
+                      
+  if (isYesterday) {
+    return `昨天 ${timePart}`;
+  }
 
-  if (messageDate >= todayStart) return fmtTime(messageDate);
-  if (messageDate >= yesterdayStart) return `昨天 ${fmtTime(messageDate)}`;
-  if (messageDate >= thisYearStart) return `${(messageDate.getMonth()+1).toString().padStart(2,'0')}-${messageDate.getDate().toString().padStart(2,'0')} ${fmtTime(messageDate)}`;
-  return `${messageDate.getFullYear()}-${(messageDate.getMonth()+1).toString().padStart(2,'0')}-${messageDate.getDate().toString().padStart(2,'0')} ${fmtTime(messageDate)}`;
+  // 获取日期部分
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+
+  // 判断是否是今年 (如果是今年，省略年份)
+  if (date.getFullYear() === now.getFullYear()) {
+    return `${month}-${day} ${timePart}`;
+  }
+
+  // 跨年了，显示完整日期
+  return `${date.getFullYear()}-${month}-${day} ${timePart}`;
 }
 
-/**
- * 滚动到底部
- */
+
 async function scrollToBottom() {
   await nextTick();
   if (messageContainer.value) {
@@ -207,183 +224,296 @@ function goBack() {
 }
 </script>
 
-
 <style scoped>
-/* ================== 容器 ================== */
-.chat-container {
+/* ================== 全局布局 ================== */
+.chat-wrapper {
   display: flex;
-  height: calc(100vh - 100px);
+  justify-content: center;
+  align-items: center;
+  height: calc(100vh - 80px); /* 减去顶部导航高度 */
   width: 100%;
-  background: linear-gradient(to bottom, #e6f0e6, #f5f5f5);
-  border-radius: 24px;
-  overflow: hidden;
-  box-shadow: 0 12px 28px rgba(0,0,0,0.12);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: #f0f9f0;
+  padding: 20px;
+  height: 100%; 
+  min-height: calc(100vh - 80px);
+  justify-content: center; 
+   position: relative; 
 }
 
-/* ================== 聊天窗口 ================== */
-.chat-window {
-  flex-grow: 1;
+.chat-container {
+  width: 100%;
+  max-width: 900px; /* 限制最大宽度，大屏更好看 */
+  height: 100%;
+  background-color: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  position: relative;
 }
 
-/* ------------------ 头部 ------------------ */
+/* ================== 头部 ================== */
 .chat-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 18px 24px;
-  border-bottom: 1px solid #e0e0e0;
+  height: 64px;
+  padding: 0 20px;
   background-color: #ffffff;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 10;
 }
 
-.chat-header h3 {
+.header-info {
+  flex: 1;                    /* 占满剩余宽度 */
+  display: flex;              /* 让内部元素居中 */
+  justify-content: center;    /* 水平居中 */
+  align-items: center;        /* 垂直居中 */
+  text-align: center;         /* 备用，防止文字折行 */
+}
+
+.header-info h3 {
   margin: 0;
-  font-size: 1.25rem;
-  color: #333;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a;
 }
 
-.back-btn {
+.status-dot {
+  font-size: 12px;
+  color: #2D7D4F;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.status-dot::before {
+  content: '';
+  display: block;
+  width: 8px;
+  height: 8px;
+  background-color: #2D7D4F;
+  border-radius: 50%;
+}
+
+.icon-btn {
   background: none;
   border: none;
-  color: #2D7D4F;
-  font-weight: bold;
   cursor: pointer;
+  color: #666;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.back-btn:hover { color: #1f5233; }
 
-/* ------------------ 消息区 ------------------ */
+.icon-btn:hover {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+/* ================== 消息列表 ================== */
 .messages {
-  flex-grow: 1;
+  flex: 1;
+  background-color: #f9f9f9; /* 消息区浅灰底色 */
+  /* 可选：加个背景纹理 */
+  /* background-image: radial-gradient(#e1e1e1 1px, transparent 1px); background-size: 20px 20px; */
   padding: 20px;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
   scroll-behavior: smooth;
 }
 
-.messages::-webkit-scrollbar {
-  width: 6px;
-}
-.messages::-webkit-scrollbar-thumb {
-  background-color: rgba(45, 125, 79, 0.3);
-  border-radius: 3px;
-}
+/* 滚动条美化 */
+.messages::-webkit-scrollbar { width: 6px; }
+.messages::-webkit-scrollbar-thumb { background-color: #d1d5db; border-radius: 3px; }
 .messages::-webkit-scrollbar-track { background: transparent; }
 
-.message-item {
+/* 状态提示 */
+.state-text {
+  height: 100%;
   display: flex;
-  max-width: 75%;
-  position: relative;
-  animation: slideUp 0.25s ease-out;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #9ca3af;
+  font-size: 14px;
+}
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #2D7D4F;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ================== 消息气泡组 ================== */
+.message-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px; /* 消息间距 */
 }
 
-@keyframes slideUp { from { opacity:0; transform: translateY(8px);} to {opacity:1; transform: translateY(0);} }
+.message-row {
+  display: flex;
+  align-items: flex-end; /* 底部对齐，配合头像 */
+  gap: 10px;
+  animation: fadeIn 0.3s ease;
+}
 
-/* ------------------ 气泡 ------------------ */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* 头像样式 */
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #e5e7eb;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  flex-shrink: 0;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* 我发的消息 - 右侧 */
+.row-sent {
+  flex-direction: row-reverse;
+}
+.row-sent .avatar {
+  background-color: #2D7D4F;
+  color: #fff;
+}
+
+/* 接收的消息 - 左侧 */
+.row-received .avatar {
+  background-color: #fff; /* 或者根据用户ID生成颜色 */
+}
+
+/* 气泡包裹 */
+.message-content-wrapper {
+  max-width: 65%;
+}
+
 .message-bubble {
   position: relative;
-  padding: 14px 18px;
-  border-radius: 20px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  padding: 12px 16px;
+  font-size: 15px;
+  line-height: 1.5;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   word-wrap: break-word;
-  font-size: 0.95rem;
-  line-height: 1.4;
 }
 
-.message-time {
-  display: block;
-  font-size: 0.68rem;
-  color: #888;
+/* 发送方气泡样式 */
+.row-sent .message-bubble {
+  background-color: #2D7D4F; /* 主题绿 */
+  color: #fff;
+  /* 只有左上、左下、右上圆角，右下角尖一点 */
+  border-radius: 18px 18px 4px 18px; 
+}
+
+/* ⚪ 接收方气泡样式 */
+.row-received .message-bubble {
+  background-color: #ffffff;
+  color: #1f2937;
+  border: 1px solid #f0f0f0;
+  /* 只有右上、右下、左下圆角，左下角尖一点 */
+  border-radius: 18px 18px 18px 4px;
+}
+
+/* Meta 信息 (时间 + 已读) */
+.meta-info {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
   margin-top: 4px;
-  text-align: right;
   opacity: 0.8;
 }
 
-/* 气泡尾巴 */
-.bubble-tail {
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  bottom: 0;
-  background: inherit;
-  clip-path: polygon(0 0, 100% 0, 0 100%);
+.time {
+  font-size: 10px;
 }
 
-/* 自己发送 */
-.message-item.sent {
-  align-self: flex-end;
-}
-.message-item.sent .message-bubble {
-  background: linear-gradient(145deg, #D4F8C6, #B8E6A0);
-  border-bottom-right-radius: 4px;
-}
-.message-item.sent .bubble-tail {
-  right: -6px;
-  transform: rotate(90deg);
-}
-.message-item.sent .message-time { color: #4f7a43; }
+.row-sent .time { color: rgba(255,255,255,0.8); }
+.row-received .time { color: #9ca3af; }
 
-/* 接收消息 */
-.message-item.received {
-  align-self: flex-start;
-}
-.message-item.received .message-bubble {
-  background: #ffffff;
-  border-bottom-left-radius: 4px;
-}
-.message-item.received .bubble-tail {
-  left: -6px;
-  transform: rotate(-90deg);
+.check-icon {
+  font-size: 10px;
+  font-weight: bold;
 }
 
-/* ------------------ 输入区 ------------------ */
+/* ================== 输入区域 ================== */
 .chat-input-area {
-  padding: 16px 24px;
-  border-top: 1px solid #e0e0e0;
-  background-color: #f9f9f9;
+  background-color: #ffffff;
+  padding: 16px 20px;
+  border-top: 1px solid #f0f0f0;
 }
 
-.message-form {
+.input-box {
   display: flex;
-  gap: 12px;
+  align-items: center;
+  background-color: #f3f4f6;
+  border-radius: 24px;
+  padding: 6px 6px 6px 16px; /* 右边padding留给按钮 */
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.input-box:focus-within {
+  background-color: #fff;
+  border-color: #2D7D4F;
+  box-shadow: 0 0 0 3px rgba(45, 125, 79, 0.1);
 }
 
 .message-input {
-  flex-grow: 1;
-  padding: 14px 18px;
-  border: 1px solid #ccc;
-  border-radius: 24px;
-  font-size: 1rem;
+  flex: 1;
+  border: none;
+  background: transparent;
   outline: none;
-  transition: all 0.2s;
-}
-.message-input:focus {
-  border-color: #2D7D4F;
-  box-shadow: 0 0 12px rgba(45,125,79,0.25);
+  font-size: 15px;
+  color: #333;
+  padding: 8px 0;
 }
 
-.send-button {
-  padding: 12px 24px;
+.message-input::placeholder {
+  color: #9ca3af;
+}
+
+.send-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
   border: none;
-  border-radius: 24px;
-  background: linear-gradient(135deg,#2D7D4F,#1F5233);
+  background-color: #2D7D4F;
   color: #fff;
-  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  margin-left: 8px;
 }
-.send-button:hover {
-  background: linear-gradient(135deg,#3da86c,#2d7d4f);
-  box-shadow: 0 4px 14px rgba(45,125,79,0.3);
+
+.send-btn:hover:not(:disabled) {
+  background-color: #246640;
+  transform: scale(1.05);
 }
-.send-button:disabled {
-  background: #a5d6a7;
-  cursor: not-allowed;
-  box-shadow: none;
+
+.send-btn:disabled {
+  background-color: #d1d5db;
+  cursor: default;
+  transform: none;
 }
 </style>

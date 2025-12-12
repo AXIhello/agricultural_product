@@ -162,6 +162,10 @@ import { useAuthStore } from '@/stores/authStore';
 import { storeToRefs } from 'pinia';
 import ExpertOverview from "@/components/ExpertOverview.vue";
 import AgriKnowledge from "@/components/AgriculturalKnowledgeList.vue";
+import { useRoute } from 'vue-router';
+
+//路由对象
+const route = useRoute();
 
 // ---------------- 用户信息与登录状态 ----------------
 const authStore = useAuthStore();// 使用 Pinia 的认证存储
@@ -388,6 +392,9 @@ const publishKnowledge = async () => {
 
 // ---------------- 生命周期 ----------------
 onMounted(() => {
+  if (route.query.view) {
+    currentView.value = route.query.view; 
+  }
   fetchQuestions();
   fetchKnowledgeList();
 });

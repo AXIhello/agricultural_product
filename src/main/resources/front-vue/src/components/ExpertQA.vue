@@ -1,28 +1,84 @@
 <template>
   <div class="expert-qa-container">
-    <div class="qa-item" v-for="qa in qaList" :key="qa.id">
-      <h4 style="font-size: 16px; margin-bottom: 5px;">问题：{{ qa.question }}</h4>
-      <p style="font-size: 14px; color: #666; margin-bottom: 5px;">回答：{{ qa.answer }}</p>
+    
+    <!-- 加载状态提示 -->
+    <div v-if="loading" style="text-align:center; color:#999;">加载中...</div>
+    <div v-else-if="qaList.length === 0" style="text-align:center; color:#999;">暂无已采纳的问答</div>
+
+    <div 
+      class="qa-item" 
+      v-for="qa in qaList" 
+      :key="qa.questionId"
+      @click="goToExpertPage"
+    >
+      <!-- 绑定真实数据字段：title 是问题，acceptedAnswerContent 是已采纳回答 -->
+      <h4 style="font-size: 16px; margin-bottom: 5px;">问题：{{ qa.title }}</h4>
+      <p style="font-size: 14px; color: #666; margin-bottom: 5px;">
+        回答：{{ qa.acceptedAnswerContent || '暂无详细回答内容' }}
+      </p>
     </div>
   </div>
 </template>
 
 <script setup>
-const qaList = [
-  {
-    id: 1,
-    question: '如何防治水稻病虫害？',
-    answer: '建议采取综合防治措施，包括选择抗病品种、合理施肥、化学防治等。',
-  },
-  {
-    id: 2,
-    question: '如何提高蔬菜产量？',
-    answer: '合理施肥、科学灌溉、病虫害防治是提高蔬菜产量的关键。',
-  },
-];
+import { ref, onMounted } from 'vue';
+import axios from '@/utils/axios'; // 确保路径正确
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+
+const qaList = ref([]);
+const loading = ref(false);
+
+const goToExpertPage = () => {
+   router.push({
+    path: '/expert', 
+    query: { view: 'qa' }     
+  });
+}
+
+// 获取已采纳的问题列表
+const fetchAnsweredQuestions = async () => {
+  loading.value = true;
+  try {
+    const response = await axios.get('/expert-questions?status=answered&pageNum=1&pageSize=5');
+    
+    const questions = response.data.records || [];
+    
+    const questionsWithAnswers = await Promise.all(questions.map(async (q) => {
+      try {
+        // 获取该问题的所有回答
+        const answersResp = await axios.get(`/expert-questions/${q.questionId}/answers`);
+        const answers = answersResp.data.records || [];
+        
+        // 找到 isAccepted === 1 的回答
+        const acceptedAnswer = answers.find(a => a.isAccepted === 1);
+        
+        return {
+          ...q,
+          acceptedAnswerContent: acceptedAnswer ? acceptedAnswer.content : '该问题暂无回答内容'
+        };
+      } catch (err) {
+        console.error(`获取问题 ${q.questionId} 回答失败`, err);
+        return { ...q, acceptedAnswerContent: '加载回答失败' };
+      }
+    }));
+
+    qaList.value = questionsWithAnswers;
+  } catch (error) {
+    console.error('获取专家问答失败:', error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+onMounted(() => {
+  fetchAnsweredQuestions();
+});
 </script>
 
 <style scoped>
+/* 你的原有样式，完全保留 */
 .expert-qa-container {
   padding: 18px;
 }
@@ -62,5 +118,4 @@ const qaList = [
   line-height: 1.5;
   color: #444;
 }
-
 </style>

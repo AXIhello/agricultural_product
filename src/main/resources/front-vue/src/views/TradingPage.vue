@@ -22,7 +22,7 @@
             <ProductRecommend  class="side-recommend"/>
           </div>
         
-          <div class="product-page">
+          <div class="product-page-layout">
             <!-- 左侧分类栏 -->
             <aside class="category-sidebar">
               <ul style="padding-left: 0;list-style: none;">
@@ -46,26 +46,43 @@
               </ul>
             </aside>
 
-            <!-- 产品展示区 -->
-            <div class="product-list">
-              <div
-                  v-for="product in products"
-                  :key="product.productId"
-                  class="product-card"
-                  @click="goToProductDetail(product)"
-              >
-                <div class="product-image">
-                  <img :src="product.imageUrl" :alt="product.productName" @error="handleImageError" />
-                </div>
+            <div class="product-main-area">
 
-                <div class="product-info">
-                  <h3 class="product-name">{{ product.productName }}</h3>
-<!--                  <p class="product-description"> {{ product.description }}</p>-->
-                  <p class="product-price">¥{{ product.price }} / {{ product.unitInfo }}</p>
-                </div>
-
+              <!-- 商品搜索栏 -->
+              <div class="shop-search-bar">
+                  <input 
+                    type="text" 
+                    v-model="searchKeyword" 
+                    placeholder="请输入商品名称搜索..." 
+                    @keyup.enter="handleSearch"
+                  />
+                  <button @click="handleSearch">搜索</button>
+                  <button v-if="isSearching" @click="resetSearch" class="reset-btn">返回全部</button>
               </div>
+
+              <!-- 产品展示区 -->
+              <div class="product-list">
+                <div
+                    v-for="product in products"
+                    :key="product.productId"
+                    class="product-card"
+                    @click="goToProductDetail(product)"
+                >
+                  <div class="product-image">
+                    <img :src="product.imageUrl" :alt="product.productName" @error="handleImageError" />
+                  </div>
+
+                  <div class="product-info">
+                    <h3 class="product-name">{{ product.productName }}</h3>
+  <!--                  <p class="product-description"> {{ product.description }}</p>-->
+                    <p class="product-price">¥{{ product.price }} / {{ product.unitInfo }}</p>
+                  </div>
+
+                </div>
+              </div>
+
             </div>
+
           </div>
 
         </div>
@@ -1388,19 +1405,87 @@ const createOrder = () => {
 
 };
 
+//=============搜索商品相关============
+const searchKeyword = ref('') // 搜索关键词
+const isSearching = ref(false) // 是否处于搜索状态
+const loadingProducts = ref(false) // 加载状态
+
+// 给产品列表加载图片
+async function processProductImages(records) {
+  return await Promise.all(
+    records.map(async (product) => {
+      let imageUrl = defaultImg;
+      try {
+        // 尝试获取图片
+        const imageRes = await axios.get(`/products/${product.productId}/image`, {
+          responseType: 'blob'
+        });
+        if (imageRes.data && imageRes.data.size > 0) {
+          imageUrl = URL.createObjectURL(imageRes.data);
+        }
+      } catch (err) {
+        // 图片加载失败，使用默认图，不报错
+      }
+      return { ...product, imageUrl };
+    })
+  );
+}
+
+// 搜索商品
+async function handleSearch() {
+  if (!searchKeyword.value.trim()) {
+    ElMessage.warning('请输入搜索关键词');
+    return;
+  }
+
+  loadingProducts.value = true;
+  isSearching.value = true;
+  selectedSubcat.value = null; // 搜索时清空分类选中状态
+
+  try {
+    // 调用后端搜索接口 (假设你的 Controller 路径前缀是 /products)
+    const res = await axios.get('/products/search', {
+      params: {
+        keyword: searchKeyword.value,
+        pageNum: 1,
+        pageSize: 50 // 搜索结果展示多一点
+      }
+    });
+
+    const page = res.data;
+    const records = page.records || [];
+
+    // 复用图片处理逻辑
+    products.value = await processProductImages(records);
+
+  } catch (err) {
+    console.error('搜索失败', err);
+    ElMessage.error('搜索失败，请稍后重试');
+  } finally {
+    loadingProducts.value = false;
+  }
+}
+
+// 重置搜索（返回全部商品）
+async function resetSearch() {
+  searchKeyword.value = '';
+  isSearching.value = false;
+  await loadProducts(); // 重新加载默认列表
+}
+
 
 </script>
 
 <style scoped>
 
 
-/* 左侧分类栏 */
+/* 左侧分类栏
 .category-sidebar {
   width: 100px;
   background-color: #f8f8f8;
   border-radius: 8px;
   font-size: 13px;
-}
+} */
 
 .cat-title {
   font-weight: bold;
@@ -1434,17 +1519,102 @@ const createOrder = () => {
 /*产品样式*/
 .product-page {
   display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
+  flex-direction: column; /* 垂直排列：上面推荐，下面主体 */
+  gap: 20px;
+}
+
+/* 下半部分布局容器 (Flex 左右) */
+.product-page-layout {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start; /* 顶部对齐 */
+}
+
+/* 左侧侧边栏 (固定宽度) */
+.category-sidebar {
+  flex: 0 0 120px; /* 固定 120px 宽，不伸缩 */
+  background-color: #f8f8f8;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 13px;
+}
+
+/* 右侧主体区域 (自动撑满剩余空间) */
+.product-main-area {
+  flex: 1; 
+  display: flex;
+  flex-direction: column; /* 搜索栏在上，列表在下 */
+  gap: 15px;
+  min-width: 0; /* 防止内容过宽撑破布局 */
+}
+
+/* 搜索栏样式 */
+.shop-search-bar {
+  display: flex;
+  gap: 10px;
+  background: #fff;
+  padding: 10px 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  align-items: center;
+}
+
+.shop-search-bar input {
+  flex: 1; /* 输入框撑满剩余空间 */
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.shop-search-bar input:focus {
+  border-color: #52c41a;
+}
+
+.shop-search-bar button {
+  background-color: #52c41a;
+  color: white;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.shop-search-bar button:hover {
+  background-color: #43a047;
+}
+
+/* 返回全部按钮样式（灰色系） */
+.shop-search-bar .reset-btn {
+  background-color: #f5f5f5;
+  color: #666;
+  border: 1px solid #ddd;
+}
+
+.shop-search-bar .reset-btn:hover {
+  background-color: #e0e0e0;
+  color: #333;
+}
+
+.loading-text, .empty-text {
+  width: 100%;
+  text-align: center;
+  padding: 40px;
+  color: #999;
+  font-size: 15px;
 }
 
 .product-list {
-  margin-left:10px;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-start;
   gap: 16px;
   align-items: flex-start;
+  min-height: 200px; /* 防止内容为空时塌陷 */
 }
 
 /* 产品卡片 */
