@@ -515,7 +515,10 @@ const selectAddress = async (addrId) => {
 
 // 跳转页面
 const goToAddressManage = () => router.push('/profile')
-const goToTrading = () => router.push('/trading')
+const goToTrading = () => {
+  localStorage.removeItem('orderPreview')
+  router.push('/trading')
+}
 
 // 修改数量
 const changeQuantity = (item, delta) => {

@@ -219,7 +219,8 @@ import axios from '../utils/axios'
 import router from "@/router"
 import { useAuthStore } from '@/stores/authStore'
 import { storeToRefs } from 'pinia'
-import defaultImg from '@/assets/img.png' // 默认图片占位符
+import defaultImg from '@/assets/img.png'
+import {ElMessage} from "element-plus"; // 默认图片占位符
 
 // 获取全局状态
 const authStore = useAuthStore()
@@ -427,8 +428,26 @@ const cancelOrder = async (orderId) => {
   } catch(e) { alert('取消失败') }
 }
 
-const goToPay = (orderId) => {
-  router.push(`/orders/${orderId}`)
+const goToPay = async (orderId) => {
+  try {
+    // 3. 调用支付宝支付接口
+    const payRes = await axios.post(`/alipay/pay/${orderId}`, {}, {responseType: 'text'});
+    if (!payRes.data) {
+      ElMessage.error('支付接口返回为空');
+      return;
+    }
+
+    // 打开一个新窗口支付
+    const payWindow = window.open('', '_blank');
+    payWindow.document.write(payRes.data);
+    payWindow.document.close();
+
+    ElMessage.success('支付页面已打开，请完成支付');
+
+  } catch (err) {
+    console.error('支付失败', err);
+    ElMessage.error('支付失败，请稍后重试');
+  }
 }
 
 // 单品逻辑
