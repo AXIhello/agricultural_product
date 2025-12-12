@@ -28,7 +28,6 @@
            class="main-nav">
           <button v-if="role === 'farmer' || role === 'buyer'" @click="switchView('address')" :class="{ active: currentView === 'address' }">我的地址</button>
           <button v-if="role === 'farmer'" @click="switchView('appointments')" :class="{ active: currentView === 'appointments' }">我的预约</button>
-          <button v-if="role === 'farmer' || role === 'buyer'" @click="switchView('message')" :class="{ active: currentView === 'message' }">我的消息</button>
           <button v-if="role === 'farmer'" @click="switchView('autoReply')" :class="{ active: currentView === 'autoReply' }">自动回复设置</button>
           <button v-if="role === 'expert'" @click="switchView('profile')" :class="{ active: currentView === 'profile' }">个人档案</button>
           <button v-if="role === 'expert'" @click="switchView('knowledgeManage')" :class="{ active: currentView === 'knowledgeManage' }">知识管理</button>
@@ -361,35 +360,10 @@
           </div>
         </div>
 
-        <!-- ======================== 买家/农户：我的消息 ======================== -->
-        <div v-if="currentView === 'message'">
+<!--        &lt;!&ndash; ======================== 买家/农户：我的消息 ======================== &ndash;&gt;-->
+<!--        <div v-if="currentView === 'message'">-->
 
-          <div v-if="isLoading" class="status-indicator">
-            <p>正在加载消息...</p>
-          </div>
-          <div v-else-if="sessions.length === 0" class="status-indicator">
-            <p>您还没有任何消息</p>
-          </div>
-          <ul v-else class="session-list">
-            <!-- 循环渲染会话列表 -->
-            <li v-for="session in sessions" :key="session.sessionId" class="session-item" @click="goToChat(session)">
-              <div class="avatar-placeholder">
-                <!-- 可以放一个用户头像图标或图片 -->
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-              </div>
-              <div class="session-details">
-                <div class="session-header">
-                  <span class="peer-user-id">用户 {{ getPeerUser(session).id }}</span>
-                  <span class="last-message-time">{{ formatTime(session.lastMessageTime) }}</span>
-                </div>
-                <div class="last-message-preview">
-                  <!-- 这里可以未来扩展，显示最后一条消息的预览 -->
-                  点击查看对话
-                </div>
-              </div>
-            </li>
-          </ul>
-        </div>
+<!--        </div>-->
 
         <!-- ======================== 专家：个人档案 ======================== -->
         <div v-if="currentView === 'profile'" class="expert-profile-container">
@@ -1221,7 +1195,6 @@ onMounted(() => {
   } else {
     currentView.value = '';
   }
-  loadSessions();
   hasInitialLoadFinished.value = true;
 });
 
@@ -1256,79 +1229,6 @@ async function loadDataForRole(currentRole) {
 
 function exit(){
   authStore.logout();
-}
-
-function editProfile(){
-
-}
-
-
-const sessions = ref([]);
-const isLoading = ref(true);
-
-// --- Methods ---
-
-/**
- * 从后端加载用户的会话列表.
- */
-async function loadSessions() {
-  try {
-    // API: GET /chat/auto-replies/chat/sessions
-    const response = await axios.get('/chat/sessions');
-    // 按最后消息时间降序排序
-    sessions.value = (response.data || []).sort((a, b) =>
-        new Date(b.lastMessageTime) - new Date(a.lastMessageTime)
-    );
-  } catch (error) {
-    console.error('加载会话列表失败:', error);
-    alert('无法加载消息列表，请稍后再试。');
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-/**
- * 确定会话中的对方用户ID.
- * @param {object} session - 会话对象.
- * @returns {object} 包含对方用户ID的对象.
- */
-function getPeerUser(session) {
-  if (!userInfo.value?.userId) return { id: '未知' };
-  const peerId = session.userAId === userInfo.value.userId ? session.userBId : session.userAId;
-  return { id: peerId };
-}
-
-/**
- * 导航到对应的聊天室.
- * @param {object} session - 被点击的会话对象.
- */
-function goToChat(session) {
-  const peer = getPeerUser(session);
-  // 添加对自己ID的判断
-  if (peer.id !== '未知' && peer.id !== userInfo.value?.userId) {
-    router.push(`/chat/${peer.id}`);
-  } else if (peer.id === userInfo.value?.userId) {
-    console.warn("Attempted to open a chat with self. Operation blocked.");
-    alert('您不能和自己聊天。');
-  }
-}
-
-/**
- * 格式化时间字符串.
- * @param {string} dateTimeStr - ISO格式的时间字符串.
- */
-function formatTime(dateTimeStr) {
-  if (!dateTimeStr) return '';
-  const date = new Date(dateTimeStr);
-  const now = new Date();
-  const diffInMs = now - date;
-  const diffInHours = diffInMs / (1000 * 60 * 60);
-
-  if (diffInHours < 24 && date.getDate() === now.getDate()) {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  } else {
-    return date.toLocaleDateString();
-  }
 }
 
 
@@ -1721,80 +1621,6 @@ function formatTime(dateTimeStr) {
 .form-group textarea {
   width: 100%;
   padding: 6px;
-}
-
-/*消息中心*/
-.session-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.session-item {
-  display: flex;
-  align-items: center;
-  padding: 1rem 0.5rem;
-  border-bottom: 1px solid #f0f0f0;
-  cursor: pointer;
-  transition: background-color 0.2s ease-in-out;
-}
-
-.session-item:last-child {
-  border-bottom: none;
-}
-
-.session-item:hover {
-  background-color: #f7f9fa;
-}
-
-.avatar-placeholder {
-  flex-shrink: 0;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background-color: #e9ecef;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 1rem;
-  color: #495057;
-}
-
-.session-details {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.session-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.25rem;
-}
-
-.peer-user-id {
-  font-weight: 600;
-  color: #212529;
-}
-
-.last-message-time {
-  font-size: 0.8rem;
-  color: #888;
-}
-
-.last-message-preview {
-  font-size: 0.9rem;
-  color: #6c757d;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.status-indicator {
-  text-align: center;
-  padding: 3rem 0;
-  color: #888;
 }
 
 /* 修改 .top-info-bar 相关的样式 */

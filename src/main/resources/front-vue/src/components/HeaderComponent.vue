@@ -15,6 +15,9 @@
         <li>
           <router-link to="/trading" active-class="active-link">农产品交易</router-link>
         </li>
+        <li>
+          <router-link to="/messages" active-class="active-link">消息中心</router-link>
+        </li>
         <li v-if="isAdmin">
           <router-link to="/admin-review" active-class="active-link">审核信息</router-link>
         </li>

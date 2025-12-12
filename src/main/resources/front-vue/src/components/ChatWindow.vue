@@ -1,16 +1,17 @@
 <template>
   <div class="chat-wrapper">
     <div class="chat-container">
-      
+
       <!-- 头部 -->
       <div class="chat-header">
         <button @click="goBack()" class="icon-btn back-btn" title="返回">
-          <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 18l-6-6 6-6"/>
+          </svg>
         </button>
         <div class="header-info">
           <h3>用户 {{ receiverId }}</h3>
         </div>
-        
       </div>
 
       <!-- 消息列表 -->
@@ -18,19 +19,18 @@
         <div v-if="isLoading" class="state-text">
           <div class="spinner"></div> 正在加载消息...
         </div>
-        
+
         <div v-else-if="messages.length === 0" class="state-text empty">
           <img src="https://cdn-icons-png.flaticon.com/512/2665/2665038.png" alt="Empty" width="60" style="opacity: 0.5; margin-bottom: 10px;">
-          <p>还没有消息，打个招呼吧 </p>
+          <p>还没有消息，打个招呼吧</p>
         </div>
 
         <div v-else class="message-group">
-          <div 
-            v-for="(message, index) in messages" 
-            :key="message.messageId"
-            :class="['message-row', message.senderId === currentUser?.userId ? 'row-sent' : 'row-received']"
+          <div
+              v-for="(message, index) in messages"
+              :key="message.messageId"
+              :class="['message-row', message.senderId === currentUser?.userId ? 'row-sent' : 'row-received']"
           >
-            <!-- 头像 (这里用首字母或图标模拟) -->
             <div class="avatar">
               {{ message.senderId === currentUser?.userId ? '我' : 'Ta' }}
             </div>
@@ -40,11 +40,11 @@
                 <p class="text">{{ message.content }}</p>
                 <div class="meta-info">
                   <span class="time">{{ formatMessageTime(message.sendTime) }}</span>
-                  <!-- 已读未读勾勾 (仅发送方显示，模拟) -->
                   <span v-if="message.senderId === currentUser?.userId" class="check-icon">✓</span>
                 </div>
               </div>
             </div>
+
           </div>
         </div>
       </div>
@@ -59,8 +59,15 @@
               class="message-input"
               :disabled="!currentSession"
           />
-          <button type="submit" class="send-btn" :disabled="!newMessageContent.trim() || !currentSession">
-            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+
+          <button type="submit" class="send-btn"
+                  :disabled="!newMessageContent.trim() || !currentSession">
+            <svg viewBox="0 0 24 24" width="20" height="20"
+                 stroke="currentColor" stroke-width="2" fill="none"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
           </button>
         </form>
       </div>
@@ -72,8 +79,8 @@
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import axios from '../utils/axios';
-import { useAuthStore } from '@/stores/authStore';
+import axios from '../utils/axios.js';
+import { useAuthStore } from '@/stores/authStore.js';
 import { storeToRefs } from 'pinia';
 import router from "@/router/index.js";
 
@@ -98,7 +105,7 @@ onMounted(() => {
     router.push('/login');
     return;
   }
-  receiverId.value = parseInt(route.params.receiverId, 10);
+  receiverId.value = props.receiverId;
   if (receiverId.value) {
     initializeChat(receiverId.value);
     setupSseConnection();
@@ -113,7 +120,7 @@ watch(
     () => route.params.receiverId,
     (newId) => {
       if (newId && parseInt(newId, 10) !== receiverId.value) {
-        receiverId.value = parseInt(newId, 10);
+        receiverId.value = props.receiverId;
         messages.value = [];
         currentSession.value = null;
         initializeChat(receiverId.value);
@@ -121,19 +128,19 @@ watch(
     }
 );
 
-// --- Methods ---
+// -------- Methods ----------
 async function initializeChat(peerId) {
   isLoading.value = true;
   try {
     const sessionRes = await axios.post(`/chat/session/${peerId}`);
     currentSession.value = sessionRes.data;
 
-    if (currentSession.value && currentSession.value.sessionId) {
-      const messagesRes = await axios.get(`/chat/messages/${currentSession.value.sessionId}`);
-      messages.value = messagesRes.data.sort((a, b) => new Date(a.sendTime) - new Date(b.sendTime));
+    if (currentSession.value?.sessionId) {
+      const msgRes = await axios.get(`/chat/messages/${currentSession.value.sessionId}`);
+      messages.value = msgRes.data.sort((a, b) => new Date(a.sendTime) - new Date(b.sendTime));
     }
-  } catch (error) {
-    console.error('初始化失败:', error);
+  } catch (err) {
+    console.error('初始化失败:', err);
   } finally {
     isLoading.value = false;
     await scrollToBottom();
@@ -142,75 +149,59 @@ async function initializeChat(peerId) {
 
 async function sendMessage() {
   if (!newMessageContent.value.trim() || !currentSession.value) return;
-  const messageData = {
+
+  const payload = {
     sessionId: currentSession.value.sessionId,
     content: newMessageContent.value,
-    msgType: 'text',
+    msgType: 'text'
   };
+
   try {
-    await axios.post('/chat/messages', messageData);
+    await axios.post('/chat/messages', payload);
     newMessageContent.value = '';
-  } catch (error) {
-    console.error('发送失败:', error);
+  } catch (err) {
+    console.error('发送失败:', err);
   }
 }
 
 function setupSseConnection() {
   if (!token.value) return;
+
   const url = `/api/chat/stream?token=${token.value}`;
   eventSource = new EventSource(url);
+
   eventSource.onmessage = async (event) => {
-    const newMessage = JSON.parse(event.data);
-    if (currentSession.value && newMessage.sessionId === currentSession.value.sessionId) {
-      messages.value.push(newMessage);
+    const msg = JSON.parse(event.data);
+    if (currentSession.value && msg.sessionId === currentSession.value.sessionId) {
+      messages.value.push(msg);
       await scrollToBottom();
     }
   };
+
   eventSource.onerror = () => eventSource.close();
 }
 
-function formatMessageTime(dateTimeStr) {
-  if (!dateTimeStr) return '';
-  
-  const date = new Date(dateTimeStr);
+function formatMessageTime(time) {
+  if (!time) return '';
+  const d = new Date(time);
   const now = new Date();
-  
-  // 获取时间部分 HH:mm
-  const timePart = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-  
-  // 判断是否是今天
-  const isToday = date.getDate() === now.getDate() &&
-                  date.getMonth() === now.getMonth() &&
-                  date.getFullYear() === now.getFullYear();
-                  
-  if (isToday) {
-    return timePart;
-  }
 
-  // 判断是否是昨天
+  const hhmm = `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+
+  const isToday = d.toDateString() === now.toDateString();
+  if (isToday) return hhmm;
+
   const yesterday = new Date(now);
   yesterday.setDate(now.getDate() - 1);
-  const isYesterday = date.getDate() === yesterday.getDate() &&
-                      date.getMonth() === yesterday.getMonth() &&
-                      date.getFullYear() === yesterday.getFullYear();
-                      
-  if (isYesterday) {
-    return `昨天 ${timePart}`;
-  }
+  if (d.toDateString() === yesterday.toDateString()) return `昨天 ${hhmm}`;
 
-  // 获取日期部分
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const day = date.getDate().toString().padStart(2, '0');
+  const month = (d.getMonth() + 1).toString().padStart(2, '0');
+  const day = d.getDate().toString().padStart(2, '0');
 
-  // 判断是否是今年 (如果是今年，省略年份)
-  if (date.getFullYear() === now.getFullYear()) {
-    return `${month}-${day} ${timePart}`;
-  }
+  if (d.getFullYear() === now.getFullYear()) return `${month}-${day} ${hhmm}`;
 
-  // 跨年了，显示完整日期
-  return `${date.getFullYear()}-${month}-${day} ${timePart}`;
+  return `${d.getFullYear()}-${month}-${day} ${hhmm}`;
 }
-
 
 async function scrollToBottom() {
   await nextTick();
@@ -222,7 +213,13 @@ async function scrollToBottom() {
 function goBack() {
   router.back();
 }
+
+const props = defineProps({
+  receiverId: Number
+});
+
 </script>
+
 
 <style scoped>
 /* ================== 全局布局 ================== */
@@ -242,7 +239,7 @@ function goBack() {
 
 .chat-container {
   width: 100%;
-  max-width: 900px; /* 限制最大宽度，大屏更好看 */
+  max-width: 1500px; /* 限制最大宽度，大屏更好看 */
   height: 100%;
   background-color: #ffffff;
   border-radius: 20px;

@@ -10,7 +10,7 @@ import OrderConfirm from "@/views/OrderConfirm.vue";
 import UserApplication from "@/views/UserApplication.vue";
 import AdminReview from "@/views/AdminReview.vue";
 import ProductDetail from "@/views/ProductDetail.vue";
-import Chat from "@/views/Chat.vue";
+import ChatWindow from "@/components/ChatWindow.vue";
 import MessageCenter from '../views/MessageCenter.vue'
 import PayResult from '@/views/PayResult.vue'
 import { useAuthStore } from '@/stores/authStore';
@@ -101,7 +101,7 @@ const routes = [
   {
     path: '/chat/:receiverId', // 使用动态参数 receiverId
     name: 'Chat',
-    component: Chat,
+    component: ChatWindow,
     meta: { requiresAuth: true } // 如果需要登录才能访问，可以添加这个
   },
     {
