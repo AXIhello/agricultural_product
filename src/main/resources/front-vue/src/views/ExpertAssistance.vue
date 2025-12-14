@@ -4,7 +4,7 @@
 
     <section class="content">
 
-      <!-- 顶部导航：三个 view -->
+      <!-- 左侧导航：三个 view -->
       <nav class="main-nav">
         <button @click="currentView = 'experts'" :class="{ active: currentView === 'experts' }">
           专家推荐
@@ -31,40 +31,47 @@
           <h3>专业知识</h3>
 
           <!-- 知识列表 -->
-          <AgriKnowledge />
+          <ExpertKnowledge ref="knowledgeRef"/>
 
           <!-- 发布知识按钮（专家可见） -->
-          <div v-if="role === 'expert'">
-            <button  class="publish-btn" @click="showDetail = true">发布新知识</button>
+          <div v-if="role === 'expert'" style="margin-top: 12px;">
+            <button class="publish-btn" @click="showDetail = true">
+              发布新知识
+            </button>
           </div>
 
-          <!-- 弹窗：银行发布新产品 -->
-          <div v-if="showDetail" class="modal-overlay" @click.self="showDetail = false">
-            <div class="modal-content">
-              <h3>发布新产品</h3>
+          <!-- 发布新知识弹窗 -->
+          <div v-if="showDetail" class="modal-overlay">
+            <div class="modal-container">
+              <!-- 右上角关闭按钮 -->
+              <button class="close-btn" @click="showDetail = false">×</button>
 
-              <form @submit.prevent="publishKnowledge" class="modal-form">
+              <h2 class="modal-title">发布新知识</h2>
 
-                <div class="form-group">
-                  <label>题目：</label>
-                  <input v-model="knowledge.title" required />
-                </div>
+              <div class="modal-body">
+                <form @submit.prevent="publishKnowledge" class="modal-form">
+                  <div class="modal-form-group row-layout">
+                    <label>题目：</label>
+                    <input v-model="knowledge.title" type="text" placeholder="请输入知识标题" required />
+                  </div>
 
-                <div class="form-group">
-                  <label>内容：</label>
-                  <textarea v-model="knowledge.content" required></textarea>
-                </div>
+                  <div class="modal-form-group row-layout">
+                    <label>内容：</label>
+                    <textarea v-model="knowledge.content" placeholder="请输入知识内容" required></textarea>
+                  </div>
+                </form>
+              </div>
 
-                <div class="form-actions">
-                  <button class="submit-btn" type="submit">提交</button>
-                  <button class="cancel-btn" type="button" @click="showDetail = false">取消</button>
-                </div>
-
-              </form>
+              <!-- 底部按钮 -->
+              <div class="modal-footer">
+                <button class="cancel-btn" @click="showDetail = false">取消</button>
+                <button class="save-btn" @click="publishKnowledge">提交</button>
+              </div>
             </div>
           </div>
 
         </div>
+
 
         <!-- ============ 3. 问答区 ============ -->
         <div v-if="currentView === 'qa'" class="qa-view">
@@ -161,7 +168,7 @@ import HeaderComponent from "@/components/HeaderComponent.vue";
 import { useAuthStore } from '@/stores/authStore';
 import { storeToRefs } from 'pinia';
 import ExpertOverview from "@/components/ExpertOverview.vue";
-import AgriKnowledge from "@/components/AgriculturalKnowledgeList.vue";
+import ExpertKnowledge from "@/components/ExpertKnowledge.vue";
 import { useRoute } from 'vue-router';
 
 //路由对象
@@ -343,31 +350,37 @@ const acceptAnswer = async (questionId, answerId) => {
 };
 
 // ---------------- 知识模块 ----------------
-const knowledgeList = ref([]);
-const knowledgePageNum = ref(1);
-const knowledgePageSize = ref(10);
-const knowledgeTotalPages = ref(1);
+// const knowledgeList = ref([]);
+// const knowledgePageNum = ref(1);
+// const knowledgePageSize = ref(10);
+// const knowledgeTotalPages = ref(1);
 
 
-// 获取知识列表
-const fetchKnowledgeList = async () => {
-  try {
-    const res = await axios.get(
-        `/knowledge/list?pageNum=${knowledgePageNum.value}&pageSize=${knowledgePageSize.value}`
-    );
-    knowledgeList.value = res.data.records || [];
-    knowledgeTotalPages.value = res.data.totalPages || 1;
-    console.log('知识列表已更新',knowledgeList.value);
-  } catch (err) {
-    console.error(err);
-  }
-};
+// // 获取知识列表
+// const fetchKnowledgeList = async () => {
+//   try {
+//     const res = await axios.get(
+//         `/knowledge/list?pageNum=${knowledgePageNum.value}&pageSize=${knowledgePageSize.value}`
+//     );
+//     // 按时间降序排序，假设 createTime 是 ISO 字符串
+//     res.data.records.sort((a, b) => b.knowledgeId - a.knowledgeId);
+//     console.log("知识：",res.data.records);
+//
+//     knowledgeList.value = res.data.records || [];
+//     knowledgeTotalPages.value = res.data.totalPages || 1;
+//     console.log('知识列表已更新',knowledgeList.value);
+//   } catch (err) {
+//     console.error(err);
+//   }
+// };
 
 const knowledge = ref({
   title: '',
   content: ''
 })
 const showDetail = ref(false)
+
+const knowledgeRef = ref(null);
 
 // 专家发布新知识
 const publishKnowledge = async () => {
@@ -383,7 +396,7 @@ const publishKnowledge = async () => {
       title: '',
       content: ''
     }
-    await fetchKnowledgeList();
+    knowledgeRef.value.fetchKnowledge();
   } catch (err) {
     console.error(err)
     alert('发布失败，请稍后重试')
@@ -396,7 +409,6 @@ onMounted(() => {
     currentView.value = route.query.view; 
   }
   fetchQuestions();
-  fetchKnowledgeList();
 });
 </script>
 
@@ -681,110 +693,5 @@ onMounted(() => {
   background-color: #45a049;
 }
 
-/*通用弹窗*/
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-}
 
-.modal-content {
-  background: white;
-  padding: 20px;
-  width: 420px;
-  max-width: 90%;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.25);
-}
-
-/*
-   Modal 内标题*/
-.modal-content h3,
-.modal-content h4 {
-  color: #2D7D4F;
-  margin-bottom: 12px;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 999;
-}
-
-.modal-title-div {
-  position: relative;
-  text-align: center;      /* 让标题居中 */
-  padding: 10px 40px;      /* 给右侧留空间放按钮 */
-}
-
-.modal-title-div h3 {
-  margin: 0;
-}
-
-.modal-close-btn {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);  /* 垂直居中对齐 */
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.modal-content {
-  background: #fff;
-  border-radius: 8px;
-  padding: 20px 25px;
-  width: 400px;
-  max-width: 90%;
-}
-
-.modal-content h3 {
-  margin-bottom: 15px;
-  text-align: center;
-}
-
-.modal-form .form-group {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.modal-form .form-group label {
-  width: 25%;
-  text-align: left;
-  font-weight: 500;
-}
-
-.modal-form .form-group input,
-.modal-form .form-group textarea {
-  width: 75%;
-  padding: 5px 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-.modal-form .form-group textarea {
-  height: 100px;
-}
-
-.modal-form .form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 15px;
-}
 </style>

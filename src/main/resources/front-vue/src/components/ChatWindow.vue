@@ -4,11 +4,11 @@
 
       <!-- 头部 -->
       <div class="chat-header">
-        <button @click="goBack()" class="icon-btn back-btn" title="返回">
-          <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M15 18l-6-6 6-6"/>
-          </svg>
-        </button>
+<!--        <button @click="goBack()" class="icon-btn back-btn" title="返回">-->
+<!--          <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">-->
+<!--            <path d="M15 18l-6-6 6-6"/>-->
+<!--          </svg>-->
+<!--        </button>-->
         <div class="header-info">
           <h3>用户 {{ receiverId }}</h3>
         </div>

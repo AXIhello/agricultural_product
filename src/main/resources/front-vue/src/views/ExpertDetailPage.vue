@@ -1,6 +1,5 @@
 <template>
   <div class="main-bg">
-    <HeaderComponent />
     <section class="content">
       <div v-if="isLoadingProfile">正在加载专家信息...</div>
       <div v-else-if="!expertProfile">未找到该专家的信息。</div>
@@ -10,7 +9,7 @@
         <div class="profile-card">
           <h3>专家档案</h3>
           <div class="profile-details">
-            <img :src="finalPhotoUrl" alt="Expert Photo" class="profile-photo">
+            <img :src="expertProfile.photoUrl" alt="Expert Photo" class="profile-photo">
             <div class="profile-info-text">
               <h4>{{ expertName || '专家姓名' }}</h4>
               <p><strong>专业领域：</strong>{{ expertProfile.specialization }}</p>
@@ -85,11 +84,6 @@ const isBooking = ref(false);
 const expertId = route.params.id; // 从URL中获取专家ID
 const expertName = ref('')
 
-const API_BASE_URL = 'http://localhost:8080'//基础地址
-
-console.log('ExpertDetailPage.vue 已加载，从URL获取到的专家ID是:', expertId);
-console.log('完整的路由参数对象:', route.params);
-
 const pagination = reactive({
   current: 1,
   pageSize: 5, // 每页显示5个时间段
@@ -99,25 +93,49 @@ const pagination = reactive({
 
 //===========专家个人信息加载===========
 //获取专家档案
+// 获取专家档案（新版：profile + photo）
 async function fetchExpertProfile() {
-
-  console.log('正在调用fetchExpertProfile');
   isLoadingProfile.value = true;
   try {
-    // API: 根据ID获取指定专家的档案
-    // 注意: 这个API需要后端实现，根据ID返回单个专家的档案和用户信息
-    const response = await axios.get(`/expert/profile/${expertId}`);
-    console.log('🔥 [调试] fetchExpertProfile (专家详情) 返回的完整数据:', response.data);
-    if (response.data && response.data.success ) {
-      expertProfile.value = response.data.data;
+    const res = await axios.get('/expert/profile');
+    const profile = res.data?.data || null;
+
+    console.log('🔥 后端原始返回 profile：', res.data);
+
+    if (!profile) {
+      expertProfile.value = null;
+      console.log('当前专家还未创建档案。');
+      return;
     }
+
+    // 尝试加载头像
+    try {
+      const imageRes = await axios.get(
+          `/expert/profile/${profile.expertId}/photo`,
+          { responseType: 'blob' }
+      );
+
+      if (imageRes.data && imageRes.data.size > 0) {
+        profile.photoUrl = URL.createObjectURL(imageRes.data);
+      } else {
+        throw new Error('空图片');
+      }
+    } catch (err) {
+      console.warn('专家头像加载失败，使用默认头像');
+      profile.photoUrl = defaultAvatar;
+    }
+
+    expertProfile.value = profile;
+
   } catch (error) {
-    console.error(`获取专家(ID: ${expertId})档案失败:`, error);
+    console.error('获取专家档案失败:', error);
+    alert('获取专家档案失败，请稍后重试。');
     expertProfile.value = null;
   } finally {
     isLoadingProfile.value = false;
   }
 }
+
 
 //加载专家名字
 async function loadExpertName() {
@@ -135,25 +153,7 @@ async function loadExpertName() {
     console.error(`获取专家(ID: ${expertId})姓名失败:`, error);
     expertName.value = '专家'
   }
-} 
-
-//处理图片路径
-const finalPhotoUrl = computed(() => {
-  // 1. 如果 expertProfile 还没加载，显示默认图
-  if (!expertProfile.value) return defaultAvatar;
-  
-  // 2. 获取后端返回的 url
-  const url = expertProfile.value.photoUrl;
-
-  // 3. 如果 url 为空，显示默认图
-  if (!url) return defaultAvatar;
-
-  // 4. 如果 url 已经是 http 开头的完整路径（比如网络图片），直接返回
-  if (url.startsWith('http')) return url;
-
-  // 5. 否则，拼接后端地址 + 相对路径
-  return `${API_BASE_URL}${url}`;
-});
+}
 
 //===========预约相关===========
 //获取可预约时间段
@@ -242,17 +242,11 @@ onMounted(() => {
 
 <style scoped>
 
-.main-bg { 
-    display: flex; 
-    flex-direction: column; 
-    height: 100vh; 
-    background-color: #F0F9F4; 
-}
+.content {
+  margin-left: auto ;
+  margin-right: auto ;
 
-.content { 
-    flex: 1; 
-    padding: 20px; 
-    background: white; 
+  justify-content: center;
 }
 
 .expert-detail-container { 

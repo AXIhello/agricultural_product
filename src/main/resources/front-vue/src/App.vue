@@ -44,7 +44,7 @@ onUnmounted(() => {
   justify-content: center;
   align-items: flex-start;
   min-height: 100vh;
-  background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%) fixed;
+  background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%) ;
 }
 
 /* 保留 logo 动画效果，但换成与主题协调颜色 */

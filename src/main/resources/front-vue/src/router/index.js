@@ -118,12 +118,12 @@ const routes = [
   },
 
   {
-    path: '/expert/:id', 
+    path: '/expert/:id',
     name: 'ExpertDetail',
-    component: () => import('../views/ExpertDetailPage.vue'), 
+    component: () => import('../views/ExpertDetailPage.vue'),
     props: true,
-    meta: { requiresAuth: true } 
-  }
+    meta: { requiresAuth: true }
+  },
 
 ]
 

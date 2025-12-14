@@ -17,16 +17,18 @@
       </div>
     </div>
     <section
-        :style="{ marginLeft: ['farmer','buyer','expert'].includes(role) ? '220px' : '20px',
-                  width: ['farmer','buyer','expert'].includes(role) ? 'calc(100% - 240px)' : 'calc(100% - 40px)'}"
+        :style="{ marginLeft: ['farmer','buyer','expert','admin' ].includes(role) ? '220px' : '20px',
+                  width: ['farmer','buyer','expert','admin' ].includes(role) ? 'calc(100% - 240px)' : 'calc(100% - 40px)'}"
         class="content"
-        v-if="role !== 'bank' && role !== 'admin'"
+        v-if="role !== 'bank' "
       >
       <!-- 统一顶部导航 -->
-      <nav v-if="role === 'farmer' || role === 'buyer' || role === 'expert' "
+      <nav v-if="role === 'farmer' || role === 'buyer' || role === 'expert' || role === 'admin' "
            :style="{ top: '65px'}"
            class="main-nav">
           <button v-if="role === 'farmer' || role === 'buyer'" @click="switchView('address')" :class="{ active: currentView === 'address' }">我的地址</button>
+          <button v-if="role === 'farmer' || role === 'buyer'" @click="switchView('myCoupon')" :class="{ active: currentView === 'myCoupon' }">我的优惠券</button>
+          <button v-if="role === 'admin'" @click="switchView('coupon')" :class="{ active: currentView === 'coupon' }">优惠券管理</button>
           <button v-if="role === 'farmer'" @click="switchView('appointments')" :class="{ active: currentView === 'appointments' }">我的预约</button>
           <button v-if="role === 'farmer'" @click="switchView('autoReply')" :class="{ active: currentView === 'autoReply' }">自动回复设置</button>
           <button v-if="role === 'expert'" @click="switchView('profile')" :class="{ active: currentView === 'profile' }">个人档案</button>
@@ -110,7 +112,6 @@
 
           </div>
         </div>
-
 
         <!-- ======================== 买家/农户：我的地址 ======================== -->
         <div v-if="currentView === 'address'" class="address-view">
@@ -219,6 +220,16 @@
 
         </div>
 
+
+        <!-- ======================== 买家/农户：我的优惠券 ======================== -->
+        <div v-if="currentView === 'myCoupon'" class="my-coupon-view">
+
+        </div>
+
+        <!-- ======================== 管理员：优惠券管理 ======================== -->
+        <div v-if="currentView === 'coupon'" class="coupon-view">
+          <CouponAdmin />
+        </div>
 
         <!-- ======================== 农户：我的预约 ======================== -->
         <div v-if="currentView === 'appointments'" class="appointments-view">
@@ -522,6 +533,7 @@ import { ref, onMounted, watch } from 'vue'
 import axios from '../utils/axios'
 import HeaderComponent from "@/components/HeaderComponent.vue";
 import ExpertAvailability from '../components/ExpertAvailability.vue';
+import CouponAdmin from '../components/CouponAdmin.vue';
 import { useAuthStore } from '@/stores/authStore';
 import { storeToRefs } from 'pinia';
 import defaultAvatar from '@/assets/default.jpg';
@@ -693,7 +705,6 @@ async function saveUserProfile() {
   // const regionStr = `${editProfileForm.value.province || ''}${editProfileForm.value.city || ''}`;
 
   try {
-    // 假设后端有一个更新用户信息的接口 /user/update
     // 你需要确认后端是否有这个接口，如果没有，需要后端加一个
     await axios.post('/user/update/profile', {
       userId: userInfo.value.userId, // 传 ID 确保后端知道改谁
@@ -857,7 +868,7 @@ async function switchExpertView(view) {
 async function fetchExpertProfile() {
   try {
     const res = await axios.get('/expert/profile');
-    const profile = res.data.data;
+    const profile = res.data.data || null;
     console.log('后端原始返回：', res.data);
 
     if (!profile) {
@@ -882,8 +893,8 @@ async function fetchExpertProfile() {
     expertProfile.value = profile;
 
   } catch (error) {
-    console.error('获取专家档案失败:', error);
-    alert('获取专家档案失败，请稍后重试。');
+     console.error('获取专家档案失败:', error);
+     alert('获取专家档案失败，请稍后重试。');
   }
 }
 
@@ -944,9 +955,28 @@ async function saveProfile() {
       }
     });
     alert('档案保存成功！');
+
+    if (selectedFile.value) {
+      const formData = new FormData();
+      formData.append('photo', selectedFile.value);
+
+      await axios.patch(
+          '/expert/profile/photo',
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          }
+      );
+    }
+
+    alert('档案保存成功');
+
     isEditing.value = false;
     selectedFile.value = null;
     await fetchExpertProfile(); // 保存成功后刷新档案数据
+
   } catch (error) {
     console.error('保存专家档案失败', error);
     alert('保存失败：' + (error.response?.data?.message || '请检查输入内容'));
@@ -1229,6 +1259,11 @@ async function loadDataForRole(currentRole) {
 
 function exit(){
   authStore.logout();
+}
+
+/** 时间格式化 */
+function formatTime(time) {
+  return time ? time.replace('T', ' ') : '';
 }
 
 

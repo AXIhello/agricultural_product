@@ -132,21 +132,25 @@ public class ExpertProfileController {
      */
     @GetMapping
     public ResponseEntity<Map<String, Object>> getMyProfile(HttpServletRequest request) {
+        Map<String, Object> result = new HashMap<>();
+
         if (!checkToken(request)) {
-            return ResponseEntity.status(401).body(Map.of("success", false, "message", "未授权"));
+            result.put("success", false);
+            result.put("message", "未授权");
+            return ResponseEntity.status(401).body(result);
         }
 
         Long expertId = getUserIdFromToken(request);
         ExpertProfile profile = expertProfileService.getProfile(expertId);
-        
+
         if (profile == null) {
-            return ResponseEntity.status(404).body(Map.of(
-                "success", false, 
-                "message", "档案不存在，请先创建"
-            ));
+            // 档案不存在，但返回 200，前端只提示，不报错
+            result.put("success", false);
+            result.put("message", "档案不存在，请先创建");
+            result.put("data", null);
+            return ResponseEntity.ok(result);
         }
 
-        Map<String, Object> result = new HashMap<>();
         result.put("success", true);
         result.put("data", profile);
         return ResponseEntity.ok(result);
