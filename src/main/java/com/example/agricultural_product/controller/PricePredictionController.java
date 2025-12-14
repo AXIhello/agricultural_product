@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -87,17 +89,25 @@ public class PricePredictionController {
             case "COMPLETED":
                 // 成功完成，返回 200 OK
                 return ResponseEntity.ok(result);
+
             case "RUNNING":
-                // 任务仍在进行，返回 202 Accepted，客户端应继续轮询
+                // 任务仍在进行，返回 202 Accepted
                 return ResponseEntity.status(HttpStatus.ACCEPTED).body(result);
+
             case "FAILED":
-                // 任务失败，返回 500 Internal Server Error (或 400 视具体错误)
+                // 【修改点】任务失败
+                // 这是一个正常的业务反馈（即“告诉前端任务失败了”这个动作本身是成功的）
+                // 所以应该返回 200 OK，让前端通过 body 中的 status: FAILED 来判断业务逻辑
                 String errorMessage = (String) result.getOrDefault("message", "未知错误");
-                logger.error("预测任务执行失败 [TaskId: {}]: {}", taskId, errorMessage);
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+                // 依然可以打印 error 日志方便排查，或者降级为 warn
+                logger.warn("预测任务业务失败 [TaskId: {}]: {}", taskId, errorMessage);
+
+                // 改为返回 200 OK
+                return ResponseEntity.ok(result);
+
             case "NOT_FOUND":
             default:
-                // 任务ID不存在
+                // 任务ID不存在，返回 404
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("status", "NOT_FOUND", "message", "任务ID不存在或已过期"));
         }
     }
@@ -111,7 +121,7 @@ public class PricePredictionController {
         return ResponseEntity.ok(predictionService.getPredictableProducts());
     }
 
-    // 获取元数据 (保持不变)
+    // 获取元数据
     @GetMapping("/metadata/search")
     public ResponseEntity<Map<String, List<String>>> searchProductMetadata(
             HttpServletRequest request,
@@ -122,13 +132,21 @@ public class PricePredictionController {
         }
 
         if (productName == null || productName.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("error", List.of("产品名称不能为空")));
+            // 参数为空还是算作请求错误，可以保留 400，或者也改成返回空
+            return ResponseEntity.badRequest().body(null);
         }
 
+        // 调用 Service 查询
         Map<String, List<String>> metadata = predictionService.getProductCategoryAndSpec(productName);
 
+
+        // 即使没找到，返回 200 OK，但是内容是空的列表
         if (metadata.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            // JSON 结果: { "specs": [], "pcats": [] }
+            return ResponseEntity.ok(Map.of(
+                    "specs", Collections.emptyList(),
+                    "pcats", Collections.emptyList()
+            ));
         }
 
         return ResponseEntity.ok(metadata);
