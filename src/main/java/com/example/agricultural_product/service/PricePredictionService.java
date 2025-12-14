@@ -1,10 +1,8 @@
 package com.example.agricultural_product.service;
 
 import com.example.agricultural_product.dto.PredictionRequest;
-import com.example.agricultural_product.pojo.Product;
 import java.util.List;
 import java.util.Map;
-
 
 public interface PricePredictionService {
 
@@ -38,4 +36,19 @@ public interface PricePredictionService {
      * @return 包含 "specs" 和 "pcats" 键的 Map<String, List<String>>
      */
     Map<String, List<String>> getProductCategoryAndSpec(String productName);
+
+    // =========================================================
+    // 【新增】 为了支持 Service 内部通过 self 代理调用异步方法
+    // =========================================================
+
+    /**
+     * 执行具体的异步预测逻辑。
+     * <p>
+     * 注意：此方法主要供 Service 内部通过 self 代理对象调用，以确保 @Async 注解生效。
+     * Controller 层通常不需要直接调用此方法，而是调用 startPredictionTask。
+     * </p>
+     * @param taskId 任务ID
+     * @param request 预测请求参数
+     */
+    void executeLstmPredictionAsync(String taskId, PredictionRequest request);
 }

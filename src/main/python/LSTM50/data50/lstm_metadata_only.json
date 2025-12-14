@@ -3,13 +3,9 @@
         "带鱼": {
             "category_mappings": {
                 "specInfo": [
-                    "500g左右/鲜",
-                    "350g左右/鲜",
-                    "250g左右/鲜",
-                    "600g-700g/冻",
+                    "100g-200g/冻",
                     "300g-500g/冻",
-                    "500g-700g/冻",
-                    "100g-200g/冻"
+                    "500g-700g/冻"
                 ],
                 "prodPcat": [
                     "海水鱼"
@@ -21,8 +17,7 @@
                 "specInfo": [
                     "100g-150g",
                     "200g-250g",
-                    "350g-400g",
-                    "250g-300g"
+                    "350g-400g"
                 ],
                 "prodPcat": [
                     "淡水鱼"
@@ -33,34 +28,34 @@
             "category_mappings": {
                 "specInfo": [
                     "10头-12头",
-                    "8头-9头",
-                    "6头-7头"
+                    "6头-7头",
+                    "8头-9头"
                 ],
                 "prodPcat": [
-                    "贝壳类",
-                    "其他类"
+                    "其他类",
+                    "贝壳类"
                 ]
             }
         },
         "海螺": {
             "category_mappings": {
                 "specInfo": [
-                    "活（大）",
                     "活（中）",
+                    "活（大）",
                     "活（小）"
                 ],
                 "prodPcat": [
-                    "贝壳类",
-                    "其他类"
+                    "其他类",
+                    "贝壳类"
                 ]
             }
         },
         "平鱼": {
             "category_mappings": {
                 "specInfo": [
-                    "250g-300g/冻",
-                    "150g-200g/冻",
                     "120g-130g/冻",
+                    "150g-200g/冻",
+                    "250g-300g/冻",
                     "80g-100g/冻"
                 ],
                 "prodPcat": [
@@ -71,25 +66,13 @@
         "草鱼": {
             "category_mappings": {
                 "specInfo": [
-                    "750g-1000g",
-                    ">1000g",
+                    "1500g左右",
                     "5000g左右",
-                    "1500g左右"
+                    "750g-1000g",
+                    ">1000g"
                 ],
                 "prodPcat": [
                     "淡水鱼"
-                ]
-            }
-        },
-        "羊蝎子": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN",
-                    "精品",
-                    "普通"
-                ],
-                "prodPcat": [
-                    "羊肉类"
                 ]
             }
         },
@@ -104,68 +87,33 @@
                 ]
             }
         },
-        "后臀尖": {
+        "羊蝎子": {
             "category_mappings": {
                 "specInfo": [
-                    "瘦",
-                    "肥"
+                    "精品"
                 ],
                 "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "前臀尖": {
-            "category_mappings": {
-                "specInfo": [
-                    "瘦",
-                    "肥"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "白条猪": {
-            "category_mappings": {
-                "specInfo": [
-                    "瘦",
-                    "肥"
-                ],
-                "prodPcat": [
-                    "猪肉类"
+                    "羊肉类"
                 ]
             }
         },
         "扇贝": {
             "category_mappings": {
                 "specInfo": [
-                    "7cm-9cm/活",
                     "10cm-12cm/活",
+                    "7cm-9cm/活",
                     ">16cm/活"
                 ],
                 "prodPcat": [
-                    "贝壳类",
-                    "其他类"
+                    "其他类",
+                    "贝壳类"
                 ]
             }
         },
         "黄鳝": {
             "category_mappings": {
                 "specInfo": [
-                    "50g-100g",
                     "100g-200g"
-                ],
-                "prodPcat": [
-                    "淡水鱼"
-                ]
-            }
-        },
-        "鲤鱼": {
-            "category_mappings": {
-                "specInfo": [
-                    "750g-1000g",
-                    ">1000g"
                 ],
                 "prodPcat": [
                     "淡水鱼"
@@ -175,8 +123,8 @@
         "鲢鱼": {
             "category_mappings": {
                 "specInfo": [
-                    ">1500g",
-                    "1000g-1500g"
+                    "1000g-1500g",
+                    ">1500g"
                 ],
                 "prodPcat": [
                     "淡水鱼"
@@ -186,8 +134,7 @@
         "胖头鱼": {
             "category_mappings": {
                 "specInfo": [
-                    ">2000g",
-                    "<2000g"
+                    ">2000g"
                 ],
                 "prodPcat": [
                     "淡水鱼"
@@ -197,43 +144,32 @@
         "嘎鱼": {
             "category_mappings": {
                 "specInfo": [
-                    ">100g",
-                    "<100g"
+                    "<100g",
+                    ">100g"
                 ],
                 "prodPcat": [
                     "淡水鱼"
                 ]
             }
         },
-        "甲鱼": {
-            "category_mappings": {
-                "specInfo": [
-                    "养殖",
-                    "仿野生"
-                ],
-                "prodPcat": [
-                    "其他类"
-                ]
-            }
-        },
         "生蚝": {
             "category_mappings": {
                 "specInfo": [
-                    "200g",
-                    "150g"
+                    "150g",
+                    "200g"
                 ],
                 "prodPcat": [
-                    "贝壳类",
-                    "其他类"
+                    "其他类",
+                    "贝壳类"
                 ]
             }
         },
         "黄花鱼": {
             "category_mappings": {
                 "specInfo": [
-                    "750g左右/鲜",
+                    "250g左右/鲜",
                     "500g左右/鲜",
-                    "250g左右/鲜"
+                    "750g左右/鲜"
                 ],
                 "prodPcat": [
                     "海水鱼"
@@ -244,8 +180,7 @@
             "category_mappings": {
                 "specInfo": [
                     "去头",
-                    "带头",
-                    "去偷"
+                    "带头"
                 ],
                 "prodPcat": [
                     "海水鱼"
@@ -255,10 +190,8 @@
         "金鲳鱼": {
             "category_mappings": {
                 "specInfo": [
-                    "500g-600g/鲜",
-                    "400g-500g/鲜",
-                    "500g-600g",
                     "400g-500g",
+                    "500g-600g",
                     "500g-650g"
                 ],
                 "prodPcat": [
@@ -269,9 +202,9 @@
         "黑鱼": {
             "category_mappings": {
                 "specInfo": [
-                    "活",
+                    "<1500g",
                     ">1500g",
-                    "<1500g"
+                    "活"
                 ],
                 "prodPcat": [
                     "淡水鱼"
@@ -281,56 +214,49 @@
         "母河蟹": {
             "category_mappings": {
                 "specInfo": [
-                    "80g左右",
-                    "65g左右",
-                    "125g左右",
-                    "110g左右",
                     "100g左右",
+                    "125g左右",
+                    "150g左右",
+                    "65g左右",
                     "75g左右",
-                    "150g左右"
+                    "80g左右"
                 ],
                 "prodPcat": [
-                    "虾蟹类",
-                    "其他类"
+                    "其他类",
+                    "虾蟹类"
                 ]
             }
         },
         "白虾": {
             "category_mappings": {
                 "specInfo": [
-                    "鲜",
-                    "20头-25头/冻",
-                    "15头-20头/冻",
                     "10头-15头/冻",
-                    "活",
-                    "冰鲜",
-                    "70-80冰鲜",
+                    "15头-20头/冻",
                     "17头-20头",
+                    "20头-25头/冻",
                     "26头-28头",
-                    "26头-30头",
-                    "22头-24头"
+                    "活"
                 ],
                 "prodPcat": [
-                    "虾蟹类",
-                    "其他类"
+                    "其他类",
+                    "虾蟹类"
                 ]
             }
         },
         "白虾（笼装）": {
             "category_mappings": {
                 "specInfo": [
-                    "26头-30头",
+                    "17头-22头",
+                    "20头-23头",
                     "21头-24头",
-                    "26头-30头/活",
                     "21头-24头/活",
                     "22头-24头",
-                    "17头-22头",
-                    "20头-23头"
+                    "26头-30头",
+                    "26头-30头/活"
                 ],
                 "prodPcat": [
-                    "虾类",
-                    "虾蟹类",
-                    "其他类"
+                    "其他类",
+                    "虾蟹类"
                 ]
             }
         },
@@ -338,249 +264,26 @@
             "category_mappings": {
                 "specInfo": [
                     "100g左右",
-                    "175g左右",
                     "150g左右",
+                    "175g左右",
                     "200g左右",
-                    "75g左右",
-                    "125g左右"
+                    "75g左右"
                 ],
                 "prodPcat": [
-                    "虾蟹类",
-                    "其他类"
+                    "其他类",
+                    "虾蟹类"
                 ]
             }
         },
         "花蛤": {
             "category_mappings": {
                 "specInfo": [
-                    "活（无沙）",
-                    "活"
+                    "活",
+                    "活（无沙）"
                 ],
                 "prodPcat": [
-                    "贝壳类",
-                    "其他类"
-                ]
-            }
-        },
-        "羊里脊": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "羊肉类"
-                ]
-            }
-        },
-        "去骨羊后腿": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "羊肉类"
-                ]
-            }
-        },
-        "牛尾": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "牛肉类"
-                ]
-            }
-        },
-        "猪心": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "纯通脊": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "纯瘦肉": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "猪脑": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "纯腔骨": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "牛林": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "牛肉类"
-                ]
-            }
-        },
-        "猪皮": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "前肘": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "护心肉": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN",
-                    "冻\\鲜",
-                    "鲜"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "精牛柳": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "牛肉类"
-                ]
-            }
-        },
-        "猪肚": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "牛后腱": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "牛肉类"
-                ]
-            }
-        },
-        "猪蹄": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "牛板筋": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "牛肉类"
-                ]
-            }
-        },
-        "羊上脑": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "羊肉类"
-                ]
-            }
-        },
-        "羊腩": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "羊肉类"
-                ]
-            }
-        },
-        "羊排骨": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "羊肉类"
-                ]
-            }
-        },
-        "通脊": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "猪肺": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
+                    "其他类",
+                    "贝壳类"
                 ]
             }
         },
@@ -594,231 +297,10 @@
                 ]
             }
         },
-        "羊尾巴油": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "羊肉类"
-                ]
-            }
-        },
-        "纯排骨": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "猪肠头": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "牛排骨": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "牛肉类"
-                ]
-            }
-        },
-        "牛前腱": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "牛肉类"
-                ]
-            }
-        },
-        "羊肉片": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "羊肉类"
-                ]
-            }
-        },
-        "整羊": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "羊肉类"
-                ]
-            }
-        },
-        "猪腰子": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "棒骨": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "猪肠": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "牛骨": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "牛肉类"
-                ]
-            }
-        },
-        "猪肝": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "猪头": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "猪板油": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "猪耳": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "牛腩": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "牛肉类"
-                ]
-            }
-        },
         "羊小腿": {
             "category_mappings": {
                 "specInfo": [
-                    "UNKNOWN",
                     "羊棒"
-                ],
-                "prodPcat": [
-                    "羊肉类"
-                ]
-            }
-        },
-        "羊骨头": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "羊肉类"
-                ]
-            }
-        },
-        "牛上脑": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "牛肉类"
-                ]
-            }
-        },
-        "猪尾巴": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "羊腱子肉": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "羊肉类"
-                ]
-            }
-        },
-        "腔排骨": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "去骨羊前腿": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
                 ],
                 "prodPcat": [
                     "羊肉类"
@@ -835,96 +317,6 @@
                 ]
             }
         },
-        "整牛": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "牛肉类"
-                ]
-            }
-        },
-        "羊腰窝": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "羊肉类"
-                ]
-            }
-        },
-        "牛后腿": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "牛肉类"
-                ]
-            }
-        },
-        "猪口条": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "肥膘肉": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "牛前腿": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "牛肉类"
-                ]
-            }
-        },
-        "牛油": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "牛肉类"
-                ]
-            }
-        },
-        "牛腰窝": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "牛肉类"
-                ]
-            }
-        },
-        "牛金钱腱": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "牛肉类"
-                ]
-            }
-        },
         "鲟鱼": {
             "category_mappings": {
                 "specInfo": [
@@ -932,16 +324,6 @@
                 ],
                 "prodPcat": [
                     "淡水鱼"
-                ]
-            }
-        },
-        "后肘（去骨）": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
                 ]
             }
         },
@@ -975,16 +357,6 @@
                 ]
             }
         },
-        "多宝鱼": {
-            "category_mappings": {
-                "specInfo": [
-                    "活"
-                ],
-                "prodPcat": [
-                    "海水鱼"
-                ]
-            }
-        },
         "罗非鱼": {
             "category_mappings": {
                 "specInfo": [
@@ -995,30 +367,10 @@
                 ]
             }
         },
-        "牛蛙": {
-            "category_mappings": {
-                "specInfo": [
-                    "活"
-                ],
-                "prodPcat": [
-                    "其他类"
-                ]
-            }
-        },
         "泥鳅": {
             "category_mappings": {
                 "specInfo": [
                     "活"
-                ],
-                "prodPcat": [
-                    "淡水鱼"
-                ]
-            }
-        },
-        "桂鱼": {
-            "category_mappings": {
-                "specInfo": [
-                    "标桂"
                 ],
                 "prodPcat": [
                     "淡水鱼"
@@ -1035,24 +387,14 @@
                 ]
             }
         },
-        "淡水鲈鱼": {
-            "category_mappings": {
-                "specInfo": [
-                    "活"
-                ],
-                "prodPcat": [
-                    "淡水鱼"
-                ]
-            }
-        },
         "田螺": {
             "category_mappings": {
                 "specInfo": [
                     "去尾"
                 ],
                 "prodPcat": [
-                    "贝壳类",
-                    "其他类"
+                    "其他类",
+                    "贝壳类"
                 ]
             }
         },
@@ -1066,24 +408,14 @@
                 ]
             }
         },
-        "后肘（带骨）": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
         "钉螺": {
             "category_mappings": {
                 "specInfo": [
                     "活"
                 ],
                 "prodPcat": [
-                    "贝壳类",
-                    "其他类"
+                    "其他类",
+                    "贝壳类"
                 ]
             }
         },
@@ -1093,8 +425,8 @@
                     "活"
                 ],
                 "prodPcat": [
-                    "贝壳类",
-                    "其他类"
+                    "其他类",
+                    "贝壳类"
                 ]
             }
         },
@@ -1104,8 +436,8 @@
                     "活"
                 ],
                 "prodPcat": [
-                    "贝壳类",
-                    "其他类"
+                    "其他类",
+                    "贝壳类"
                 ]
             }
         },
@@ -1125,8 +457,8 @@
                     "活"
                 ],
                 "prodPcat": [
-                    "贝壳类",
-                    "其他类"
+                    "其他类",
+                    "贝壳类"
                 ]
             }
         },
@@ -1146,8 +478,8 @@
                     "活"
                 ],
                 "prodPcat": [
-                    "贝壳类",
-                    "其他类"
+                    "其他类",
+                    "贝壳类"
                 ]
             }
         },
@@ -1157,16 +489,15 @@
                     "活"
                 ],
                 "prodPcat": [
-                    "贝壳类",
-                    "其他类"
+                    "其他类",
+                    "贝壳类"
                 ]
             }
         },
         "海鲈鱼": {
             "category_mappings": {
                 "specInfo": [
-                    "鲜",
-                    "500g-650g"
+                    "鲜"
                 ],
                 "prodPcat": [
                     "海水鱼"
@@ -1176,14 +507,12 @@
         "公梭子蟹": {
             "category_mappings": {
                 "specInfo": [
-                    "250g左右",
-                    "250g",
                     "150g",
-                    "300g-350g",
-                    "200g-250g"
+                    "200g-250g",
+                    "250g",
+                    "300g-350g"
                 ],
                 "prodPcat": [
-                    "虾蟹类",
                     "其他类"
                 ]
             }
@@ -1201,22 +530,26 @@
         "带子": {
             "category_mappings": {
                 "specInfo": [
-                    "活",
-                    "150g"
+                    "活"
                 ],
                 "prodPcat": [
-                    "贝壳类",
-                    "其他类"
+                    "其他类",
+                    "贝壳类"
                 ]
             }
         },
-        "牛筋头巴脑": {
+        "国产平鱼": {
             "category_mappings": {
                 "specInfo": [
-                    "UNKNOWN"
+                    "100g-200g/鲜",
+                    "120g-130g/鲜",
+                    "150g-200g/鲜",
+                    "200g-300g/鲜",
+                    "250g-300g/鲜",
+                    "80g-100g/鲜"
                 ],
                 "prodPcat": [
-                    "牛肉类"
+                    "海水鱼"
                 ]
             }
         },
@@ -1242,299 +575,30 @@
                 ]
             }
         },
-        "茼蒿": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "水菜"
-                ]
-            }
-        },
-        "菊花菜": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "水菜"
-                ]
-            }
-        },
-        "樱桃萝卜": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "水菜"
-                ]
-            }
-        },
-        "菜心": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "水菜"
-                ]
-            }
-        },
-        "香芹": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "水菜"
-                ]
-            }
-        },
-        "蒿子秆": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "水菜"
-                ]
-            }
-        },
-        "奶白菜": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "水菜"
-                ]
-            }
-        },
-        "空心菜": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "水菜"
-                ]
-            }
-        },
-        "盖菜": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "水菜"
-                ]
-            }
-        },
-        "菠菜": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "水菜"
-                ]
-            }
-        },
-        "油菜": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "水菜"
-                ]
-            }
-        },
-        "青蒜": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "水菜"
-                ]
-            }
-        },
-        "豌豆苗": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "水菜"
-                ]
-            }
-        },
-        "香葱": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "水菜"
-                ]
-            }
-        },
-        "苦菊": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "水菜"
-                ]
-            }
-        },
-        "油麦菜": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "水菜"
-                ]
-            }
-        },
-        "苋菜": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "水菜"
-                ]
-            }
-        },
-        "鸡毛菜": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "水菜"
-                ]
-            }
-        },
-        "小红扇贝": {
-            "category_mappings": {
-                "specInfo": [
-                    "活"
-                ],
-                "prodPcat": [
-                    "贝壳类",
-                    "其他类"
-                ]
-            }
-        },
-        "散生菜": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "水菜"
-                ]
-            }
-        },
-        "快菜": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "水菜"
-                ]
-            }
-        },
-        "小白菜": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "水菜"
-                ]
-            }
-        },
-        "穿心莲": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "水菜"
-                ]
-            }
-        },
-        "梅花肉": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "芥兰": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "水菜"
-                ]
-            }
-        },
-        "木耳菜": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "水菜"
-                ]
-            }
-        },
         "基围虾": {
             "category_mappings": {
                 "specInfo": [
-                    "40头-50头活",
                     "30头-50头活",
-                    "30头-50头/活",
-                    "40头-60头",
-                    "35头-40头"
+                    "35头-40头",
+                    "40头-50头活",
+                    "40头-60头"
                 ],
                 "prodPcat": [
-                    "虾蟹类",
-                    "其他类"
+                    "其他类",
+                    "虾蟹类"
                 ]
             }
         },
-        "青鱼": {
+        "国产带鱼": {
             "category_mappings": {
                 "specInfo": [
-                    "活"
+                    "200g-300g/冻",
+                    "300g-500g/冻",
+                    "500g-700g/冻",
+                    "600g-700g/冻"
                 ],
                 "prodPcat": [
-                    "淡水鱼"
-                ]
-            }
-        },
-        "小里脊": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
+                    "海水鱼"
                 ]
             }
         },
@@ -1549,68 +613,27 @@
                 ]
             }
         },
-        "梅花骨": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "五花头": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "猪肉类"
-                ]
-            }
-        },
-        "牛百叶": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "牛肉类"
-                ]
-            }
-        },
-        "水萝卜": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "水菜"
-                ]
-            }
-        },
         "面包蟹": {
             "category_mappings": {
                 "specInfo": [
                     "活"
                 ],
                 "prodPcat": [
-                    "虾蟹类",
-                    "其他类"
+                    "其他类",
+                    "虾蟹类"
                 ]
             }
         },
         "小龙虾": {
             "category_mappings": {
                 "specInfo": [
-                    "活",
+                    "20g-30g",
                     "35g-45g",
-                    "20g-30g"
+                    "活"
                 ],
                 "prodPcat": [
-                    "虾类",
-                    "虾蟹类",
-                    "其他类"
+                    "其他类",
+                    "虾蟹类"
                 ]
             }
         },
@@ -1624,106 +647,25 @@
                 ]
             }
         },
-        "母梭子蟹": {
-            "category_mappings": {
-                "specInfo": [
-                    "250g左右",
-                    "150g",
-                    "300g-350g"
-                ],
-                "prodPcat": [
-                    "虾蟹类",
-                    "其他类"
-                ]
-            }
-        },
-        "白玉南豆腐": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "精品豆腐泡": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "白玉北豆腐": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "精品豆腐丝": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
         "豆腐干": {
             "category_mappings": {
                 "specInfo": [
                     "散"
                 ],
                 "prodPcat": [
-                    "UNKNOWN"
+                    "None"
                 ]
             }
         },
-        "香香内脂豆腐": {
+        "国产黄花鱼": {
             "category_mappings": {
                 "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "小黄花鱼": {
-            "category_mappings": {
-                "specInfo": [
-                    "冻"
+                    "250g左右/鲜",
+                    "500g左右/鲜",
+                    "750g左右/鲜"
                 ],
                 "prodPcat": [
                     "海水鱼"
-                ]
-            }
-        },
-        "白玉内酯豆腐": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "精品豆腐干": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
                 ]
             }
         },
@@ -1733,7 +675,7 @@
                     "散"
                 ],
                 "prodPcat": [
-                    "UNKNOWN"
+                    "None"
                 ]
             }
         },
@@ -1743,18 +685,7 @@
                     "散"
                 ],
                 "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "琵琶虾": {
-            "category_mappings": {
-                "specInfo": [
-                    "活"
-                ],
-                "prodPcat": [
-                    "虾蟹类",
-                    "其他类"
+                    "None"
                 ]
             }
         },
@@ -1764,17 +695,7 @@
                     "散"
                 ],
                 "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "香香北豆腐": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
+                    "None"
                 ]
             }
         },
@@ -1784,8 +705,8 @@
                     "活"
                 ],
                 "prodPcat": [
-                    "贝壳类",
-                    "其他类"
+                    "其他类",
+                    "贝壳类"
                 ]
             }
         },
@@ -1795,18 +716,7 @@
                     "屉"
                 ],
                 "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "猫眼螺": {
-            "category_mappings": {
-                "specInfo": [
-                    "活"
-                ],
-                "prodPcat": [
-                    "贝壳类",
-                    "其他类"
+                    "None"
                 ]
             }
         },
@@ -1816,7 +726,7 @@
                     "屉"
                 ],
                 "prodPcat": [
-                    "UNKNOWN"
+                    "None"
                 ]
             }
         },
@@ -1830,25 +740,23 @@
                 ]
             }
         },
-        "毛钳": {
+        "护心肉": {
             "category_mappings": {
                 "specInfo": [
-                    "UNKNOWN",
-                    "活"
+                    "鲜"
                 ],
                 "prodPcat": [
-                    "贝壳类",
-                    "其他类"
+                    "猪肉类"
                 ]
             }
         },
-        "黄心菜": {
+        "羊蹄": {
             "category_mappings": {
                 "specInfo": [
-                    "UNKNOWN"
+                    "水褪"
                 ],
                 "prodPcat": [
-                    "水菜"
+                    "羊肉类"
                 ]
             }
         },
@@ -1863,37 +771,27 @@
                 ]
             }
         },
-        "荆芥": {
+        "扇贝（地播）": {
             "category_mappings": {
                 "specInfo": [
-                    "UNKNOWN"
+                    "10cm-12cm/活",
+                    "7cm-9cm/活"
                 ],
                 "prodPcat": [
-                    "水菜"
-                ]
-            }
-        },
-        "紫苏叶": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "水菜"
+                    "其他类"
                 ]
             }
         },
         "小河虾": {
             "category_mappings": {
                 "specInfo": [
-                    "活",
                     "中",
                     "小",
-                    "35头-40头"
+                    "活"
                 ],
                 "prodPcat": [
-                    "虾蟹类",
-                    "其他类"
+                    "其他类",
+                    "虾蟹类"
                 ]
             }
         },
@@ -1903,19 +801,28 @@
                     "活"
                 ],
                 "prodPcat": [
-                    "虾蟹类",
-                    "其他类"
+                    "其他类",
+                    "虾蟹类"
                 ]
             }
         },
         "鲽鱼": {
             "category_mappings": {
                 "specInfo": [
-                    "750左右/冻",
-                    "750g/冻"
+                    "750左右/冻"
                 ],
                 "prodPcat": [
                     "海水鱼"
+                ]
+            }
+        },
+        "波士顿龙虾": {
+            "category_mappings": {
+                "specInfo": [
+                    "活"
+                ],
+                "prodPcat": [
+                    "虾蟹类"
                 ]
             }
         },
@@ -1935,8 +842,18 @@
                     "活"
                 ],
                 "prodPcat": [
-                    "虾蟹类",
-                    "其他类"
+                    "其他类",
+                    "虾蟹类"
+                ]
+            }
+        },
+        "帝王蟹": {
+            "category_mappings": {
+                "specInfo": [
+                    "活"
+                ],
+                "prodPcat": [
+                    "虾蟹类"
                 ]
             }
         },
@@ -1946,8 +863,17 @@
                     "鲜"
                 ],
                 "prodPcat": [
-                    "海水鱼",
-                    "其他类"
+                    "海水鱼"
+                ]
+            }
+        },
+        "小青龙虾": {
+            "category_mappings": {
+                "specInfo": [
+                    "活"
+                ],
+                "prodPcat": [
+                    "虾蟹类"
                 ]
             }
         },
@@ -1957,8 +883,7 @@
                     "活"
                 ],
                 "prodPcat": [
-                    "贝壳类",
-                    "其他类"
+                    "贝壳类"
                 ]
             }
         },
@@ -1968,8 +893,8 @@
                     "鲜"
                 ],
                 "prodPcat": [
-                    "虾蟹类",
-                    "其他类"
+                    "其他类",
+                    "虾蟹类"
                 ]
             }
         },
@@ -1979,31 +904,99 @@
                     "活"
                 ],
                 "prodPcat": [
-                    "虾蟹类",
+                    "其他类",
+                    "虾蟹类"
+                ]
+            }
+        },
+        "海螺丝": {
+            "category_mappings": {
+                "specInfo": [
+                    "活"
+                ],
+                "prodPcat": [
                     "其他类"
                 ]
             }
         },
-        "荠菜": {
+        "角螺": {
             "category_mappings": {
                 "specInfo": [
-                    "UNKNOWN"
+                    "活"
                 ],
                 "prodPcat": [
-                    "水菜"
+                    "其他类"
+                ]
+            }
+        },
+        "大香螺": {
+            "category_mappings": {
+                "specInfo": [
+                    "活"
+                ],
+                "prodPcat": [
+                    "其他类"
                 ]
             }
         },
         "白虾（精品）": {
             "category_mappings": {
                 "specInfo": [
-                    "26头-30头/活",
-                    "21头-24头/活",
-                    "26头-30头",
-                    "22头-24头"
+                    "22头-24头",
+                    "26头-30头"
                 ],
                 "prodPcat": [
-                    "虾蟹类",
+                    "其他类"
+                ]
+            }
+        },
+        "竹蛏子": {
+            "category_mappings": {
+                "specInfo": [
+                    "活",
+                    "活（中）"
+                ],
+                "prodPcat": [
+                    "其他类"
+                ]
+            }
+        },
+        "毛蚶": {
+            "category_mappings": {
+                "specInfo": [
+                    "活"
+                ],
+                "prodPcat": [
+                    "其他类"
+                ]
+            }
+        },
+        "虾仁": {
+            "category_mappings": {
+                "specInfo": [
+                    "鲜"
+                ],
+                "prodPcat": [
+                    "虾蟹类"
+                ]
+            }
+        },
+        "石斑鱼": {
+            "category_mappings": {
+                "specInfo": [
+                    "活"
+                ],
+                "prodPcat": [
+                    "海水鱼"
+                ]
+            }
+        },
+        "海肠子": {
+            "category_mappings": {
+                "specInfo": [
+                    "活"
+                ],
+                "prodPcat": [
                     "其他类"
                 ]
             }
@@ -2019,17 +1012,6 @@
                 ]
             }
         },
-        "江米面": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN",
-                    "水磨"
-                ],
-                "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
         "古船富强粉": {
             "category_mappings": {
                 "specInfo": [
@@ -2041,36 +1023,45 @@
                 ]
             }
         },
-        "蚕豆": {
+        "鲜带鱼": {
             "category_mappings": {
                 "specInfo": [
-                    "UNKNOWN"
+                    "200g左右",
+                    "300g左右",
+                    "500g左右"
                 ],
                 "prodPcat": [
-                    "干果",
-                    "杂粮类"
+                    "海水鱼"
                 ]
             }
         },
-        "青豆": {
+        "多春鱼": {
             "category_mappings": {
                 "specInfo": [
-                    "UNKNOWN"
+                    "鲜"
                 ],
                 "prodPcat": [
-                    "干果",
-                    "杂粮类"
+                    "海水鱼"
                 ]
             }
         },
-        "黄花菜": {
+        "花螺": {
             "category_mappings": {
                 "specInfo": [
-                    "UNKNOWN"
+                    "活"
                 ],
                 "prodPcat": [
-                    "特菜",
-                    "UNKNOWN"
+                    "贝壳类"
+                ]
+            }
+        },
+        "栉孔扇贝": {
+            "category_mappings": {
+                "specInfo": [
+                    "活"
+                ],
+                "prodPcat": [
+                    "其他类"
                 ]
             }
         },
@@ -2080,7 +1071,36 @@
                     "活"
                 ],
                 "prodPcat": [
-                    "虾蟹类",
+                    "虾蟹类"
+                ]
+            }
+        },
+        "红星斑": {
+            "category_mappings": {
+                "specInfo": [
+                    "活"
+                ],
+                "prodPcat": [
+                    "海水鱼"
+                ]
+            }
+        },
+        "沙母蟹": {
+            "category_mappings": {
+                "specInfo": [
+                    "活"
+                ],
+                "prodPcat": [
+                    "其他类"
+                ]
+            }
+        },
+        "竹节蛏": {
+            "category_mappings": {
+                "specInfo": [
+                    "活（中）"
+                ],
+                "prodPcat": [
                     "其他类"
                 ]
             }
@@ -2088,123 +1108,10 @@
         "澳洲龙虾": {
             "category_mappings": {
                 "specInfo": [
-                    "1000g-1250g",
                     "<750g"
                 ],
                 "prodPcat": [
-                    "虾蟹类",
                     "其他类"
-                ]
-            }
-        },
-        "火龙果": {
-            "category_mappings": {
-                "specInfo": [
-                    "红心",
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "进口果"
-                ]
-            }
-        },
-        "香椿": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "金龙鱼大豆油": {
-            "category_mappings": {
-                "specInfo": [
-                    "5L/桶"
-                ],
-                "prodPcat": [
-                    "食用油"
-                ]
-            }
-        },
-        "银芽": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "毛豆仁": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "韭黄": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "鱼腥草根": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "豆尖": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "沙葁": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "南姜": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "元宝牌大豆油": {
-            "category_mappings": {
-                "specInfo": [
-                    "10L/桶"
-                ],
-                "prodPcat": [
-                    "食用油"
                 ]
             }
         },
@@ -2218,103 +1125,13 @@
                 ]
             }
         },
-        "黄豆": {
+        "元宝牌大豆油": {
             "category_mappings": {
                 "specInfo": [
-                    "UNKNOWN"
+                    "10L/桶"
                 ],
                 "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
-        "孢子甘蓝": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "番杏": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "蚕豆仁": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "香蕉西葫": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "绿豆": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
-        "爆花玉米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
-        "玉米面": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
-        "青豌豆": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
-        "鱼腥草叶": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
+                    "食用油"
                 ]
             }
         },
@@ -2328,248 +1145,7 @@
                 ]
             }
         },
-        "仙人掌": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "福临门非转基因葵花籽油": {
-            "category_mappings": {
-                "specInfo": [
-                    "5L/桶"
-                ],
-                "prodPcat": [
-                    "食用油"
-                ]
-            }
-        },
-        "芦笋": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "荔浦芋头": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "黑香米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
-        "麦仁": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
         "金龙鱼调和油": {
-            "category_mappings": {
-                "specInfo": [
-                    "5L/桶"
-                ],
-                "prodPcat": [
-                    "食用油"
-                ]
-            }
-        },
-        "金龙鱼非转基因葵花籽油": {
-            "category_mappings": {
-                "specInfo": [
-                    "5L/桶"
-                ],
-                "prodPcat": [
-                    "食用油"
-                ]
-            }
-        },
-        "薏仁米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
-        "松花江大米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "米面类"
-                ]
-            }
-        },
-        "百合": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "古船大米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN",
-                    "蓝"
-                ],
-                "prodPcat": [
-                    "米面类"
-                ]
-            }
-        },
-        "首农双河长粒香大米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "米面类"
-                ]
-            }
-        },
-        "亮珠河稻花香米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "米面类"
-                ]
-            }
-        },
-        "紫豇豆": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "高山娃娃": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "西洋菜": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "慈姑": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "秋葵": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "香芋头": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "芦荟": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "黑龙江长粒稻花香米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "米面类"
-                ]
-            }
-        },
-        "小玉米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
-        "小米面": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
-        "汇福大豆油": {
             "category_mappings": {
                 "specInfo": [
                     "5L/桶"
@@ -2589,70 +1165,20 @@
                 ]
             }
         },
+        "汇福大豆油": {
+            "category_mappings": {
+                "specInfo": [
+                    "5L/桶"
+                ],
+                "prodPcat": [
+                    "食用油"
+                ]
+            }
+        },
         "福临门大豆油": {
             "category_mappings": {
                 "specInfo": [
                     "5L/桶"
-                ],
-                "prodPcat": [
-                    "食用油"
-                ]
-            }
-        },
-        "紫米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
-        "红小豆": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
-        "白芝麻": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
-        "福临门花生油": {
-            "category_mappings": {
-                "specInfo": [
-                    "5L/桶"
-                ],
-                "prodPcat": [
-                    "食用油"
-                ]
-            }
-        },
-        "福临门调和油": {
-            "category_mappings": {
-                "specInfo": [
-                    "5L/桶"
-                ],
-                "prodPcat": [
-                    "食用油"
-                ]
-            }
-        },
-        "古币香油": {
-            "category_mappings": {
-                "specInfo": [
-                    "450g/瓶"
                 ],
                 "prodPcat": [
                     "食用油"
@@ -2669,213 +1195,33 @@
                 ]
             }
         },
-        "玉米渣": {
+        "古币香油": {
             "category_mappings": {
                 "specInfo": [
-                    "UNKNOWN"
+                    "450g/瓶"
                 ],
                 "prodPcat": [
-                    "杂粮类"
+                    "食用油"
                 ]
             }
         },
-        "荞麦面": {
+        "福临门调和油": {
             "category_mappings": {
                 "specInfo": [
-                    "UNKNOWN"
+                    "5L/桶"
                 ],
                 "prodPcat": [
-                    "杂粮类"
+                    "食用油"
                 ]
             }
         },
-        "紫菜头": {
+        "福临门花生油": {
             "category_mappings": {
                 "specInfo": [
-                    "UNKNOWN"
+                    "5L/桶"
                 ],
                 "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "球茎茴香": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "北大荒精洁米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "米面类"
-                ]
-            }
-        },
-        "冰草": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "紫贝天葵": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "菊苣": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "秋然香米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "米面类"
-                ]
-            }
-        },
-        "亮珠河珍珠米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "米面类"
-                ]
-            }
-        },
-        "东北长粒香米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "米面类"
-                ]
-            }
-        },
-        "亮珠河长粒香米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "米面类"
-                ]
-            }
-        },
-        "黑豆": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
-        "白芸豆": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
-        "燕麦": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
-        "高粱米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
-        "北方江米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
-        "花生米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
-        "红芸豆": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
-        "豇豆": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
-        "法香": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
+                    "食用油"
                 ]
             }
         },
@@ -2889,43 +1235,13 @@
                 ]
             }
         },
-        "黑土王秋田小町米": {
+        "古船标准粉": {
             "category_mappings": {
                 "specInfo": [
-                    "UNKNOWN"
+                    "25kg"
                 ],
                 "prodPcat": [
                     "米面类"
-                ]
-            }
-        },
-        "古船东北粳米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "米面类"
-                ]
-            }
-        },
-        "东北大米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "米面类"
-                ]
-            }
-        },
-        "多力葵花籽油": {
-            "category_mappings": {
-                "specInfo": [
-                    "5L/桶"
-                ],
-                "prodPcat": [
-                    "食用油"
                 ]
             }
         },
@@ -2939,107 +1255,7 @@
                 ]
             }
         },
-        "奶花豆": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
-        "龙豆": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "老家辽星长粒香": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "米面类"
-                ]
-            }
-        },
-        "首农双河秋田小町": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "米面类"
-                ]
-            }
-        },
-        "莜麦面": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
-        "甜豆": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "古船标准粉": {
-            "category_mappings": {
-                "specInfo": [
-                    "25kg"
-                ],
-                "prodPcat": [
-                    "米面类"
-                ]
-            }
-        },
-        "好面缘面粉": {
-            "category_mappings": {
-                "specInfo": [
-                    "25kg"
-                ],
-                "prodPcat": [
-                    "米面类"
-                ]
-            }
-        },
-        "古船非转基因大豆油": {
-            "category_mappings": {
-                "specInfo": [
-                    "10L/桶"
-                ],
-                "prodPcat": [
-                    "食用油"
-                ]
-            }
-        },
-        "海米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "福临门非转基因玉米油": {
+        "多力葵花籽油": {
             "category_mappings": {
                 "specInfo": [
                     "5L/桶"
@@ -3059,33 +1275,33 @@
                 ]
             }
         },
-        "麻椒": {
+        "福临门非转基因玉米油": {
             "category_mappings": {
                 "specInfo": [
-                    "UNKNOWN"
+                    "5L/桶"
                 ],
                 "prodPcat": [
-                    "UNKNOWN"
+                    "食用油"
                 ]
             }
         },
-        "肉蔻": {
+        "波士顿青龙虾": {
             "category_mappings": {
                 "specInfo": [
-                    "UNKNOWN"
+                    "活"
                 ],
                 "prodPcat": [
-                    "UNKNOWN"
+                    "其他类"
                 ]
             }
         },
-        "花椒": {
+        "好面缘面粉": {
             "category_mappings": {
                 "specInfo": [
-                    "UNKNOWN"
+                    "25kg"
                 ],
                 "prodPcat": [
-                    "UNKNOWN"
+                    "米面类"
                 ]
             }
         },
@@ -3099,24 +1315,13 @@
                 ]
             }
         },
-        "福临门菜籽油": {
+        "偏口鱼": {
             "category_mappings": {
                 "specInfo": [
-                    "4.5L/桶",
-                    "5L/桶"
+                    "750g-2500g鲜"
                 ],
                 "prodPcat": [
-                    "食用油"
-                ]
-            }
-        },
-        "杏肉": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
+                    "海水鱼"
                 ]
             }
         },
@@ -3130,156 +1335,23 @@
                 ]
             }
         },
-        "梅菜": {
+        "江米面": {
             "category_mappings": {
                 "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "金钱菇": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "猫眼豆": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
+                    "水磨"
                 ],
                 "prodPcat": [
                     "杂粮类"
                 ]
             }
         },
-        "西柚": {
+        "福临门菜籽油": {
             "category_mappings": {
                 "specInfo": [
-                    "UNKNOWN"
+                    "4.5L/桶"
                 ],
                 "prodPcat": [
-                    "进口果"
-                ]
-            }
-        },
-        "榴莲": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN",
-                    "金枕",
-                    "干尧"
-                ],
-                "prodPcat": [
-                    "进口果"
-                ]
-            }
-        },
-        "田满村稻花香米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "米面类"
-                ]
-            }
-        },
-        "味精": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "海带丝": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "路畅料酒": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "海带": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN",
-                    "二级分类"
-                ]
-            }
-        },
-        "白芷": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "生腰果": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "黑芝麻": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
-        "枸杞": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "桂皮": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
+                    "食用油"
                 ]
             }
         },
@@ -3303,400 +1375,10 @@
                 ]
             }
         },
-        "黑瓜子": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "凉瓜": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "苤蓝": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "夹豆": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "金龙鱼东北大米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "米面类"
-                ]
-            }
-        },
-        "嘎嘎纯长粒香米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "米面类"
-                ]
-            }
-        },
-        "朝天椒": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "冬菇": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "龙口粉丝": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "虾皮": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "路畅黄豆酱油": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "路畅米醋": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "龙门米醋": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "路畅陈醋": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "猴头菇": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "雪景绵白糖": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "大料": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "丁香": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "腐竹": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "玉泰淀粉": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "京晶食盐": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "王致和腐乳": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "粉条": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "国产杏仁": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "空心脆枣": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "普核桃": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "山竹": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "进口果"
-                ]
-            }
-        },
-        "大麦": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
-        "香蕉干": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "熟腰果": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "百香果": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "进口果"
-                ]
-            }
-        },
         "新疆干枣": {
             "category_mappings": {
                 "specInfo": [
                     "散装"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "白瓜子": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "松花江秋天小町米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "米面类"
-                ]
-            }
-        },
-        "东北盘锦大米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "米面类"
-                ]
-            }
-        },
-        "甘草": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "辣椒王": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "古船龙粳长粒大米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "米面类"
-                ]
-            }
-        },
-        "菠萝蜜": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "进口果"
-                ]
-            }
-        },
-        "猕猴桃干": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
                 ],
                 "prodPcat": [
                     "干果"
@@ -3713,516 +1395,6 @@
                 ]
             }
         },
-        "葵花籽": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "龙眼": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "进口果"
-                ]
-            }
-        },
-        "香菇": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "紫菜": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "银耳": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "松子": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "木耳": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "莲子": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "毛榛子": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "话梅": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "桂圆": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "良姜": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "南方江米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "杂粮类"
-                ]
-            }
-        },
-        "巴旦木": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "美杏仁": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "蛇果": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "进口果"
-                ]
-            }
-        },
-        "莲籽": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "五香花生米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "绿茶南瓜子": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "花生": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "长寿果": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "葡萄干": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "大榛": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "辣椒面": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "杏核": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "香叶": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "灯笼椒": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "情人梅": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "姬娜果": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "进口果"
-                ]
-            }
-        },
-        "椰青": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "进口果"
-                ]
-            }
-        },
-        "珍珠香菇": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "新一代干辣椒": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "花菇": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "核桃仁": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "薄皮核桃": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "开心果": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "金果": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "进口果"
-                ]
-            }
-        },
-        "夏威夷果": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "白薯干": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "鱿鱼丝": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "山楂干": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "鲍鱼果": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "生姜片": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "无花果": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "方正富硒米": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "米面类"
-                ]
-            }
-        },
-        "黑莓": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "进口果"
-                ]
-            }
-        },
-        "青苹果": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "进口果"
-                ]
-            }
-        },
-        "荷兰豆": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "兰花": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
-        },
-        "牛油果": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "进口果"
-                ]
-            }
-        },
-        "凤梨": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "进口果"
-                ]
-            }
-        },
         "元宝特精粉": {
             "category_mappings": {
                 "specInfo": [
@@ -4232,57 +1404,6 @@
                     "米面类"
                 ]
             }
-        },
-        "释迦": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "进口果"
-                ]
-            }
-        },
-        "胡桃": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "干果"
-                ]
-            }
-        },
-        "子弹头干辣椒": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "UNKNOWN"
-                ]
-            }
-        },
-        "树莓": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "进口果"
-                ]
-            }
-        },
-        "鲜竹笋": {
-            "category_mappings": {
-                "specInfo": [
-                    "UNKNOWN"
-                ],
-                "prodPcat": [
-                    "特菜"
-                ]
-            }
         }
-    },
-    "global_info": "Metadata only, for Java Service lookup."
+    }
 }
