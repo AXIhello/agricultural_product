@@ -1222,9 +1222,12 @@ onMounted(() => {
     currentView.value = 'address';
   } else if (role.value === 'expert') {
     currentView.value = 'profile';
+  } else if (role.value === 'admin') {
+    currentView.value = 'coupon';
   } else {
     currentView.value = '';
   }
+  console.log(userInfo.value)
   hasInitialLoadFinished.value = true;
 });
 
