@@ -222,11 +222,15 @@ public class ExpertProfileController {
      * GET /api/expert/profile/{expertId}/photo
      */
     @GetMapping("/{expertId}/photo")
-    public ResponseEntity<?> getExpertPhoto(@PathVariable Long expertId) {
+    public ResponseEntity<?> getExpertPhoto(
+            @PathVariable Long expertId,
+            @RequestHeader(value = "If-None-Match", required = false) String ifNoneMatch) {
+        
         ExpertProfile profile = expertProfileService.getProfile(expertId);
         if (profile == null || profile.getPhotoUrl() == null || profile.getPhotoUrl().trim().isEmpty()) {
             return ResponseEntity.notFound().build();
         }
+        
         try {
             String photoUrl = profile.getPhotoUrl();
             Path filePath;
@@ -236,16 +240,31 @@ public class ExpertProfileController {
             } else {
                 filePath = Paths.get(uploadDir).resolve(photoUrl).normalize().toAbsolutePath();
             }
+            
             if (!Files.exists(filePath) || !Files.isRegularFile(filePath)) {
                 return ResponseEntity.notFound().build();
             }
+            
+            // 生成 ETag（基于文件路径和最后修改时间）
+            long lastModified = Files.getLastModifiedTime(filePath).toMillis();
+            String etag = "\"" + photoUrl.hashCode() + "-" + lastModified + "\"";
+            
+            // 检查 ETag 是否匹配，如果匹配则返回 304 Not Modified
+            if (etag.equals(ifNoneMatch)) {
+                return ResponseEntity.status(304).build();
+            }
+            
             byte[] bytes = Files.readAllBytes(filePath);
             String contentType = Files.probeContentType(filePath);
             if (contentType == null) contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
+            
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CACHE_CONTROL, "max-age=86400, public")
+                    .header(HttpHeaders.CACHE_CONTROL, "max-age=3600, public")  // 缓存1小时，配合ETag使用
+                    .header(HttpHeaders.ETAG, etag)
+                    .header(HttpHeaders.LAST_MODIFIED, String.valueOf(lastModified))
                     .contentType(MediaType.parseMediaType(contentType))
                     .body(new ByteArrayResource(bytes));
+                    
         } catch (IOException io) {
             log.error("读取专家照片失败", io);
             return ResponseEntity.internalServerError().body("Failed to read photo");
