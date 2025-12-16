@@ -141,7 +141,7 @@ async function fetchExpertProfile() {
 async function loadExpertName() {
   try {
     const response = await axios.get(`/expert/profile/list`);
-    console.log('🔥 [调试] loadExpertName (专家列表) 返回的完整数据:', response.data);
+    console.log('loadExpertName (专家列表) 返回的完整数据:', response.data);
     if (response.data && response.data.success) {
       const list = response.data.data;
       const item = list.find(obj => obj.id === String(expertId));
@@ -199,12 +199,12 @@ async function bookAppointment(slotId) {
     } 
     // 后端返回 200 但 success 为 false（如果你的后端架构是这样的）
     else {
-      // 🔥 显示后端传回来的具体错误信息
+      // 显示后端传回来的具体错误信息
       const msg = response.data.message || '预约失败，该时段可能已被约满。';
       alert(msg); // 或者 ElMessage.error(msg);
     }
   } catch (error) {
-    // 🔥 捕获 400 错误 (BusinessException 抛出的)
+    // 捕获 400 错误 (BusinessException 抛出的)
     console.error('预约请求发生异常:', error);
     
     // 获取后端返回的 message

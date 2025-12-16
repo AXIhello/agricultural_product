@@ -34,4 +34,19 @@ public class ExpertQuestion {
 
 	@TableField("update_time")
 	private LocalDateTime updateTime;
+    
+	/**
+     * 提问者名字 
+     */
+    @TableField(exist = false) 
+    private String farmerName;
+
+    public String getFarmerName() {
+        return farmerName;
+    }
+
+    public void setFarmerName(String farmerName) {
+        this.farmerName = farmerName;
+    }
+
 } 

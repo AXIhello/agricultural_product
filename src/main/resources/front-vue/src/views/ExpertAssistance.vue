@@ -93,15 +93,19 @@
           <div class="search-bar">
             <input type="text" v-model="searchKeyword" placeholder="搜索问题">
             <button @click="searchQuestions">搜索</button>
+            <button 
+              v-if="searchKeyword" 
+              @click="resetSearch" 
+              class="reset-btn"
+            >
+              返回全部
+            </button>
           </div>
+          
 
           <!-- 问题列表 -->
           <div class="question-list">
             <h3>问题列表(共 {{ totalItems }} 个问题)</h3>
-
-            <div v-if="questions.length > 0" style="color: #666; font-size: 0.9rem; margin-bottom: 10px;">
-              显示所有问题：{{ questions.length }} 个
-            </div>
 
             <div v-if="loading">加载中...</div>
             <div v-else-if="questions.length === 0">暂无问题</div>
@@ -110,38 +114,25 @@
               <div
                   v-for="question in questions"
                   :key="question.questionId"
-                  class="question-item"
+                  :id="'question-' + question.questionId"
+                  class="question-item clickable-card"
+                  @click="openQADetail(question)"
               >
-                <h4>{{ question.title }}</h4>
-                <p>{{ question.content }}</p>
-                <p>提问时间: {{ formatDate(question.createTime) }}</p>
-                <p v-if="question.status === 'answered'">状态: 已采纳</p>
-                <p v-else>状态: 待回答</p>
-
-                <!-- 回答列表 -->
-                <div class="answers-section">
-                  <div v-for="answer in question.answers" :key="answer.answerId" class="answer-item">
-                    <p>回答内容: {{ answer.content }}</p>
-                    <p>回答者: {{ answer.responderName }}</p>
-                    <p>回答时间: {{ formatDate(answer.createTime) }}</p>
-                    <button
-                        v-if="question.farmerId === user?.userId && question.status !== 'answered'"
-                        @click="acceptAnswer(question.questionId, answer.answerId)"
-                    >
-                      采纳
-                    </button>
-                    <span v-else-if="answer.isAccepted === 1">已采纳</span>
-                  </div>
-
-                  <!-- 回答输入 -->
-                  <div class="answer-form" v-if="user">
-                    <textarea v-model="newAnswers[question.questionId]" placeholder="写下你的回答"></textarea>
-                    <button @click="submitAnswer(question.questionId)">提交回答</button>
-                  </div>
-                  <div v-else>
-                    <p>登录后可以回答问题。</p>
-                  </div>
+                <div class="card-header">
+                  <h4>{{ question.title }}</h4>
+                  <span :class="question.status === 'answered' ? 'status-tag done' : 'status-tag wait'">
+                    {{ question.status === 'answered' ? '已解决' : '待解决' }}
+                  </span>
                 </div>
+                <p class="preview-text">{{ question.content }}</p>
+                <div class="card-footer">
+                  <div class="footer-info">
+                    <span class="asker-name">提问者：{{ question.farmerName || '匿名用户' }}</span>
+                    <span class="time">提问时间：{{ formatDate(question.createTime) }}</span>
+                  </div>
+                  <span class="click-tip">点击查看详情 >></span>
+                </div>
+
               </div>
             </div>
           </div>
@@ -153,6 +144,76 @@
             <button @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">下一页</button>
           </div>
 
+          <!-- ============ 问答详情弹窗 ============ -->
+          <div v-if="showQADetail && selectedQuestion" class="modal-overlay" @click.self="closeQADetail">
+            <div class="modal-content qa-detail-modal">
+              <button class="close-btn-icon" @click="closeQADetail">×</button>
+              
+              <!-- 问题详情 -->
+              <div class="detail-header">
+                <h3>{{ selectedQuestion.title }}</h3>
+                <div class="detail-meta">
+                  <span class="meta-item">提问者：<b>{{ selectedQuestion.farmerName || '匿名用户' }}</b></span>
+                  <span>发布时间：{{ formatDate(selectedQuestion.createTime) }}</span>
+                  <span>状态：{{ selectedQuestion.status === 'answered' ? '已采纳' : '待回答' }}</span>
+                </div>
+                <div class="detail-content">
+                  {{ selectedQuestion.content }}
+                </div>
+              </div>
+
+              <hr class="divider" />
+
+              <!-- 回答列表区域 -->
+              <div class="answers-section">
+                <h4>回答列表 ({{ selectedQuestion.answers ? selectedQuestion.answers.length : 0 }})</h4>
+                
+                <div v-if="!selectedQuestion.answers || selectedQuestion.answers.length === 0" class="no-answer-tip">
+                  暂无回答，期待您的专业解答！
+                </div>
+
+                <div v-for="answer in selectedQuestion.answers" :key="answer.answerId" class="answer-item">
+                  <div class="answer-main">
+                    <p class="answer-content">{{ answer.content }}</p>
+                    <p class="answer-meta">
+                      回答者: {{ answer.responderName }} | 时间: {{ formatDate(answer.createTime) }}
+                    </p>
+                  </div>
+                  
+                  <!-- 采纳按钮/标记 -->
+                  <div class="answer-action">
+                    <button
+                        v-if="selectedQuestion.farmerId === user?.userId && selectedQuestion.status !== 'answered'"
+                        class="accept-btn"
+                        @click="acceptAnswer(selectedQuestion.questionId, answer.answerId)"
+                    >
+                      采纳
+                    </button>
+                    <span v-else-if="answer.isAccepted === 1" class="accepted-badge">✅ 已采纳</span>
+                  </div>
+                </div>
+
+                <!-- 回答输入框 -->
+                <div class="answer-form-wrapper" v-if="user">
+                  <h4>我来回答</h4>
+                  <textarea 
+                    v-model="newAnswers[selectedQuestion.questionId]" 
+                    placeholder="请输入您的回答..."
+                    rows="3"
+                  ></textarea>
+                  <div class="form-footer">
+                    <span class="msg" v-if="answerMessages[selectedQuestion.questionId]">{{ answerMessages[selectedQuestion.questionId] }}</span>
+                    <button @click="submitAnswer(selectedQuestion.questionId)">提交回答</button>
+                  </div>
+                </div>
+                <div v-else class="login-tip">
+                  <p>登录后可以回答问题。</p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
         </div>
 
       </div>
@@ -162,7 +223,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, nextTick } from 'vue';
 import axios from '../utils/axios';
 import HeaderComponent from "@/components/HeaderComponent.vue";
 import { useAuthStore } from '@/stores/authStore';
@@ -196,7 +257,24 @@ const totalPages = computed(() => Math.ceil(totalItems.value / pageSize.value));
 const newAnswers = ref({});
 const answerMessages = ref({});
 
+// --- 弹窗控制变量 ---
+const showQADetail = ref(false);
+const selectedQuestion = ref(null);
 
+// --- 打开/关闭弹窗逻辑 ---
+const openQADetail = (question) => {
+  selectedQuestion.value = question;
+  showQADetail.value = true;
+};
+
+const closeQADetail = () => {
+  showQADetail.value = false;
+  selectedQuestion.value = null;
+  // 清理当前问题的输入框提示
+  if (selectedQuestion.value) {
+    answerMessages.value[selectedQuestion.value.questionId] = '';
+  }
+};
 
 // 格式化日期
 const formatDate = (dateTimeString) => {
@@ -244,6 +322,15 @@ const fetchQuestions = async () => {
           }
         })
     );
+    
+    // --- 如果在弹窗打开时刷新数据，需要同步更新 selectedQuestion ---
+    if (showQADetail.value && selectedQuestion.value) {
+      const updatedQ = questions.value.find(q => q.questionId === selectedQuestion.value.questionId);
+      if (updatedQ) {
+        selectedQuestion.value = updatedQ;
+      }
+    }
+
   } catch (err) {
     console.error('获取问题列表失败', err);
   } finally {
@@ -266,6 +353,7 @@ const publishQuestion = async () => {
   }
 
   const currentUserId = user.value?.userId;
+
   if (!currentUserId) {
     alert('无法获取用户信息，请重新登录后再发布问题！');
     return;
@@ -280,8 +368,38 @@ const publishQuestion = async () => {
 
     if (response.data) {
       publishMessage.value = '问题发布成功！';
-      newQuestion.value = { title: '', content: '' };
-      fetchQuestions();
+      newQuestion.value = { title: '', content: '' };//清空表单
+
+      // 清空搜索关键词
+      searchKeyword.value = '';
+      
+      // 重置到第一页
+      currentPage.value = 1;
+
+      // 重新获取列表
+      await fetchQuestions();
+
+      //等待 DOM 更新（列表渲染完毕）后，执行滚动和高亮
+      nextTick(() => {
+
+        const newestQuestion = questions.value[0];
+
+        if (newestQuestion) {
+          // 找到对应的 DOM 元素
+          const element = document.getElementById(`question-${newestQuestion.questionId}`);
+          
+          if (element) {
+            // 平滑滚动到该元素
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // 添加高亮样式
+            element.classList.add('highlight-new');
+            // 2秒后移除高亮样式
+            setTimeout(() => {
+              element.classList.remove('highlight-new');
+            }, 2000);
+          }
+        }
+      });
     } else {
       publishMessage.value = '问题发布失败。';
     }
@@ -299,6 +417,13 @@ const publishQuestion = async () => {
 const searchQuestions = () => {
   currentPage.value = 1;
   fetchQuestions();
+};
+
+// 重置搜索，返回全部列表
+const resetSearch = () => {
+  searchKeyword.value = ''; // 清空搜索关键词
+  currentPage.value = 1;    // 重置回第一页
+  fetchQuestions();         // 重新调用接口，此时 keyword 为空，会自动拉取全部数据
 };
 
 // 提交回答
@@ -569,8 +694,22 @@ onMounted(() => {
   transition: background-color 0.3s;
 }
 
-.search-bar button:hover {
-  background-color: #0077a3;
+.search-bar :hover {
+  background-color:#e0e0e0; 
+  color: #333;
+}
+
+/* 重置按钮样式 */
+.search-bar .reset-btn {
+  background-color: #f0f0f0; /* 浅灰色背景 */
+  color: #666;               /* 深灰色文字 */
+  margin-left: 10px;         /* 与搜索按钮拉开距离 */
+  border: 1px solid #ddd;
+}
+
+.search-bar .reset-btn:hover {
+  background-color: #e0e0e0; /* 悬停变深一点 */
+  color: #333;
 }
 
 .question-list {
@@ -693,5 +832,392 @@ onMounted(() => {
   background-color: #45a049;
 }
 
+/*通用弹窗*/
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
 
+.modal-content {
+  background: white;
+  padding: 20px;
+  width: 420px;
+  max-width: 90%;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+}
+
+/*
+   Modal 内标题*/
+.modal-content h3,
+.modal-content h4 {
+  color: #2D7D4F;
+  margin-bottom: 12px;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.modal-title-div {
+  position: relative;
+  text-align: center;      /* 让标题居中 */
+  padding: 10px 40px;      /* 给右侧留空间放按钮 */
+}
+
+.modal-title-div h3 {
+  margin: 0;
+}
+
+.modal-close-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);  /* 垂直居中对齐 */
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px 25px;
+  width: 400px;
+  max-width: 90%;
+}
+
+.modal-content h3 {
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.modal-form .form-group {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.modal-form .form-group label {
+  width: 25%;
+  text-align: left;
+  font-weight: 500;
+}
+
+.modal-form .form-group input,
+.modal-form .form-group textarea {
+  width: 75%;
+  padding: 5px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.modal-form .form-group textarea {
+  height: 100px;
+}
+
+.modal-form .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 15px;
+}
+</style>
+
+
+/* ---------------- 问题展示修正---------------- */
+<style scoped>
+  /* ---------------- 列表项样式 (卡片预览) ---------------- */
+.clickable-card {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  border-left: 5px solid transparent;
+}
+
+.clickable-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  border-left-color: #2D7D4F; /* 悬停时左侧显示绿条 */
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.card-header h4 {
+  margin: 0;
+  font-size: 1.15rem;
+  color: #333;
+}
+
+.status-tag {
+  font-size: 0.8rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.status-tag.done { background: #e6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+.status-tag.wait { background: #fff7e6; color: #faad14; border: 1px solid #ffe58f; }
+
+.preview-text {
+  color: #666;
+  font-size: 0.95rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* 限制显示2行 */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.card-footer {
+   display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #999;
+  font-size: 0.85rem;
+  margin-top: 10px; /* 稍微增加一点顶部间距 */
+}
+
+.footer-info {
+  display: flex;
+  gap: 15px; /* 名字和时间之间的间距 */
+}
+
+.asker-name {
+  color: #555;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px; /* 图标和文字间距 */
+}
+
+.click-tip {
+  color: #2D7D4F;
+  font-weight: bold;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.clickable-card:hover .click-tip {
+  opacity: 1;
+}
+
+/* ---------------- 详情弹窗特定样式 ---------------- */
+/* 弹窗容器调整 */
+.qa-detail-modal {
+  width: 700px; /* 比知识弹窗更宽 */
+  max-width: 95%;
+  max-height: 90vh; /* 防止超出屏幕高度 */
+  overflow-y: auto; /* 允许滚动 */
+  padding: 25px;
+  position: relative;
+}
+
+.close-btn-icon {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #888;
+  cursor: pointer;
+  line-height: 1;
+}
+.close-btn-icon:hover { color: #333; }
+
+.detail-header h3 {
+  font-size: 1.5rem;
+  color: #2D7D4F;
+  margin-bottom: 10px;
+  padding-right: 30px;
+}
+
+.detail-meta {
+  color: #888;
+  font-size: 0.9rem;
+  margin-bottom: 15px;
+  display: flex;
+  gap: 20px; /* 各个元数据之间的间距 */
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.detail-meta .meta-item b {
+  color: #333; /* 名字加深显示 */
+}
+.detail-meta span { margin-right: 20px; }
+
+.detail-content {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #333;
+  background: #fdfdfd;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.divider {
+  border: 0;
+  border-top: 1px solid #eee;
+  margin: 20px 0;
+}
+
+/* 弹窗内的回答区 */
+.answers-section {
+  padding: 0 5px;
+}
+.answers-section h4 {
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+  border-left: 4px solid #2D7D4F;
+  padding-left: 10px;
+}
+
+.answer-item {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #eee;
+  padding: 15px 0;
+}
+.answer-main {
+  flex: 1;
+}
+.answer-content {
+  font-size: 1rem;
+  color: #444;
+  margin-bottom: 5px;
+}
+.answer-meta {
+  font-size: 0.85rem;
+  color: #999;
+}
+.answer-action {
+  margin-left: 15px;
+  display: flex;
+  align-items: center;
+}
+
+/* 采纳按钮 */
+.accept-btn {
+  background-color: white;
+  border: 1px solid #2D7D4F;
+  color: #2D7D4F;
+  padding: 5px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.accept-btn:hover {
+  background-color: #2D7D4F;
+  color: white;
+}
+.accepted-badge {
+  color: #52c41a;
+  font-weight: bold;
+}
+
+/* 弹窗内的输入框 */
+.answer-form-wrapper {
+  margin-top: 20px;
+  background: #f0f9f0;
+  padding: 15px;
+  border-radius: 6px;
+}
+.answer-form-wrapper h4 {
+  border: none;
+  padding: 0;
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+.answer-form-wrapper textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  resize: vertical;
+}
+.form-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 10px;
+}
+.form-footer .msg {
+  color: #ff4d4f;
+  margin-right: 10px;
+  font-size: 0.9rem;
+}
+.form-footer button {
+  background-color: #2D7D4F;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* 通用弹窗覆盖层 (复用) */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px); /* 增加背景模糊效果 */
+}
+.modal-content {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* 输入框通用样式复原 */
+input[type="text"], textarea {
+  box-sizing: border-box; 
+  /* 确保padding不会撑大宽度 */
+}
+</style>
+
+//发布问题后高亮新问题
+<style scoped>
+/* 定义高亮动画 */
+@keyframes flash-highlight {
+  0% { background-color: #e6ffed; border-color: #52c41a; transform: scale(1.02); }
+  50% { background-color: #e6ffed; border-color: #52c41a; transform: scale(1.02); }
+  100% { background-color: #fff; border-color: transparent; transform: scale(1); }
+}
+
+/* 应用到卡片上的类 */
+.highlight-new {
+  animation: flash-highlight 2s ease-out;
+  /* 确保动画期间卡片层级较高，不会被遮挡 */
+  z-index: 10; 
+  position: relative;
+  border: 2px solid #52c41a; /* 临时加个绿边框 */
+}
 </style>
