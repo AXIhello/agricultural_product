@@ -7,6 +7,7 @@ import com.example.agricultural_product.dto.OrderDTO;
 import com.example.agricultural_product.pojo.Order;
 import org.apache.ibatis.annotations.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Mapper
@@ -41,5 +42,10 @@ public interface OrderMapper extends BaseMapper<Order> {
     // 复用之前定义的 ResultMap，自动填充 orderItems
     @ResultMap("orderWithItemsResultMap") 
     List<OrderDTO> findOrdersBySellerId(Long farmerId);
+
+    @Select("SELECT COALESCE(SUM(oi.quantity), 0) FROM tb_order_item oi " +
+            "JOIN tb_order o ON oi.order_id = o.order_id " +
+            "WHERE oi.product_id = #{productId} AND oi.status = 'RECEIVED' AND o.update_time >= #{from}")
+    Integer sumProductSalesSince(Integer productId, LocalDateTime from);
 
 }

@@ -36,6 +36,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     @Autowired
     private CouponService couponService;
 
+    @Autowired
+    private OrderMapper orderMapper;
+
     private String buildStockKey(Integer productId) {
         return "seckill:stock:" + productId;
     }
@@ -369,6 +372,13 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     public List<OrderDTO> getSellerOrders(Long farmerId) {
         // 直接调用
         return this.baseMapper.findOrdersBySellerId(farmerId);
+    }
+
+    @Override
+    public Integer getProductSalesLast30Days(Integer productId) {
+        LocalDateTime from = LocalDateTime.now().minusDays(30);
+        Integer sales = orderMapper.sumProductSalesSince(productId, from);
+        return sales != null ? sales : 0;
     }
 
 }

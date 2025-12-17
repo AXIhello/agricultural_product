@@ -103,4 +103,6 @@ public interface OrderService extends IService<Order> {
      * 获取农户（卖家）的销售订单列表
      */
     List<OrderDTO> getSellerOrders(Long farmerId);
+
+    Integer getProductSalesLast30Days(Integer productId);
 }

@@ -285,4 +285,13 @@ public class OrderController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    /**
+     * 获取产品在过去30天的销售数量
+     */
+    @GetMapping("/product/{productId}/sales")
+    public ResponseEntity<Integer> getProductSalesLast30Days(@PathVariable Integer productId) {
+        Integer sales = orderService.getProductSalesLast30Days(productId);
+        return ResponseEntity.ok(sales);
+    }
 }
