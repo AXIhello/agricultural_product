@@ -45,7 +45,7 @@ public interface OrderMapper extends BaseMapper<Order> {
 
     @Select("SELECT COALESCE(SUM(oi.quantity), 0) FROM tb_order_item oi " +
             "JOIN tb_order o ON oi.order_id = o.order_id " +
-            "WHERE oi.product_id = #{productId} AND oi.status = 'RECEIVED' AND o.update_time >= #{from}")
+            "WHERE oi.product_id = #{productId} AND (oi.status = 'RECEIVED' OR oi.status = 'REVIEWED') AND o.update_time >= #{from}")
     Integer sumProductSalesSince(Integer productId, LocalDateTime from);
 
 }
