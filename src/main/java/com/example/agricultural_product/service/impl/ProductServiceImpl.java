@@ -5,12 +5,15 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.agricultural_product.dto.ProductUpdateDTO;
 import com.example.agricultural_product.dto.RecommendedProductDTO;
+import com.example.agricultural_product.mapper.OrderItemReviewMapper;
 import com.example.agricultural_product.mapper.ProductMapper;
 import com.example.agricultural_product.pojo.Product;
 import com.example.agricultural_product.service.ProductService;
+import com.example.agricultural_product.service.OrderService; 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.annotation.Lazy;
 import com.example.agricultural_product.vo.ProductTreeVO;
 
 import java.util.ArrayList;
@@ -25,6 +28,14 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
 
 	@Autowired
 	private ProductMapper productMapper;
+
+	@Autowired
+    private OrderItemReviewMapper orderItemReviewMapper;
+
+	@Autowired
+    @Lazy // 加上 @Lazy 防止循环依赖报错
+    private OrderService orderService; // 用于销量
+
 
 	private void normalizeImagePath(Page<Product> page) {
 		if (page == null || page.getRecords() == null) return;
@@ -97,12 +108,30 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
 
 	@Override
 	public Page<Product> getProductsByFarmerId(Long farmerId, Integer pageNum, Integer pageSize) {
+		//查询商品基础信息
 		Page<Product> page = new Page<>(pageNum, pageSize);
 		LambdaQueryWrapper<Product> wrapper = new LambdaQueryWrapper<>();
 		wrapper.eq(Product::getFarmerId, farmerId)
 		       .eq(Product::getStatus, "active")
 		       .orderByDesc(Product::getCreateTime);
 		Page<Product> result = page(page, wrapper);
+
+        // 2. 遍历结果，填充 评分 和 销量
+        if (result.getRecords() != null) {
+            for (Product p : result.getRecords()) {
+                // --- 填充评分 (之前的逻辑) ---
+                Double avg = orderItemReviewMapper.getAverageRatingByProductId(p.getProductId());
+                Integer count = orderItemReviewMapper.getCountByProductId(p.getProductId());
+                p.setAverageRating(avg != null ? avg : 0.0);
+                p.setRatingCount(count != null ? count : 0);
+
+                // --- 填充销量 (新增逻辑) ---
+                // 调用 OrderService 获取该商品销量
+                Integer sales = orderService.getProductSalesLast30Days(p.getProductId());
+                p.setSales(sales != null ? sales : 0);
+            }
+        }
+
 		normalizeImagePath(result);
 		return result;
 	}
