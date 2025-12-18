@@ -77,6 +77,7 @@
         <h2 class="modal-title">{{ currentTemplate ? '编辑模板' : '创建模板' }}</h2>
 
         <div class="modal-body">
+
           <!-- 模板名称 -->
           <div class="modal-form-group row-layout">
             <label>模板名称：</label>
@@ -94,22 +95,54 @@
             </select>
           </div>
 
-          <!-- 优惠额度 -->
-          <div class="modal-form-group row-layout">
-            <label>优惠额度：</label>
-            <input type="number" step="0.01" v-model="form.discountValue" required />
+          <!-- ================= 优惠额度（按类型区分） ================= -->
+
+          <!-- 满减 / 固定金额 -->
+          <div
+              v-if="form.couponType === 'full_reduction' || form.couponType === 'fixed_amount'"
+              class="modal-form-group row-layout"
+          >
+            <label>
+              {{ form.couponType === 'full_reduction' ? '减免金额：' : '固定优惠金额：' }}
+            </label>
+            <input
+                type="number"
+                step="0.01"
+                v-model="form.discountValue"
+                required
+            />
           </div>
+
+          <!-- 折扣 -->
+          <div v-if="form.couponType === 'discount'" class="modal-form-group row-layout">
+            <label>折扣率：</label>
+            <input
+                type="number"
+                step="0.01"
+                v-model="form.discountValue"
+                placeholder="如 0.8 表示 8 折"
+                required
+            />
+          </div>
+
+          <div v-if="form.couponType === 'discount'" class="modal-form-group row-layout">
+            <label>最大优惠金额：</label>
+            <input
+                type="number"
+                step="0.01"
+                v-model="form.maxDiscountAmount"
+                required
+            />
+          </div>
+
+          <!-- 免运费：不显示任何优惠额度 -->
+
+          <!-- ================= 其他配置 ================= -->
 
           <!-- 最低订单金额 -->
           <div class="modal-form-group row-layout">
             <label>最低使用金额：</label>
             <input type="number" step="0.01" v-model="form.minOrderAmount" />
-          </div>
-
-          <!-- 最大优惠金额 -->
-          <div class="modal-form-group row-layout">
-            <label>最大优惠金额：</label>
-            <input type="number" step="0.01" v-model="form.maxDiscountAmount" />
           </div>
 
           <!-- 适用范围 -->
@@ -150,7 +183,7 @@
           </div>
 
           <!-- 固定日期 -->
-          <div v-if="form.validityType==='fixed'" class="modal-form-group row-layout">
+          <div v-if="form.validityType === 'fixed'" class="modal-form-group row-layout">
             <label>开始时间：</label>
             <input type="datetime-local" v-model="form.validityStart" required />
             <label>结束时间：</label>
@@ -178,6 +211,7 @@
 
       </div>
     </div>
+
 
     <!-- ================= 批量发放弹窗 ================= -->
     <div v-if="batchModalVisible" class="modal-overlay">

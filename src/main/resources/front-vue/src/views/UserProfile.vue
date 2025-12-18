@@ -223,7 +223,7 @@
 
         <!-- ======================== 买家/农户：我的优惠券 ======================== -->
         <div v-if="currentView === 'myCoupon'" class="my-coupon-view">
-
+          <MyCouponList />
         </div>
 
         <!-- ======================== 管理员：优惠券管理 ======================== -->
@@ -370,11 +370,6 @@
             </div>
           </div>
         </div>
-
-<!--        &lt;!&ndash; ======================== 买家/农户：我的消息 ======================== &ndash;&gt;-->
-<!--        <div v-if="currentView === 'message'">-->
-
-<!--        </div>-->
 
         <!-- ======================== 专家：个人档案 ======================== -->
         <div v-if="currentView === 'profile'" class="expert-profile-container">
@@ -534,6 +529,7 @@ import axios from '../utils/axios'
 import HeaderComponent from "@/components/HeaderComponent.vue";
 import ExpertAvailability from '../components/ExpertAvailability.vue';
 import CouponAdmin from '../components/CouponAdmin.vue';
+import MyCouponList from '../components/CouponUser.vue';
 import { useAuthStore } from '@/stores/authStore';
 import { storeToRefs } from 'pinia';
 import defaultAvatar from '@/assets/default.jpg';
