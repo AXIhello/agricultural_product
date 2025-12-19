@@ -9,7 +9,7 @@
         <button @click="switchView('predict')" :class="{ active: currentView === 'predict' }">行情大厅</button>
         <button @click="switchView('demands')" :class="{ active: currentView === 'demands' }">求购需求</button>
         <button v-if="role === 'farmer'" @click="switchView('myProducts')" :class="{ active: currentView === 'myProducts' }">我的产品</button>
-        <button v-if="role === 'buyer'" @click="switchView('cart')" :class="{ active: currentView === 'cart' }">我的购物车</button>
+        <button v-if="role === 'buyer'||'farmer'" @click="switchView('cart')" :class="{ active: currentView === 'cart' }">我的购物车</button>
         <button v-if="role === 'buyer'||'farmer'" @click="switchView('myOrders')" :class="{ active: currentView === 'myOrders' }">我的订单</button>
       </nav>
 
