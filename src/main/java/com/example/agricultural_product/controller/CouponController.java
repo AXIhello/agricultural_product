@@ -303,18 +303,8 @@ public class CouponController {
         try {
             String token = request.getHeader("Authorization").substring(7);
             Long userId = JwtUtil.getUserId(token);
-            
-            // 获取各状态优惠券数量
-            Page<CouponDTO> unusedPage = couponService.getUserCoupons(userId, "unused", 1, 1);
-            Page<CouponDTO> usedPage = couponService.getUserCoupons(userId, "used", 1, 1);
-            Page<CouponDTO> expiredPage = couponService.getUserCoupons(userId, "expired", 1, 1);
-            
-            Map<String, Object> statistics = new HashMap<>();
-            statistics.put("unused", unusedPage.getTotal());
-            statistics.put("used", usedPage.getTotal());
-            statistics.put("expired", expiredPage.getTotal());
-            statistics.put("total", unusedPage.getTotal() + usedPage.getTotal() + expiredPage.getTotal());
-            
+            Map<String, Long> statistics = couponService.getCouponStatistics(userId);
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("data", statistics);

@@ -7,6 +7,7 @@ import com.example.agricultural_product.entity.UserCoupon;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 优惠券服务接口
@@ -76,4 +77,9 @@ public interface CouponService {
      * 定时任务：过期优惠券处理
      */
     void expireCoupons();
+
+    /**
+     * 查询用户优惠券统计数据
+     */
+    Map<String, Long> getCouponStatistics(Long userId);
 }

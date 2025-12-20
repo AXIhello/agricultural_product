@@ -392,6 +392,36 @@ public class CouponServiceImpl implements CouponService {
         int count = userCouponMapper.update(null, wrapper);
         log.info("定时任务：处理过期优惠券，数量：{}", count);
     }
+
+    @Override
+    public Map<String, Long> getCouponStatistics(Long userId) {
+        Map<String, Long> stats = new HashMap<>(4);
+
+        long unused = userCouponMapper.selectCount(
+            new LambdaQueryWrapper<UserCoupon>()
+                .eq(UserCoupon::getUserId, userId)
+                .eq(UserCoupon::getStatus, "unused")
+        );
+
+        long used = userCouponMapper.selectCount(
+            new LambdaQueryWrapper<UserCoupon>()
+                .eq(UserCoupon::getUserId, userId)
+                .eq(UserCoupon::getStatus, "used")
+        );
+
+        long expired = userCouponMapper.selectCount(
+            new LambdaQueryWrapper<UserCoupon>()
+                .eq(UserCoupon::getUserId, userId)
+                .eq(UserCoupon::getStatus, "expired")
+        );
+
+        stats.put("unused", unused);
+        stats.put("used", used);
+        stats.put("expired", expired);
+        stats.put("total", unused + used + expired);
+
+        return stats;
+    }
     
     // ==================== 私有辅助方法 ====================
     
