@@ -47,35 +47,43 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     @Transactional
-    public ChatSession createOrGetSession(long currentUserId, long peerUserId) {
+    public ChatSession createOrGetSession(long currentUserId, long peerUserId, String currentRole, String peerRole) {
         if (currentUserId == peerUserId) throw new IllegalArgumentException("不能与自己创建会话");
         long a = Math.min(currentUserId, peerUserId);
         long b = Math.max(currentUserId, peerUserId);
+        boolean currentIsA = currentUserId == a;
+        String userARole = currentIsA ? safeRole(currentRole) : safeRole(peerRole);
+        String userBRole = currentIsA ? safeRole(peerRole) : safeRole(currentRole);
 
         ChatSession exist = sessionMapper.selectOne(
                 new LambdaQueryWrapper<ChatSession>()
                         .eq(ChatSession::getUserAId, a)
                         .eq(ChatSession::getUserBId, b)
+                        .eq(ChatSession::getUserARole, userARole)
+                        .eq(ChatSession::getUserBRole, userBRole)
         );
         if (exist != null) return exist;
 
         ChatSession s = new ChatSession();
         s.setUserAId(a);
         s.setUserBId(b);
+        s.setUserARole(userARole);
+        s.setUserBRole(userBRole);
         sessionMapper.insert(s);
         return sessionMapper.selectById(s.getSessionId());
     }
 
     @Override
     @Transactional
-    public ChatMessage sendMessage(long currentUserId, Long sessionId, Long peerUserId, String content, String msgType) {
+    public ChatMessage sendMessage(long currentUserId, Long sessionId, Long peerUserId, String content, String msgType,
+                                   String currentRole, String peerRole) {
         if (content == null || content.trim().isEmpty()) throw new IllegalArgumentException("消息内容不能为空");
         String type = (msgType == null || msgType.isEmpty()) ? "text" : msgType;
 
         Long sid = sessionId;
         if (sid == null) {
             if (peerUserId == null) throw new IllegalArgumentException("缺少会话或对端ID");
-            sid = createOrGetSession(currentUserId, peerUserId).getSessionId();
+            sid = createOrGetSession(currentUserId, peerUserId, currentRole, peerRole).getSessionId();
         } else {
             assertParticipant(sid, currentUserId);
         }
@@ -136,5 +144,9 @@ public class ChatServiceImpl implements ChatService {
                 .eq(ChatMessage::getReceiverId, currentUserId)
                 .set(ChatMessage::getRead, true));
         if (updated == 0) throw new IllegalArgumentException("消息不存在或无权标记");
+    }
+
+    private String safeRole(String role) {
+        return (role == null || role.isBlank()) ? "unknown" : role.trim().toLowerCase();
     }
 }
