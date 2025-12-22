@@ -62,7 +62,10 @@
         <div class="farmer-info">
           <h3>农户信息</h3>
           <div class="farmer-info-row">
-            <p>农户ID: {{ currentSpec.farmerId }}</p>
+            <p class="clickable-farmer" @click="openFarmerDetail">
+              农户ID: {{ currentSpec.farmerId }} 
+              <span class="info-icon">ℹ</span> 
+            </p>
 
             <!-- 只有当当前用户不是该商品的农户才显示“联系卖家” -->
             <button
@@ -125,6 +128,9 @@
       <p>抱歉，商品信息加载失败或该商品不存在。</p>
       <el-button @click="router.back()">返回上一页</el-button>
     </div>
+    
+    <FarmerProfileModal ref="farmerProfileRef" />
+
   </div>
 </template>
 
@@ -138,6 +144,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { storeToRefs } from 'pinia'
 import ImagePreview from '@/components/ImagePreview.vue'
 import Stars from '@/components/Stars.vue'
+import FarmerProfileModal from '@/components/FarmerProfileModal.vue'
 
 const authStore = useAuthStore()
 const {userInfo, isLoggedIn, role} = storeToRefs(authStore)
@@ -147,14 +154,28 @@ const imgUrl = ref(placeholder)
 const showPreview = ref(false)
 const route = useRoute()
 const router = useRouter()
+const farmerProfileRef = ref(null)
 
-// 新增：规格相关
+// 规格相关
 const productSpecs = ref([])     // 所有规格（同名的不同商品）
 const currentSpec = ref({})      // 当前选中的规格
 
 const quantity = ref(1)
 const loading = ref(true)
 const isAddingToCart = ref(false)
+
+//打开农户详细信息弹窗
+const openFarmerDetail = () => {
+  if (currentSpec.value && currentSpec.value.farmerId) {
+    // 同时隐藏融资记录和信用分
+    farmerProfileRef.value.open(currentSpec.value.farmerId, { 
+      hideFinancing: true,
+      hideCredit: true 
+    })
+  }
+}
+
+
 
 //时间格式化
 const formatTime = (t) => (t ? new Date(t).toLocaleString() : '')
@@ -633,4 +654,33 @@ onMounted(() => {
   }
 }
 
+</style>
+
+/* 农户ID可点击*/
+<style scoped>
+.clickable-farmer {
+  cursor: pointer;
+  color: #2d7d4f; /* 使用主题绿，或者蓝色 #1890ff */
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity 0.2s;
+}
+
+.clickable-farmer:hover {
+  text-decoration: underline;
+  opacity: 0.8;
+}
+
+.info-icon {
+  font-size: 12px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 </style>

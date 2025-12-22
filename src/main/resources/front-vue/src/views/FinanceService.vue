@@ -177,7 +177,10 @@
                           :value="user.userId" 
                           v-model="newApp.coApplicantIds"
                         >
-                        <span>{{ user.name }} (信用分: {{ user.creditScore }})</span>
+                        <span class="clickable-user-name" @click.prevent="openFarmerDetail(user.userId)">
+                          {{ user.name }} (信用分: {{ user.creditScore }})
+                          <i class="info-icon">i</i>
+                        </span>
                         <span v-if="user.sameRegion" class="tag">同地区</span>
                       </div>
                     </div>
@@ -298,7 +301,13 @@
 
         <div class="table-row-f" v-for="invite in invitations" :key="invite.financingId">
           <span>#{{ invite.financingId }}</span>
-          <span>{{ invite.initiatorName || '加载中...' }}</span>
+          <span 
+            class="clickable-user-name" 
+            @click.stop="openFarmerDetail(invite.initiatingFarmerId)"
+          >
+            {{ invite.initiatorName || '加载中...' }}
+            <i class="info-icon" v-if="invite.initiatorName">i</i>
+          </span>
           <span>{{ invite.amount }} 元</span>
           <span>{{ invite.purpose }}</span>
           
@@ -321,8 +330,8 @@
       </div>
 
       <!-- 弹窗：申请详情 -->
-        <div v-if="showDetail" class="modal-overlay" @click.self="closeDetail()">
-          <div class="modal-container">
+      <div v-if="showDetail" class="modal-overlay" @click.self="closeDetail()">
+        <div class="modal-container">
             <h3>申请详情</h3>
 
             <div class="form-row"><label>ID：</label><span>{{ currentApp.financingId }}</span></div>
@@ -433,9 +442,11 @@
 
             <button class="cancel-btn" @click="closeDetail()">关闭</button>
             
-          </div>
         </div>
+      </div>
 
+      <!--农户个人信息详情-->
+      <FarmerProfileModal ref="farmerProfileRef" />
 
     </section>
   </div>
@@ -447,6 +458,7 @@ import axios from '../utils/axios'
 import { useAuthStore } from '@/stores/authStore'
 import { storeToRefs } from 'pinia'
 import HeaderComponent from '../components/HeaderComponent.vue';
+import FarmerProfileModal from '../components/FarmerProfileModal.vue';
 import {useRoute} from 'vue-router'
 
 const route = useRoute()
@@ -458,6 +470,17 @@ const newProduct = ref({ productName: '', description: '', termMonths: '', inter
 
 // 当前视图：applications / product
 const currentView = ref('products')
+
+// 创建一个 ref 来引用组件实例
+const farmerProfileRef = ref(null)
+
+// 修改打开农户信息详情的方法，现在只需调用组件的 open 方法
+const openFarmerDetail = (userId) => {
+  if (farmerProfileRef.value) {
+    farmerProfileRef.value.open(userId)
+  }
+}
+
 // 产品详情弹窗
 const showProductDetail = ref(false)
 const currentProduct = ref(null)
@@ -1649,5 +1672,37 @@ watch(currentView, val => {
   display: flex;
   gap: 15px;
   justify-content: flex-end;
+}
+</style>
+
+/* ================农户详情点击链接样式================*/
+<style scoped>
+.clickable-user-name {
+  color: #1890ff;       /* 蓝色链接色 */
+  cursor: pointer;      /* 鼠标变小手 */
+  text-decoration: underline;
+  display: flex;        /* 弹性布局对齐图标 */
+  align-items: center;
+  gap: 6px;             /* 文字和图标的间距 */
+  transition: opacity 0.2s;
+}
+
+.clickable-user-name:hover {
+  opacity: 0.7;
+}
+
+.info-icon {
+  font-style: normal;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: #e6f7ff;
+  color: #1890ff;
+  font-size: 10px;
+  border: 1px solid #91d5ff;
+  text-decoration: none; /* 去掉图标里的下划线 */
 }
 </style>

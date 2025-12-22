@@ -1,6 +1,7 @@
 package com.example.agricultural_product.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -746,6 +747,23 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
                     });
         }
         return financings;
+    }
+
+    @Override
+    public Page<Financing> listFinancingsByTargetUser(Long userId, Integer pageNum, Integer pageSize) {
+        Page<Financing> page = new Page<>(pageNum, pageSize);
+        QueryWrapper<Financing> queryWrapper = new QueryWrapper<>();
+        
+        // 查询发起人是该用户的记录
+        queryWrapper.eq("initiating_farmer_id", userId);
+        
+        // 排序：按时间倒序
+        queryWrapper.orderByDesc("create_time");
+        
+        // 可选：为了隐私，你可能只希望展示特定的字段，或者在 Controller层转成 DTO
+        // 这里为了简便，直接返回 Entity
+        
+        return financingMapper.selectPage(page, queryWrapper);
     }
 
 

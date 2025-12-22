@@ -61,7 +61,7 @@ public class Product {
     private String place;
 
     @TableField("average_rating")
-    private Double averageRating; // 新增：评分字段
+    private Double averageRating; // 评分字段
 
     @TableField("rating_count")
     private Integer ratingCount;
@@ -77,6 +77,9 @@ public class Product {
 
     @TableField(exist = false)
     private Boolean hasImage; // 关键：判断是否有图片的字段
+
+    @TableField(exist = false)
+    private Integer sales;   
 
 
 }

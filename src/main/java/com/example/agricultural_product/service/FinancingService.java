@@ -110,4 +110,7 @@ public interface FinancingService extends IService<Financing> {
      * 查询用户作为共同申请人参与的融资列表
      */
     List<Financing> listInvitedFinancings(Long userId);
+
+    // 查询指定用户的融资记录
+    Page<Financing> listFinancingsByTargetUser(Long userId, Integer pageNum, Integer pageSize);
 }

@@ -349,4 +349,17 @@ public class FinancingController {
         Long userId = getUserIdFromToken(request);
         return ResponseEntity.ok(financingService.listInvitedFinancings(userId));
     }
+
+    /**
+     * 查看指定农户的融资申请历史（公开数据，用于信用评估）
+     * 供其他农户在查看个人详情时调用
+     */
+    @GetMapping("/list/by-user")
+    public ResponseEntity<Page<Financing>> listFinancingByUserId(
+            @RequestParam Long userId,
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+        
+        return ResponseEntity.ok(financingService.listFinancingsByTargetUser(userId, pageNum, pageSize));
+    }
 }
