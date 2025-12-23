@@ -97,7 +97,7 @@ const pagination = reactive({
 async function fetchExpertProfile() {
   isLoadingProfile.value = true;
   try {
-    const res = await axios.get('/expert/profile');
+    const res = await axios.get(`/expert/profile/${expertId}`);
     const profile = res.data?.data || null;
 
     console.log('🔥 后端原始返回 profile：', res.data);
@@ -227,6 +227,7 @@ function changePage(page) {
 
 onMounted(() => {
   console.log('组件已挂载 (onMounted)，准备根据 expertId 获取数据...');
+  console.log('组件已挂载，expertId:', expertId);
   if (expertId) {
     console.log('expertId 有效，即将调用 fetchExpertProfile 和 fetchAvailableSlots');
     fetchExpertProfile();
@@ -234,7 +235,6 @@ onMounted(() => {
     loadExpertName();
 
   } else {
-    // ✅ 添加一个 else 分支，方便调试
     console.error('在 onMounted 中检测到 expertId 无效或为空，因此未发送API请求！');
   }
 });
