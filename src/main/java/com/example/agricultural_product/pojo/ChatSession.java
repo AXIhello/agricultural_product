@@ -18,6 +18,12 @@ public class ChatSession {
     @TableField("user_b_id")
     private Long userBId;
 
+    @TableField("user_a_role")
+    private String userARole;
+
+    @TableField("user_b_role")
+    private String userBRole;
+
     @TableField("last_message_time")
     private LocalDateTime lastMessageTime;
 
@@ -33,6 +39,10 @@ public class ChatSession {
     public void setUserAId(Long userAId) { this.userAId = userAId; }
     public Long getUserBId() { return userBId; }
     public void setUserBId(Long userBId) { this.userBId = userBId; }
+    public String getUserARole() { return userARole; }
+    public void setUserARole(String userARole) { this.userARole = userARole; }
+    public String getUserBRole() { return userBRole; }
+    public void setUserBRole(String userBRole) { this.userBRole = userBRole; }
     public LocalDateTime getLastMessageTime() { return lastMessageTime; }
     public void setLastMessageTime(LocalDateTime lastMessageTime) { this.lastMessageTime = lastMessageTime; }
     public LocalDateTime getCreateTime() { return createTime; }

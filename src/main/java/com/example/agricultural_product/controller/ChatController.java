@@ -32,9 +32,13 @@ public class ChatController {
     }
 
     @PostMapping("/session/{peerId}")
-    public ChatSession createOrGetSession(@PathVariable("peerId") Long peerId, HttpServletRequest request) {
+    public ChatSession createOrGetSession(@PathVariable("peerId") Long peerId,
+                                          @RequestBody(required = false) SessionRequest body,
+                                          HttpServletRequest request) {
         long uid = currentUserId(request);
-        return chatService.createOrGetSession(uid, peerId);
+        String currentRole = body == null ? null : body.getCurrentRole();
+        String peerRole = body == null ? null : body.getPeerRole();
+        return chatService.createOrGetSession(uid, peerId, currentRole, peerRole);
     }
 
     @GetMapping("/sessions")
@@ -55,7 +59,8 @@ public class ChatController {
     @PostMapping("/messages")
     public ChatMessage send(@RequestBody SendMessageRequest req, HttpServletRequest request) {
         long uid = currentUserId(request);
-        return chatService.sendMessage(uid, req.getSessionId(), req.getPeerUserId(), req.getContent(), req.getMsgType());
+        return chatService.sendMessage(uid, req.getSessionId(), req.getPeerUserId(), req.getContent(), req.getMsgType(),
+                req.getCurrentRole(), req.getPeerRole());
     }
 
     @PutMapping("/messages/{messageId}/read")
@@ -90,6 +95,8 @@ public class ChatController {
         private Long peerUserId;  // 可选
         private String content;
         private String msgType;   // text/image
+        private String currentRole;
+        private String peerRole;
 
         public Long getSessionId() { return sessionId; }
         public void setSessionId(Long sessionId) { this.sessionId = sessionId; }
@@ -99,5 +106,19 @@ public class ChatController {
         public void setContent(String content) { this.content = content; }
         public String getMsgType() { return msgType; }
         public void setMsgType(String msgType) { this.msgType = msgType; }
+        public String getCurrentRole() { return currentRole; }
+        public void setCurrentRole(String currentRole) { this.currentRole = currentRole; }
+        public String getPeerRole() { return peerRole; }
+        public void setPeerRole(String peerRole) { this.peerRole = peerRole; }
+    }
+
+    public static class SessionRequest {
+        private String currentRole;
+        private String peerRole;
+
+        public String getCurrentRole() { return currentRole; }
+        public void setCurrentRole(String currentRole) { this.currentRole = currentRole; }
+        public String getPeerRole() { return peerRole; }
+        public void setPeerRole(String peerRole) { this.peerRole = peerRole; }
     }
 }
