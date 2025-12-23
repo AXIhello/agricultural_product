@@ -720,7 +720,6 @@ async function loadProducts() {
     const page = res.data;
     const records = page.records || [];
 
-    console.log('分页信息：', page);
     records.forEach((product, index) => {
       console.log(`商品 ${index + 1}:`, product);
     });
@@ -737,7 +736,6 @@ async function loadProducts() {
             if (imageRes.data && imageRes.data.size > 0) {
               imageUrl = URL.createObjectURL(imageRes.data);
             }
-            console.log('产品图片：',imageUrl);
           } catch (err) {
             console.log('产品图片加载失败，使用默认图：', product.productId, err);
             imageUrl = defaultImg;
@@ -772,7 +770,6 @@ async function loadAllProducts() {
               // 如果图片加载失败，使用默认占位图
               imageUrl = new URL('../assets/img.png', import.meta.url).href
             }
-            console.log('全部产品：', imageUrl)
             return {...product, imageUrl}
           } catch (err) {
             console.warn('产品加载失败:', product.productId, err)
@@ -995,7 +992,7 @@ const batchDown = async () => {
 watch([filterStatus, filterCategory], loadMyProducts)
 
 // ====== 预测逻辑 ======
-
+const loading = ref(false)
 //启动预测任务
 async function startPrediction(product) {
   try {
@@ -1173,8 +1170,6 @@ const showCreateDemand = ref(false)
 async function loadDemands() {
   try{
     const reqRes = await axios.get('/purchase-demands')
-    // 打印响应体
-    console.log(reqRes.data)
     demands.value = reqRes.data.records
   }catch(err){
     console.error('加载购物需求失败',err);
@@ -1184,7 +1179,7 @@ async function loadDemands() {
 
 // ====== 订单逻辑 ======
 const myOrders = ref([])
-const loading = ref(true)// 时间格式化
+// 时间格式化
 const formatTime = t => (t ? new Date(t).toLocaleString() : '')
 
 // 计算总价

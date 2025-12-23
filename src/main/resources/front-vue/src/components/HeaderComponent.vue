@@ -42,7 +42,6 @@ export default {
     ...mapState(useAuthStore, ['role']),
    
     isAdmin() {
-      console.log(this.role);
       return this.role === 'admin';
     },
     isFinancing(){
