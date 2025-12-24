@@ -77,152 +77,202 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
-import { useRoute } from 'vue-router';
-import axios from '../utils/axios.js';
-import { useAuthStore } from '@/stores/authStore.js';
-import { storeToRefs } from 'pinia';
-import router from "@/router/index.js";
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import axios from '../utils/axios.js'
+import { useAuthStore } from '@/stores/authStore.js'
+import { storeToRefs } from 'pinia'
+import router from '@/router/index.js'
 
-// --- Reactive State ---
-const route = useRoute();
-const receiverId = ref(null);
-const currentSession = ref(null);
-const messages = ref([]);
-const newMessageContent = ref('');
-const isLoading = ref(true);
-const messageContainer = ref(null);
+// ---------- props ----------
+const props = defineProps({
+  receiverId: {
+    type: Number,
+    required: true
+  },
+  currentRole: {
+    type: String,
+    required: true
+  },
+  peerRole: {
+    type: String,
+    required: true
+  }
+})
 
-let eventSource = null;
+// ---------- store ----------
+const authStore = useAuthStore()
+const { userInfo: currentUser, isLoggedIn, token } = storeToRefs(authStore)
 
-const authStore = useAuthStore();
-const { userInfo: currentUser, isLoggedIn, token } = storeToRefs(authStore);
+// ---------- state ----------
+const currentSession = ref(null)
+const messages = ref([])
+const newMessageContent = ref('')
+const isLoading = ref(true)
+const messageContainer = ref(null)
 
-// --- Lifecycle ---
+let eventSource = null
+
+// ---------- lifecycle ----------
 onMounted(() => {
   if (!isLoggedIn.value) {
-    alert('请先登录后再进行聊天！');
-    router.push('/login');
-    return;
+    alert('请先登录后再进行聊天！')
+    router.push('/login')
+    return
   }
-  receiverId.value = props.receiverId;
-  if (receiverId.value) {
-    console.log('聊天组件挂载，receiverId:', receiverId.value);
-    initializeChat(receiverId.value);
-    setupSseConnection();
-  }
-});
+
+  console.log(
+      'ChatWindow mount:',
+      'receiverId=', props.receiverId,
+      'currentRole=', props.currentRole,
+      'peerRole=', props.peerRole
+  )
+  initForReceiver(props.receiverId)
+})
 
 onUnmounted(() => {
-  if (eventSource) eventSource.close();
-});
+  closeSse()
+})
 
+// ⭐ 当左侧切换联系人时
 watch(
-    () => route.params.receiverId,
-    (newId) => {
-      if (newId && parseInt(newId, 10) !== receiverId.value) {
-        receiverId.value = props.receiverId;
-        messages.value = [];
-        currentSession.value = null;
-        initializeChat(receiverId.value);
-      }
-    }
-);
+    () => props.receiverId,
+    async (newId, oldId) => {
+      if (!newId || newId === oldId) return
 
-// -------- Methods ----------
+      console.log('切换聊天对象:', oldId, '->', newId)
+      resetChat()
+      await initForReceiver(newId)
+    }
+)
+
+// ---------- core ----------
+async function initForReceiver(peerId) {
+  await initializeChat(peerId)
+  setupSseConnection()
+}
+
+function resetChat() {
+  messages.value = []
+  currentSession.value = null
+  isLoading.value = true
+  closeSse()
+}
+
+// ---------- api ----------
 async function initializeChat(peerId) {
-  console.log('初始化聊天，peerId:', peerId);
-  isLoading.value = true;
+  console.log('初始化聊天，peerId:', peerId)
+
   try {
-    const sessionRes = await axios.post(`/chat/session/${peerId}`);
-    currentSession.value = sessionRes.data;
+    const sessionRes = await axios.post(
+        `/chat/session/${peerId}`,
+        {
+          currentRole: props.currentRole,
+          peerRole: props.peerRole
+        }
+    )
+
+    currentSession.value = sessionRes.data
 
     if (currentSession.value?.sessionId) {
-      const msgRes = await axios.get(`/chat/messages/${currentSession.value.sessionId}`);
-      messages.value = msgRes.data.sort((a, b) => new Date(a.sendTime) - new Date(b.sendTime));
+      const msgRes = await axios.get(
+          `/chat/messages/${currentSession.value.sessionId}`
+      )
+      messages.value = msgRes.data.sort(
+          (a, b) => new Date(a.sendTime) - new Date(b.sendTime)
+      )
     }
-    console.log('消息加载完成，消息数:', messages.value.length);
+
+    console.log('消息加载完成，消息数:', messages.value.length)
   } catch (err) {
-    console.error('初始化失败:', err);
+    console.error('初始化失败:', err)
   } finally {
-    isLoading.value = false;
-    await scrollToBottom();
+    isLoading.value = false
+    await scrollToBottom()
   }
 }
 
 async function sendMessage() {
-  if (!newMessageContent.value.trim() || !currentSession.value) return;
+  if (!newMessageContent.value.trim() || !currentSession.value) return
 
   const payload = {
     sessionId: currentSession.value.sessionId,
+    peerUserId: props.receiverId,
     content: newMessageContent.value,
     msgType: 'text'
-  };
+  }
 
   try {
-    await axios.post('/chat/messages', payload);
-    newMessageContent.value = '';
+    await axios.post('/chat/messages', payload)
+    newMessageContent.value = ''
   } catch (err) {
-    console.error('发送失败:', err);
+    console.error('发送失败:', err)
   }
 }
 
+// ---------- SSE ----------
 function setupSseConnection() {
-  if (!token.value) return;
+  if (!token.value) return
 
-  const url = `/api/chat/stream?token=${token.value}`;
-  eventSource = new EventSource(url);
+  const url = `/api/chat/stream?token=${token.value}`
+  eventSource = new EventSource(url)
 
   eventSource.onmessage = async (event) => {
-    const msg = JSON.parse(event.data);
-    if (currentSession.value && msg.sessionId === currentSession.value.sessionId) {
-      messages.value.push(msg);
-      await scrollToBottom();
+    const msg = JSON.parse(event.data)
+    if (
+        currentSession.value &&
+        msg.sessionId === currentSession.value.sessionId
+    ) {
+      messages.value.push(msg)
+      await scrollToBottom()
     }
-  };
+  }
 
-  eventSource.onerror = () => eventSource.close();
+  eventSource.onerror = () => {
+    closeSse()
+  }
+}
+
+function closeSse() {
+  if (eventSource) {
+    eventSource.close()
+    eventSource = null
+  }
+}
+
+// ---------- ui ----------
+async function scrollToBottom() {
+  await nextTick()
+  if (messageContainer.value) {
+    messageContainer.value.scrollTop = messageContainer.value.scrollHeight
+  }
 }
 
 function formatMessageTime(time) {
-  if (!time) return '';
-  const d = new Date(time);
-  const now = new Date();
+  if (!time) return ''
+  const d = new Date(time)
+  const now = new Date()
 
-  const hhmm = `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+  const hhmm = `${d.getHours().toString().padStart(2, '0')}:${d
+      .getMinutes()
+      .toString()
+      .padStart(2, '0')}`
 
-  const isToday = d.toDateString() === now.toDateString();
-  if (isToday) return hhmm;
+  if (d.toDateString() === now.toDateString()) return hhmm
 
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-  if (d.toDateString() === yesterday.toDateString()) return `昨天 ${hhmm}`;
+  const yesterday = new Date(now)
+  yesterday.setDate(now.getDate() - 1)
+  if (d.toDateString() === yesterday.toDateString())
+    return `昨天 ${hhmm}`
 
-  const month = (d.getMonth() + 1).toString().padStart(2, '0');
-  const day = d.getDate().toString().padStart(2, '0');
+  const m = (d.getMonth() + 1).toString().padStart(2, '0')
+  const day = d.getDate().toString().padStart(2, '0')
 
-  if (d.getFullYear() === now.getFullYear()) return `${month}-${day} ${hhmm}`;
+  if (d.getFullYear() === now.getFullYear())
+    return `${m}-${day} ${hhmm}`
 
-  return `${d.getFullYear()}-${month}-${day} ${hhmm}`;
+  return `${d.getFullYear()}-${m}-${day} ${hhmm}`
 }
-
-async function scrollToBottom() {
-  await nextTick();
-  if (messageContainer.value) {
-    messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
-  }
-}
-
-function goBack() {
-  router.back();
-}
-
-const props = defineProps({
-  receiverId: Number
-});
-
 </script>
-
 
 <style scoped>
 /* ================== 全局布局 ================== */

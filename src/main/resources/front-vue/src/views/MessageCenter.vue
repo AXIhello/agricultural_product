@@ -24,7 +24,7 @@
                 :key="session.sessionId"
                 class="session-item"
                 :class="{ active: activePeerId === getPeerUser(session).id }"
-                @click="activePeerId = getPeerUser(session).id"
+                @click="handleSessionClick(session)"
             >
               <div class="avatar-placeholder">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
@@ -55,7 +55,13 @@
 
       <!-- 右侧：聊天窗口 -->
       <main class="chat-content">
-        <ChatWindow v-if="activePeerId" :receiver-id="activePeerId" />
+        <ChatWindow
+            v-if="activePeerId"
+            :receiver-id="activePeerId"
+            :current-role="activeCurrentRole"
+            :peer-role="activePeerRole"
+        />
+
         <div v-else class="empty-chat-hint">
           ← 请选择左侧联系人开始聊天
         </div>
@@ -67,6 +73,7 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
+import { useRoute, useRouter } from 'vue-router'
 import axios from "../utils/axios";
 import { useAuthStore } from "@/stores/authStore";
 import { storeToRefs } from 'pinia';
@@ -80,21 +87,114 @@ const { userInfo, isLoggedIn } = storeToRefs(authStore);
 const sessions = ref([]);
 const isLoading = ref(true);
 const activePeerId = ref(null); // 右侧聊天窗口的对象
+const activeCurrentRole = ref(null)
+const activePeerRole = ref(null)
 
-onMounted(() => {
+
+const route = useRoute()
+
+onMounted(async () => {
   if (!isLoggedIn.value) return;
-  loadSessions();
+  sessions.value = [];
+  await loadSessions();
+
+  const peerId = route.query.peerId;
+  if (peerId) {
+    await openChatWithPeer(
+        Number(peerId),
+        route.query.currentRole,
+        route.query.peerRole
+    );
+  }
 });
+
+function handleSessionClick(session) {
+  const currentUserId = userInfo.value.userId
+
+  const isA = session.userAId === currentUserId
+
+  activePeerId.value = Number(
+      isA ? session.userBId : session.userAId
+  )
+
+  // 同步角色
+  activeCurrentRole.value = isA
+      ? session.userARole
+      : session.userBRole
+
+  activePeerRole.value = isA
+      ? session.userBRole
+      : session.userARole
+}
+
+
+
+async function openChatWithPeer(peerId, currentRole, peerRole) {
+  console.log('role:',currentRole, peerRole);
+  console.log('sessions:',sessions.value);
+  //  先查已有 session
+  let session = sessions.value.find(s => {
+    const aId = Number(s.userAId)
+    const bId = Number(s.userBId)
+    const me = Number(userInfo.value.userId)
+    const peer = Number(peerId)
+
+    console.log('—— checking session ——')
+    console.log('sessionId:', s.sessionId)
+    console.log('A:', aId, 'B:', bId)
+    console.log('me:', me, 'peer:', peer)
+
+    const match =
+        (aId === me && bId === peer) ||
+        (bId === me && aId === peer)
+
+    console.log('match result:', match)
+    console.log('------------------------')
+
+    return match
+  })
+
+
+
+  // 没有就创建
+  if (!session) {
+    console.log('no session found');
+    const res = await axios.post(`/chat/session/${peerId}`, {
+      currentRole,
+      peerRole
+    });
+
+    session = res.data;
+    sessions.value.unshift(session);
+  }
+
+  // 设置右侧聊天对象
+  activePeerId.value = peerId
+  activeCurrentRole.value = currentRole
+  activePeerRole.value = peerRole
+
+}
+
 
 /** 加载会话列表 */
 async function loadSessions() {
   try {
-    const response = await axios.get("/chat/sessions");
-    sessions.value = (response.data || []).sort(
+    const response = await axios.get("/chat/sessions")
+
+    console.log('加载出来的response:', response.data);
+    // 按 sessionId 去重
+    const map = new Map()
+    ;(response.data || []).forEach(s => {
+      map.set(s.sessionId, s)
+    })
+
+    sessions.value = Array.from(map.values()).sort(
         (a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime)
-    );
+    )
+
+    console.log('去重后的 sessions:', sessions.value)
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
 }
 
