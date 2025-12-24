@@ -6,6 +6,7 @@ import com.example.agricultural_product.dto.OrderDTO;
 import com.example.agricultural_product.pojo.Order;
 import com.example.agricultural_product.pojo.OrderItem;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface OrderService extends IService<Order> {
@@ -16,10 +17,21 @@ public interface OrderService extends IService<Order> {
      * @param addressId 收货地址ID
      * @param orderItems 订单项列表
      * @param userCouponId 使用的优惠券ID（可为空）
+     * @param originalAmount 原价
+     * @param couponDiscount 折扣金额
+     * @param totalAmount 总价
      * @return 订单ID，失败返回null
      */
-    Integer createOrder(Long userId, Integer addressId, List<OrderItem> orderItems, Long userCouponId);
-    
+    public Integer createOrder(
+            Long userId,
+            Integer addressId,
+            List<OrderItem> orderItems,
+            Long userCouponId,
+            BigDecimal originalAmount,
+            BigDecimal couponDiscount,
+            BigDecimal totalAmount
+    );
+
     // /**
     //  * 根据用户ID分页查询订单
     //  * @param userId 用户ID

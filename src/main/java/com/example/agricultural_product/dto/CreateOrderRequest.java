@@ -2,13 +2,19 @@ package com.example.agricultural_product.dto;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
 public class CreateOrderRequest {
     private Integer addressId;
+    private Long userCouponId;
+
+    private BigDecimal originalAmount;
+    private BigDecimal couponDiscount;
+    private BigDecimal totalAmount;
+
     private List<OrderItemRequest> orderItems;
-    private Long userCouponId; // 使用的优惠券ID（可选）
     
     @Data
     public static class OrderItemRequest {

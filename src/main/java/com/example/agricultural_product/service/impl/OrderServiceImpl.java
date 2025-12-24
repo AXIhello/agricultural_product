@@ -45,89 +45,103 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
     @Override
     @Transactional
-    public Integer createOrder(Long userId, Integer addressId, List<OrderItem> orderItems, Long userCouponId) {
+    public Integer createOrder(
+            Long userId,
+            Integer addressId,
+            List<OrderItem> orderItems,
+            Long userCouponId,
+            BigDecimal originalAmount,
+            BigDecimal couponDiscount,
+            BigDecimal totalAmount
+    ) {
+
         if (userId == null || addressId == null || orderItems == null || orderItems.isEmpty()) {
-            return null;
+            throw new RuntimeException("参数不完整");
         }
-        // 计算总金额并验证商品（使用 Redis 预减库存防超卖）
-        BigDecimal originalAmount = BigDecimal.ZERO;
+
+        // ================== 1 校验商品 + Redis 预减库存 ==================
+        BigDecimal serverCalcAmount = BigDecimal.ZERO;
+
         for (OrderItem item : orderItems) {
             Integer productId = item.getProductId();
+            Integer qty = item.getQuantity();
+
             String stockKey = buildStockKey(productId);
-            // 如果 Redis 中没有该商品库存，则初始化一次（从数据库加载）
+
             if (Boolean.FALSE.equals(stringRedisTemplate.hasKey(stockKey))) {
                 Product dbProduct = productMapper.selectById(productId);
                 if (dbProduct == null || !"active".equals(dbProduct.getStatus())) {
                     throw new RuntimeException("商品不存在或已下架");
                 }
-                // 将当前数据库库存写入 Redis
-                stringRedisTemplate.opsForValue().set(stockKey, String.valueOf(dbProduct.getStock()));
+                stringRedisTemplate.opsForValue().set(stockKey, dbProduct.getStock().toString());
             }
-            // 使用 Redis 进行预减库存（高并发下避免超卖）
-            Long remain = stringRedisTemplate.opsForValue().decrement(stockKey, item.getQuantity());
+
+            Long remain = stringRedisTemplate.opsForValue().decrement(stockKey, qty);
             if (remain == null || remain < 0) {
-                // 回滚本次预减（加回去）
-                stringRedisTemplate.opsForValue().increment(stockKey, item.getQuantity());
-                throw new RuntimeException("商品库存不足");
+                stringRedisTemplate.opsForValue().increment(stockKey, qty);
+                throw new RuntimeException("库存不足");
             }
 
             Product product = productMapper.selectById(productId);
-            if (product == null || !"active".equals(product.getStatus())) {
-                throw new RuntimeException("商品不存在或已下架");
-            }
-            BigDecimal itemTotal = product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
-            originalAmount = originalAmount.add(itemTotal);
+            BigDecimal itemTotal = product.getPrice().multiply(BigDecimal.valueOf(qty));
+            serverCalcAmount = serverCalcAmount.add(itemTotal);
+
             item.setUnitPrice(product.getPrice());
         }
-        
-        // 处理优惠券
-        BigDecimal couponDiscount = BigDecimal.ZERO;
-        if (userCouponId != null) {
-            try {
-                // 锁定优惠券
-                couponService.lockCoupon(userCouponId);
-            } catch (Exception e) {
-                throw new RuntimeException("优惠券锁定失败：" + e.getMessage());
-            }
+
+        // ================== 2 金额安全校验 ==================
+        if (serverCalcAmount.compareTo(originalAmount) != 0) {
+            throw new RuntimeException("商品金额异常");
         }
-        
-        // 创建订单
+
+        if (couponDiscount.compareTo(BigDecimal.ZERO) < 0) {
+            throw new RuntimeException("优惠金额非法");
+        }
+
+
+        // ================== 3 优惠券锁定 ==================
+        if (userCouponId != null) {
+            couponService.lockCoupon(userCouponId);
+        }
+
+        // ================== 4 创建订单（直接记录金额） ==================
         Order order = new Order();
         order.setUserId(userId);
         order.setOrderDate(LocalDateTime.now());
         order.setOriginalAmount(originalAmount);
-        order.setUserCouponId(userCouponId);
         order.setCouponDiscount(couponDiscount);
-        order.setTotalAmount(originalAmount.subtract(couponDiscount));
-        order.setStatus("pending");
+        order.setTotalAmount(totalAmount);
+        order.setUserCouponId(userCouponId);
         order.setShippingAddressId(addressId);
+        order.setStatus("pending");
         order.setCreateTime(LocalDateTime.now());
         order.setUpdateTime(LocalDateTime.now());
-        
-        if (this.save(order)) {
-            // 如果使用了优惠券，使用优惠券并更新订单优惠金额
-            if (userCouponId != null) {
-                try {
-                    couponDiscount = couponService.useCoupon(userId, userCouponId, order.getOrderId(), originalAmount);
-                    order.setCouponDiscount(couponDiscount);
-                    order.setTotalAmount(originalAmount.subtract(couponDiscount));
-                    this.updateById(order);
-                } catch (Exception e) {
-                    // 使用失败，解锁优惠券
-                    couponService.unlockCoupon(userCouponId);
-                    throw new RuntimeException("优惠券使用失败：" + e.getMessage());
-                }
+
+        this.save(order);
+
+        // ================== 5 使用优惠券 ==================
+        if (userCouponId != null) {
+            try {
+                couponService.useCoupon(
+                        userId,
+                        userCouponId,
+                        order.getOrderId(),
+                        originalAmount
+                );
+            } catch (Exception e) {
+                couponService.unlockCoupon(userCouponId);
+                throw new RuntimeException("优惠券使用失败");
             }
-            
-            for (OrderItem item : orderItems) {
-                item.setOrderId(order.getOrderId());
-                item.setCreateTime(LocalDateTime.now());
-                orderItemMapper.insert(item);
-                // 这里不再扣减库存，改到支付环节
-            }
-            return order.getOrderId();
         }
-        return null;
+
+        // ================== 6 保存订单项 ==================
+        for (OrderItem item : orderItems) {
+            item.setOrderId(order.getOrderId());
+            item.setCreateTime(LocalDateTime.now());
+            orderItemMapper.insert(item);
+        }
+
+        return order.getOrderId();
     }
 
     @Override

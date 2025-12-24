@@ -63,7 +63,16 @@ public class OrderController {
                         return orderItem;
                     }).toList();
 
-            Integer orderId = orderService.createOrder(userId, req.getAddressId(), orderItems, req.getUserCouponId());
+            Integer orderId = orderService.createOrder(
+                    userId,
+                    req.getAddressId(),
+                    orderItems,
+                    req.getUserCouponId(),
+                    req.getOriginalAmount(),
+                    req.getCouponDiscount(),
+                    req.getTotalAmount()
+            );
+
             if (orderId != null) {
                 System.out.println("订单创建成功，订单ID: " + orderId);
                 return ResponseEntity.ok(orderId);

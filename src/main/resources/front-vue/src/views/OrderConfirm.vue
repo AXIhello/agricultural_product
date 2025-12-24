@@ -87,8 +87,8 @@
 
           <div v-if="couponDropdownVisible" class="coupon-dropdown">
             <MyCoupon
-                v-model:selectedId="selectedCouponId"
                 :selectable="true"
+                :selected-id="selectedCoupon?.userCouponId"
                 @select="selectCoupon"
             />
           </div>
@@ -139,10 +139,12 @@ const selectedAddressId = ref(null)
 const userAddresses = ref([])
 
 // 优惠券相关
-const coupons = ref([]) // 用户优惠券列表
-const selectedCouponId = ref(null)
-const couponDiscount = ref(0)
+const coupons = ref([])
+const selectedCoupon = ref(null)
 const couponDropdownVisible = ref(false)
+const couponDiscount = computed(() => calcCouponDiscount())
+
+
 
 const totalAmount = ref(0)
 
@@ -280,10 +282,10 @@ const toggleCouponDropdown = () => {
 }
 
 const selectCoupon = (coupon) => {
-  selectedCouponId.value = coupon.userCouponId
-  couponDiscount.value = coupon.discountValue || 0
+  selectedCoupon.value = coupon
   recalcTotal()
 }
+
 
 
 // -------------------- 下单 --------------------
@@ -295,16 +297,29 @@ const confirmOrder = async () => {
 
   const reqBody = {
     addressId: selectedAddressId.value,
+    userCouponId: selectedCoupon.value?.userCouponId || null,
+
+    originalAmount: originalPrice.value,
+    couponDiscount: couponDiscount.value,
+    totalAmount: totalAmount.value,
+
     orderItems: orderItems.value.map(i => ({
       productId: i.productId,
       quantity: i.quantity
-    })),
-    userCouponId: selectedCouponId.value
+    }))
   }
+
 
   try {
     const res = await axios.post('/orders', reqBody)
     const orderId = res.data
+
+    try {
+      await axios.delete('/cart/clear')
+    } catch (e) {
+      // 清空失败不影响下单主流程
+      console.warn('清空购物车失败', e)
+    }
 
     localStorage.removeItem('orderPreview')
 
@@ -326,14 +341,59 @@ const confirmOrder = async () => {
 }
 
 // -------------------- 总价 --------------------
-const recalcTotal = () => {
-  const sum = orderItems.value.reduce((acc, i) => acc + i.price * i.quantity, 0)
-  totalAmount.value = Math.max(0, sum - couponDiscount.value)
+
+const calcCouponDiscount = () => {
+  const coupon = selectedCoupon.value
+  const total = originalPrice.value
+
+  if (!coupon) return 0
+
+  // 未达到使用门槛
+  if (coupon.minOrderAmount && total < coupon.minOrderAmount) {
+    return 0
+  }
+
+  let discount = 0
+
+  switch (coupon.couponType) {
+    case 'full_reduction':
+      discount = coupon.discountValue
+      break
+
+    case 'fixed_amount':
+      discount = coupon.discountValue
+      break
+
+    case 'discount':
+      // discountValue 例如 0.9
+      discount = total * (1 - coupon.discountValue)
+      break
+
+    case 'free_shipping':
+      discount = 0
+      break
+  }
+
+  // 最大优惠限制
+  if (coupon.maxDiscountAmount) {
+    discount = Math.min(discount, coupon.maxDiscountAmount)
+  }
+
+  return Math.max(0, discount)
 }
+
+
+const recalcTotal = () => {
+  const total = originalPrice.value
+  const discount = calcCouponDiscount()
+  totalAmount.value = Math.max(0, total - discount)
+}
+
 
 // -------------------- 监听 --------------------
 watch(orderItems, recalcTotal, { deep: true })
-watch(selectedCouponId, recalcTotal)
+watch(selectedCoupon, recalcTotal)
+
 </script>
 
 <style scoped>
