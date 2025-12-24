@@ -1071,7 +1071,7 @@ async function pollPredictionStatus(product) {
 }
 
 function drawChart(productName) {
-  console.log(chartRef.value,chartData.value);
+  console.log('图表：',chartRef.value,'图表2：',chartData.value);
 
   if (!chartRef.value ){
     console.log('chartRef为空');
@@ -1083,7 +1083,7 @@ function drawChart(productName) {
   }
 
   const myChart = echarts.init(chartRef.value);
-  chartData.value = [];
+
 
   // 只保留最近 10 条
   const recentData = chartData.value.slice(-10);
