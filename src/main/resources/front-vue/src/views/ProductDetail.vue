@@ -276,7 +276,10 @@ async function goToChat(receiverId) {
 
   // 4. 跳转到聊天页面
   console.log(`准备跳转到与用户 ${receiverId} 的聊天室`);
-  await router.push(`/chat/${receiverId}`);
+  await router.push({
+    path: '/messages',
+    query: { userId: receiverId }
+  });
 }
 
 

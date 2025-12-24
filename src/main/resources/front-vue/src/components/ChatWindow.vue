@@ -107,6 +107,7 @@ onMounted(() => {
   }
   receiverId.value = props.receiverId;
   if (receiverId.value) {
+    console.log('聊天组件挂载，receiverId:', receiverId.value);
     initializeChat(receiverId.value);
     setupSseConnection();
   }
@@ -130,6 +131,7 @@ watch(
 
 // -------- Methods ----------
 async function initializeChat(peerId) {
+  console.log('初始化聊天，peerId:', peerId);
   isLoading.value = true;
   try {
     const sessionRes = await axios.post(`/chat/session/${peerId}`);
@@ -139,6 +141,7 @@ async function initializeChat(peerId) {
       const msgRes = await axios.get(`/chat/messages/${currentSession.value.sessionId}`);
       messages.value = msgRes.data.sort((a, b) => new Date(a.sendTime) - new Date(b.sendTime));
     }
+    console.log('消息加载完成，消息数:', messages.value.length);
   } catch (err) {
     console.error('初始化失败:', err);
   } finally {
