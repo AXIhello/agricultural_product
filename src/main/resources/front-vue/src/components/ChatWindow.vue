@@ -2,7 +2,7 @@
   <div class="chat-wrapper">
     <div class="chat-container">
 
-      <button v-if="props.showBackButton" @click="goBack" class="back-button">
+      <button v-if="showBackButton" @click="goBack" class="back-button">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="19" y1="12" x2="5" y2="12"></line>
           <polyline points="12 19 5 12 12 5"></polyline>
@@ -11,7 +11,7 @@
       </button>
 
       <!-- 头部 -->
-      <div class="chat-header" :class="headerPaddingClass">
+      <div class="chat-header">
         <div class="header-info">
           <h3>
             {{ receiverInfo?.name || `用户 ${internalReceiverId}` }}
@@ -102,9 +102,10 @@ const isLoading = ref(true);
 const messageContainer = ref(null);
 const receiverInfo = ref(null);//对方用户信息
 
-// ---------- store ----------
-const authStore = useAuthStore()
-const { userInfo: currentUser, isLoggedIn, token } = storeToRefs(authStore)
+let eventSource = null;
+
+const authStore = useAuthStore();
+const { userInfo: currentUser, isLoggedIn, token } = storeToRefs(authStore);
 
 // 定义 props
 const props = defineProps({
@@ -112,15 +113,10 @@ const props = defineProps({
     type: Number,
     default: null // 默认值为 null
   },
-  showBackButton:{
-    type : Boolean,
-    default: true
+  showBackButton: {
+    type: Boolean,
+    default: true // 默认显示返回按钮
   }
-});
-
-//调整头部样式（有无返回按钮
-const headerPaddingClass = computed(() => {
-  return props.showBackButton ? 'has-back-button-padding' : '';
 });
 
 // 优先使用 prop 传入的 receiverId，如果 prop 为空，则尝试从路由参数获取
@@ -152,9 +148,9 @@ const formattedReceiverRole = computed(() => {
 // --- Lifecycle ---
 onMounted(async () => {
   if (!isLoggedIn.value) {
-    alert('请先登录后再进行聊天！')
-    router.push('/login')
-    return
+    alert('请先登录后再进行聊天！');
+    router.push('/login');
+    return;
   }
 
   internalReceiverId.value = getActualReceiverId(); // 获取实际的 receiverId
@@ -181,7 +177,6 @@ onUnmounted(() => {
   }
 });
 
-// 当左侧切换联系人时
 watch(
     () => [props.receiverId, route.params.receiverId], // 监听两个可能来源
     async ([newPropId, newRouteId], [oldPropId, oldRouteId]) => {
@@ -230,21 +225,7 @@ watch(
     { immediate: true } // 确保在组件挂载时也触发一次
 );
 
-
-// ---------- core ----------
-async function initForReceiver(peerId) {
-  await initializeChat(peerId)
-  setupSseConnection()
-}
-
-function resetChat() {
-  messages.value = []
-  currentSession.value = null
-  isLoading.value = true
-  closeSse()
-}
-
-// ---------- api ----------
+// -------- Methods ----------
 async function initializeChat(peerId) {
   isLoading.value = true;
   console.log('initializeChat started for peerId:', peerId);
@@ -266,8 +247,6 @@ async function initializeChat(peerId) {
     }else {
       console.log('No chat session found or created.'); 
     }
-
-    console.log('消息加载完成，消息数:', messages.value.length)
   } catch (err) {
     console.error('Chat initialization failed:', err.response?.data || err.message || err);
   } finally {
@@ -278,24 +257,22 @@ async function initializeChat(peerId) {
 }
 
 async function sendMessage() {
-  if (!newMessageContent.value.trim() || !currentSession.value) return
+  if (!newMessageContent.value.trim() || !currentSession.value) return;
 
   const payload = {
     sessionId: currentSession.value.sessionId,
-    peerUserId: props.receiverId,
     content: newMessageContent.value,
     msgType: 'text'
-  }
+  };
 
   try {
-    await axios.post('/chat/messages', payload)
-    newMessageContent.value = ''
+    await axios.post('/chat/messages', payload);
+    newMessageContent.value = '';
   } catch (err) {
-    console.error('发送失败:', err)
+    console.error('发送失败:', err);
   }
 }
 
-// ---------- SSE ----------
 function setupSseConnection() {
   if (!token.value) {
     console.warn('SSE: No auth token available.');
@@ -307,8 +284,8 @@ function setupSseConnection() {
     eventSource = null;
   }
 
-  const url = `/api/chat/stream?token=${token.value}`
-  eventSource = new EventSource(url)
+  const url = `/api/chat/stream?token=${token.value}`;
+  eventSource = new EventSource(url);
 
   eventSource.onmessage = async (event) => {
     try {
@@ -340,29 +317,25 @@ function setupSseConnection() {
 }
 
 function formatMessageTime(time) {
-  if (!time) return ''
-  const d = new Date(time)
-  const now = new Date()
+  if (!time) return '';
+  const d = new Date(time);
+  const now = new Date();
 
-  const hhmm = `${d.getHours().toString().padStart(2, '0')}:${d
-      .getMinutes()
-      .toString()
-      .padStart(2, '0')}`
+  const hhmm = `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
 
-  if (d.toDateString() === now.toDateString()) return hhmm
+  const isToday = d.toDateString() === now.toDateString();
+  if (isToday) return hhmm;
 
-  const yesterday = new Date(now)
-  yesterday.setDate(now.getDate() - 1)
-  if (d.toDateString() === yesterday.toDateString())
-    return `昨天 ${hhmm}`
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (d.toDateString() === yesterday.toDateString()) return `昨天 ${hhmm}`;
 
-  const m = (d.getMonth() + 1).toString().padStart(2, '0')
-  const day = d.getDate().toString().padStart(2, '0')
+  const month = (d.getMonth() + 1).toString().padStart(2, '0');
+  const day = d.getDate().toString().padStart(2, '0');
 
-  if (d.getFullYear() === now.getFullYear())
-    return `${m}-${day} ${hhmm}`
+  if (d.getFullYear() === now.getFullYear()) return `${month}-${day} ${hhmm}`;
 
-  return `${d.getFullYear()}-${m}-${day} ${hhmm}`
+  return `${d.getFullYear()}-${month}-${day} ${hhmm}`;
 }
 
 async function scrollToBottom() {
@@ -394,6 +367,7 @@ async function fetchReceiverInfo(userId) {
 }
 
 </script>
+
 
 <style scoped>
 /* ================== 全局布局 ================== */
@@ -431,16 +405,13 @@ async function fetchReceiverInfo(userId) {
 .chat-header {
   height: 64px;
   padding: 0 20px;
+   padding-top: 20px;
   background-color: #ffffff;
   border-bottom: 1px solid #f0f0f0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   z-index: 10;
-}
-
-.chat-header.has-back-button-padding {
-  padding-top: 20px; /* 只有当有返回按钮时才增加顶部内边距 */
 }
 
 .header-info {
