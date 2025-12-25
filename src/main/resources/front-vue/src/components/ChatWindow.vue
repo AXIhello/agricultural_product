@@ -106,13 +106,6 @@ const receiverInfo = ref(null);//对方用户信息
 const authStore = useAuthStore()
 const { userInfo: currentUser, isLoggedIn, token } = storeToRefs(authStore)
 
-// ---------- state ----------
-const currentSession = ref(null)
-const messages = ref([])
-const newMessageContent = ref('')
-const isLoading = ref(true)
-const messageContainer = ref(null)
-
 // 定义 props
 const props = defineProps({
   receiverId: {
