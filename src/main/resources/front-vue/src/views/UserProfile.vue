@@ -16,18 +16,12 @@
         <button class="exit-btn" @click="exit()">退出登录</button>
       </div>
     </div>
-    <section
-        :style="{ marginLeft: ['farmer','buyer','expert','admin' ].includes(role) ? '220px' : '20px',
-                  width: ['farmer','buyer','expert','admin' ].includes(role) ? 'calc(100% - 240px)' : 'calc(100% - 40px)'}"
-        class="content"
-        v-if="role !== 'bank' "
-      >
+    <section class="content">
       <!-- 统一顶部导航 -->
-      <nav v-if="role === 'farmer' || role === 'buyer' || role === 'expert' || role === 'admin' "
-           :style="{ top: '65px'}"
+      <nav :style="{ top: '65px'}"
            class="main-nav">
-          <button v-if="role === 'farmer' || role === 'buyer'" @click="switchView('address')" :class="{ active: currentView === 'address' }">我的地址</button>
-          <button v-if="role === 'farmer' || role === 'buyer'" @click="switchView('myCoupon')" :class="{ active: currentView === 'myCoupon' }">我的优惠券</button>
+          <button @click="switchView('address')" :class="{ active: currentView === 'address' }">我的地址</button>
+          <button @click="switchView('myCoupon')" :class="{ active: currentView === 'myCoupon' }">我的优惠券</button>
           <button v-if="role === 'admin'" @click="switchView('coupon')" :class="{ active: currentView === 'coupon' }">优惠券管理</button>
           <button v-if="role === 'farmer'" @click="switchView('appointments')" :class="{ active: currentView === 'appointments' }">我的预约</button>
           <button v-if="role === 'farmer'" @click="switchView('autoReply')" :class="{ active: currentView === 'autoReply' }">自动回复设置</button>
@@ -142,11 +136,20 @@
               </div>
             </div>
 
-            <p v-if="!addresses.length" class="empty-state">暂无地址，请添加新的地址。</p>
+            <p v-if="!addresses.length" class="empty-state">暂无地址。</p>
           </div>
 
           <!-- 新增地址按钮 -->
-          <button class="add-btn" @click="showAddAddressPopup = true">＋ 新增地址</button>
+          <div
+              class="add-application-card"
+              @click="showAddAddressPopup = true"
+          >
+            <div class="add-content">
+              <span class="plus">＋</span>
+              <p>新建地址</p>
+            </div>
+          </div>
+
 
           <!-- ========== 新增地址弹窗 ========== -->
           <!-- 新增地址弹窗 -->
@@ -305,7 +308,17 @@
           </div>
 
           <!-- 新增规则按钮 -->
-          <button class="add-btn" @click="openAdd">＋ 新增规则</button>
+          <div
+              v-if="role === 'farmer'"
+              class="add-application-card"
+              @click="openAdd()"
+          >
+            <div class="add-content">
+              <span class="plus">＋</span>
+              <p>新建规则</p>
+            </div>
+          </div>
+
 
           <!-- ================= 弹窗（新增/编辑） ================= -->
           <div v-if="showPopup" class="modal-overlay">
@@ -435,35 +448,54 @@
 
           <!-- 知识列表视图 -->
           <div v-if="!isEditingKnowledge">
+
+            <!-- 空状态 -->
             <div v-if="!knowledgeList.length" class="empty">
               暂无已发布的知识~
             </div>
 
-            <div
-                class="knowledge-card"
-                v-for="item in knowledgeList"
-                :key="item.knowledgeId"
-            >
-              <div class="knowledge-content">
-                <h4>{{ item.title }}</h4>
-                <p class="summary">{{ summary(item.content) }}</p>
+            <!-- 知识卡片列表 -->
+            <div class="knowledge-card-list">
 
-                <div class="bottom">
-                  <span class="time">{{ formatTime(item.createTime) }}</span>
-                  <div class="action-buttons">
-                    <button @click="editKnowledge(item)">编辑</button>
-                    <button class="delete-btn" @click="deleteKnowledge(item.knowledgeId)">删除</button>
+              <!-- 已有知识 -->
+              <div
+                  class="knowledge-card"
+                  v-for="item in knowledgeList"
+                  :key="item.knowledgeId"
+              >
+                <div class="knowledge-content">
+                  <h4>{{ item.title }}</h4>
+                  <p class="summary">{{ summary(item.content) }}</p>
+
+                  <div class="bottom">
+                    <span class="time">{{ formatTime(item.createTime) }}</span>
                   </div>
+                </div>
+
+                <!-- 右侧操作按钮 -->
+                <div class="knowledge-actions">
+                  <button @click="editKnowledge(item)">编辑</button>
+                  <button
+                      class="delete-btn"
+                      @click="deleteKnowledge(item.knowledgeId)"
+                  >
+                    删除
+                  </button>
+                </div>
+              </div>
+
+              <!-- 新增知识卡片 -->
+              <div
+                  class="knowledge-card add-card"
+                  @click="openKnowledgeEditor"
+              >
+                <div class="add-content">
+                  <span class="plus">＋</span>
+                  <p>发布新知识</p>
                 </div>
               </div>
             </div>
-
-            <!-- 发布新知识按钮 -->
-            <div class="new-knowledge-btn">
-              <button @click="openKnowledgeEditor">发布新知识</button>
-            </div>
           </div>
-
 
           <!-- 创建/编辑知识表单 -->
           <div v-if="isEditingKnowledge" class="knowledge-form">
@@ -476,7 +508,11 @@
 
             <div class="form-group">
               <label>内容：</label>
-              <textarea v-model="knowledgeForm.content" rows="6" placeholder="请输入内容"></textarea>
+              <textarea
+                  v-model="knowledgeForm.content"
+                  rows="6"
+                  placeholder="请输入内容"
+              ></textarea>
             </div>
 
             <div class="form-actions">
@@ -493,10 +529,7 @@
 
         <!-- ======================== 专家：我的日程 ======================== -->
         <div v-if="currentView === 'schedule'" class="schedule-view">
-          <h3>查看日程安排</h3>
-
           <div class="date-selector">
-            <label>选择日期：</label>
             <input type="date" v-model="selectedDate" @change="fetchDailySchedule" />
           </div>
 
@@ -1631,13 +1664,8 @@ function formatTime(time) {
 }
 
 .delete-btn {
-  background: #ff4d4f;
+  background-color: #e74c3c;
   color: white;
-}
-
-.new-knowledge-btn {
-  text-align: center;
-  margin-top: 16px;
 }
 
 .knowledge-form {
@@ -1726,12 +1754,71 @@ function formatTime(time) {
 
 /* 删除按钮（柔和红色） */
 .rule-delete-btn {
-  background-color: #e57373;   /* 柔和红色，比纯红更好看 */
+  background-color: #e74c3c;
 }
 .rule-delete-btn:hover {
   background-color: #d32f2f;   /* 稍深一点 */
 }
 
 /* 弹窗通用样式复用之前的即可，确保 .modal-overlay, .modal-container 等类名存在 */
+
+.knowledge-card {
+  position: relative;
+  padding-right: 150px; /* 给右侧按钮留空间 */
+  margin-bottom: 16px;
+}
+
+.knowledge-actions {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
+
+  display: flex;
+  gap: 1rem;
+}
+
+/* 按钮风格完全参考 profile-actions / form-actions */
+.knowledge-actions button {
+  padding: 8px 16px;
+  border-radius: 5px;
+  border: 1px solid #2D7D4F;
+  background-color: #2D7D4F;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.knowledge-actions button:hover {
+  background-color: #256842;
+}
+
+.knowledge-actions .delete-btn {
+  background-color: #c82333;
+  border-color: #bd2130;
+}
+
+.knowledge-actions .delete-btn:hover {
+  background-color: #a71d2a;
+}
+
+.profile-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* 右侧按钮整体靠右 */
+.profile-actions {
+  margin-left: 24px;
+  flex-shrink: 0;
+}
+
+/* 列表布局 */
+.knowledge-card-list {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
 
 </style>

@@ -22,7 +22,6 @@
 
         <!-- ============ 1. 专家推荐 ============ -->
         <div v-if="currentView === 'experts'" class="expert-overview">
-          <h3>专家推荐</h3>
           <ExpertOverview />
         </div>
 
@@ -30,23 +29,39 @@
         <div v-if="currentView === 'knowledge'" class="expert-qa">
           <h3>专业知识</h3>
 
-          <!-- 知识列表 -->
-          <ExpertKnowledge ref="knowledgeRef"/>
+          <div class="knowledge-card-list">
+            <!-- 知识列表 -->
+            <ExpertKnowledge
+                ref="knowledgeRef"
+                @edit="handleEditKnowledge"
+                @delete="handleDeleteKnowledge"
+            />
 
-          <!-- 发布知识按钮（专家可见） -->
-          <div v-if="role === 'expert'" style="margin-top: 12px;">
-            <button class="publish-btn" @click="showDetail = true">
-              发布新知识
-            </button>
+            <!-- 新增知识卡片（专家可见） -->
+            <div
+                v-if="role === 'expert'"
+                class="qa-item add-card"
+                @click="showDetail = true"
+            >
+              <div class="add-content">
+                <span class="plus">＋</span>
+                <p>发布新知识</p>
+              </div>
+            </div>
+
           </div>
 
           <!-- 发布新知识弹窗 -->
           <div v-if="showDetail" class="modal-overlay">
             <div class="modal-container">
               <!-- 右上角关闭按钮 -->
-              <button class="close-btn" @click="showDetail = false">×</button>
+              <button class="close-btn" @click="showDetail = false; resetKnowledge()">×</button>
 
-              <h2 class="modal-title">发布新知识</h2>
+
+              <h2 class="modal-title">
+                {{ isEdit ? '编辑知识' : '发布知识' }}
+              </h2>
+
 
               <div class="modal-body">
                 <form @submit.prevent="publishKnowledge" class="modal-form">
@@ -65,7 +80,10 @@
               <!-- 底部按钮 -->
               <div class="modal-footer">
                 <button class="cancel-btn" @click="showDetail = false">取消</button>
-                <button class="save-btn" @click="publishKnowledge">提交</button>
+                <button class="save-btn" @click="submitKnowledge">
+                  {{ isEdit ? '保存修改' : '提交' }}
+                </button>
+
               </div>
             </div>
           </div>
@@ -475,59 +493,84 @@ const acceptAnswer = async (questionId, answerId) => {
 };
 
 // ---------------- 知识模块 ----------------
-// const knowledgeList = ref([]);
-// const knowledgePageNum = ref(1);
-// const knowledgePageSize = ref(10);
-// const knowledgeTotalPages = ref(1);
-
-
-// // 获取知识列表
-// const fetchKnowledgeList = async () => {
-//   try {
-//     const res = await axios.get(
-//         `/knowledge/list?pageNum=${knowledgePageNum.value}&pageSize=${knowledgePageSize.value}`
-//     );
-//     // 按时间降序排序，假设 createTime 是 ISO 字符串
-//     res.data.records.sort((a, b) => b.knowledgeId - a.knowledgeId);
-//     console.log("知识：",res.data.records);
-//
-//     knowledgeList.value = res.data.records || [];
-//     knowledgeTotalPages.value = res.data.totalPages || 1;
-//     console.log('知识列表已更新',knowledgeList.value);
-//   } catch (err) {
-//     console.error(err);
-//   }
-// };
 
 const knowledge = ref({
+  knowledgeId: null,
   title: '',
   content: ''
 })
-const showDetail = ref(false)
 
-const knowledgeRef = ref(null);
+const showDetail = ref(false)
+const isEdit = ref(false)
+
+const knowledgeRef = ref(null)
+
+
+const resetKnowledge = () => {
+  knowledge.value = {}
+};
 
 // 专家发布新知识
-const publishKnowledge = async () => {
+const submitKnowledge = async () => {
+  if (!knowledge.value.title || !knowledge.value.content) {
+    alert('标题和内容不能为空')
+    return
+  }
+
   try {
-    if (!knowledge.value.title || !knowledge.value.content) {
-      alert('标题和内容不能为空');
-      return;
+    if (isEdit.value) {
+      // 编辑
+      await axios.put(
+          `/knowledge/${knowledge.value.knowledgeId}`,
+          {
+            title: knowledge.value.title,
+            content: knowledge.value.content
+          }
+      )
+      alert('修改成功')
+    } else {
+      // 新增
+      await axios.post('/knowledge/publish', {
+        title: knowledge.value.title,
+        content: knowledge.value.content
+      })
+      alert('发布成功')
     }
-    await axios.post('/knowledge/publish', knowledge.value)
-    alert('知识发布成功！')
+
     showDetail.value = false
-    knowledge.value = {
-      title: '',
-      content: ''
-    }
-    knowledgeRef.value.fetchKnowledge();
+    resetKnowledge()
+    knowledgeRef.value.fetchKnowledge()
+
   } catch (err) {
     console.error(err)
-    alert('发布失败，请稍后重试')
+    alert('操作失败')
   }
 }
 
+const handleEditKnowledge = (item) => {
+  isEdit.value = true
+  showDetail.value = true
+
+  knowledge.value = {
+    knowledgeId: item.knowledgeId,
+    title: item.title,
+    content: item.content
+  }
+
+}
+
+const handleDeleteKnowledge = async (item) => {
+  if (!confirm('确定删除该知识吗？')) return
+
+  try {
+    await axios.delete(`/knowledge/${item.knowledgeId}`)
+    alert('删除成功')
+    knowledgeRef.value.fetchKnowledge()
+  } catch (err) {
+    console.error(err)
+    alert('删除失败')
+  }
+}
 // ---------------- 生命周期 ----------------
 onMounted(() => {
   if (route.query.view) {
@@ -549,12 +592,49 @@ onMounted(() => {
   width: 100%;
 }
 
-.knowledge-card {
-  border: 1px solid #ccc;
-  padding: 0.5rem;
-  margin-bottom: 0.5rem;
-  border-radius: 4px;
+.knowledge-card-list {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
 }
+
+/* 新增卡片 */
+.add-card {
+  margin: 18px;
+  border: 2px dashed #cfd8d3;
+  background-color: #fafafa;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.add-card:hover {
+  border-color: #2D7D4F;
+  background-color: #f3faf6;
+}
+
+/* 中心内容 */
+.add-content {
+  height: 100%;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #2D7D4F;
+}
+
+.add-content .plus {
+  font-size: 36px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.add-content p {
+  margin-top: 6px;
+  font-size: 14px;
+}
+
+
+
 
 .knowledge-actions button {
   margin-right: 0.5rem;

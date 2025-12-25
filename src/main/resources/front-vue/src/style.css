@@ -209,13 +209,6 @@ button {
     position: relative;
 }
 
-/* ================= 弹窗标题 ================= */
-.modal-title {
-    font-size: 20px;
-    font-weight: 600;
-    margin-bottom: 15px;
-    text-align: center;
-}
 
 /* ================= 右上角关闭按钮 ================= */
 .close-btn {
@@ -240,7 +233,9 @@ button {
     font-size: 20px;
     margin-bottom: 15px;
     color: #2a7f2a;
+    font-weight: 600;
 }
+
 
 /* 表单部分 */
 .modal-body {
@@ -382,4 +377,39 @@ button {
     display: flex;
     gap: 10px;   /* 按钮之间的间距 */
     justify-content: center; /* 可选：让它们在格子里居中 */
+}
+
+
+.add-application-card {
+    margin-top: 16px;
+    border: 2px dashed #cfd8d3;
+    background-color: #fafafa;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    border-radius: 6px;
+}
+
+.add-application-card:hover {
+    border-color: #2D7D4F;
+    background-color: #f3faf6;
+}
+
+.add-content {
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #2D7D4F;
+}
+
+.add-content .plus {
+    font-size: 36px;
+    font-weight: 300;
+    line-height: 1;
+}
+
+.add-content p {
+    margin-top: 6px;
+    font-size: 14px;
 }

@@ -9,8 +9,41 @@
         <button @click="switchView('predict')" :class="{ active: currentView === 'predict' }">行情大厅</button>
         <button @click="switchView('demands')" :class="{ active: currentView === 'demands' }">求购需求</button>
         <button v-if="role === 'farmer'" @click="switchView('myProducts')" :class="{ active: currentView === 'myProducts' }">我的产品</button>
-        <button v-if="role === 'buyer'||'farmer'" @click="switchView('cart')" :class="{ active: currentView === 'cart' }">我的购物车</button>
-        <button v-if="role === 'buyer'||'farmer'" @click="switchView('myOrders')" :class="{ active: currentView === 'myOrders' }">我的订单</button>
+        <button @click="switchView('cart')" :class="{ active: currentView === 'cart' }">我的购物车</button>
+        <button v-if="role !== 'farmer'" @click="switchView('myOrders')" :class="{ active: currentView === 'myOrders' }">我的订单</button>
+        <!-- 我的订单（父按钮） -->
+        <button
+            v-if="role === 'farmer'"
+            class="nav-btn parent-nav"
+            @click="toggleMyOrders"
+            :class="{ active: currentView === 'myOrders' }"
+        >
+          我的订单
+          <span class="arrow" :class="{ open: showOrderSubNav }">▶</span>
+        </button>
+
+        <!-- 子导航 -->
+        <div
+            v-if="role === 'farmer' && showOrderSubNav"
+            class="order-sub-nav"
+        >
+          <button
+              class="sub-btn"
+              @click="currentOrderView = 'buyer'"
+              :class="{ active: currentOrderView === 'buyer' }"
+          >
+            我买到的
+          </button>
+
+          <button
+              class="sub-btn"
+              @click="currentOrderView = 'farmer'"
+              :class="{ active: currentOrderView === 'farmer' }"
+          >
+            我卖出的
+          </button>
+        </div>
+
       </nav>
 
       <!-- 内容区域 -->
@@ -399,8 +432,8 @@
           </div>
         </div>
 
-        <!-- 购物车（仅买家） -->
-        <div v-if="role === 'buyer' && currentView === 'cart'">
+        <!-- 购物车 -->
+        <div v-if="currentView === 'cart'">
           <p v-if="!cartItems.length" class="empty-state">购物车暂无商品~</p>
           <div v-if="cartItems.length" class="cart-list">
             <div v-for="item in cartItems" :key="item.productId" class="cart-card">
@@ -426,84 +459,132 @@
         <div v-if="currentView === 'demands'">
           <div class="request-list">
             <div
-              v-for="request in demands"
-              :key="request.demandId"
-              class="request-card"
+                v-for="request in demands"
+                :key="request.demandId"
+                class="request-card"
             >
-              <div class="request-header">
-                <div class="request-user">用户 {{ request.buyerId }}</div>
-                <div class="request-product">{{ request.productNameDesired }}</div>
+              <!-- 左侧商品名 -->
+              <div class="request-main">
+                {{ request.productNameDesired }}
               </div>
 
-              <div class="request-quantity">
-                需求量：{{ request.quantityDesired }} {{ request.unitDesired }}
-              </div>
+              <!-- 竖线 -->
+              <div class="request-divider"></div>
 
-              <div class="request-details">
-                说明：{{ request.details }}
+              <!-- 右侧详细信息 -->
+              <div class="request-info">
+                <div class="info-row">
+                  <span class="label">需求量：</span>
+                  {{ request.quantityDesired }} {{ request.unitDesired }}
+                </div>
+
+                <div class="info-row">
+                  <span class="label">发布用户：</span>
+                  用户 {{ request.buyerId }}
+                </div>
+
+                <div class="info-row" v-if="request.details">
+                  <span class="label">说明：</span>
+                  {{ request.details }}
+                </div>
               </div>
             </div>
 
+
             <p v-if="!demands.length" class="empty-state">暂无求购需求</p>
 
-            <button
-              v-if="role !== 'farmer'"
-              class="create-btn"
-              @click="showCreateDemand = true"
+            <div
+                v-if="role !== 'farmer'"
+                class="add-application-card"
+                @click="showCreateDemand = true"
             >
-              + 发布求购需求
-            </button>
+              <div class="add-content">
+                <span class="plus">＋</span>
+                <p>发布求购需求</p>
+              </div>
+            </div>
           </div>
 
 
-
           <!-- 弹窗：发布求购需求 -->
-          <div v-if="showCreateDemand" class="modal-overlay" @click.self="showCreateDemand = false">
+          <div v-if="showCreateDemand" class="modal-overlay">
             <div class="modal-container">
-              <h3>发布求购需求</h3>
+              <!-- 右上角关闭按钮 -->
+              <button class="close-btn" @click="showCreateDemand = false">×</button>
 
-              <form @submit.prevent="handleAddDemand" class="modal-form">
+              <h2 class="modal-title">发布求购需求</h2>
 
-                <div class="modal-form-group">
-                  <label>需求产品名称：</label>
-                  <input v-model="newDemand.productNameDesired" required />
+              <div class="modal-body">
+                <!-- 产品名称 -->
+                <div class="modal-form-group row-layout">
+                  <label>需求产品：</label>
+                  <input
+                      v-model="newDemand.productNameDesired"
+                      type="text"
+                      placeholder="请输入需求产品名称"
+                      required
+                  />
                 </div>
 
-                <div class="modal-form-group">
-                  <label>需求数量 (Kg)：</label>
-                  <input type="number" v-model.number="newDemand.quantityDesired" required />
+                <!-- 数量 -->
+                <div class="modal-form-group row-layout">
+                  <label>需求数量：</label>
+                  <input
+                      v-model.number="newDemand.quantityDesired"
+                      type="number"
+                      placeholder="单位：Kg"
+                      min="1"
+                      required
+                  />
                 </div>
 
-                <div class="modal-form-group">
-                  <label>期望最高单价 (元/Kg)：</label>
-                  <input type="number" v-model.number="newDemand.maxPricePerUnit" required />
+                <!-- 最高单价 -->
+                <div class="modal-form-group row-layout">
+                  <label>最高单价：</label>
+                  <input
+                      v-model.number="newDemand.maxPricePerUnit"
+                      type="number"
+                      placeholder="元 / Kg"
+                      min="0"
+                      step="0.01"
+                      required
+                  />
                 </div>
 
-                <div class="modal-form-group">
-                  <label>期望交货日期：</label>
-                  <input type="date" v-model="newDemand.deliveryDateDesired" required />
+                <!-- 期望交货日期 -->
+                <div class="modal-form-group row-layout">
+                  <label>交货日期：</label>
+                  <input
+                      v-model="newDemand.deliveryDateDesired"
+                      type="date"
+                      required
+                  />
                 </div>
 
+                <!-- 补充说明 -->
                 <div class="modal-form-group">
                   <label>补充说明：</label>
-                  <textarea v-model="newDemand.details"></textarea>
+                  <textarea
+                      v-model="newDemand.details"
+                      placeholder="可填写对品质、包装、运输等要求（选填）"
+                      rows="3"
+                  ></textarea>
                 </div>
+              </div>
 
-                <div class="actions-btn">
-                  <button type="button" class="cancel-btn" @click="showCreateDemand = false">取消</button>
-                  <button type="submit" class="submit-btn">确认发布</button>
-                </div>
-
-              </form>
+              <!-- 底部按钮 -->
+              <div class="modal-footer">
+                <button class="cancel-btn" @click="showCreateDemand = false">取消</button>
+                <button class="save-btn" @click="handleAddDemand">确认发布</button>
+              </div>
             </div>
           </div>
 
         </div>
 
         <!-- 我的订单（农户 + 买家） -->
-        <div v-if="(role === 'buyer'|| role === 'farmer')&& currentView === 'myOrders'">
-          <!-- 直接使用组件，无需传参，组件内部会自己从 Store 获取用户ID -->
-          <MyOrders />
+        <div v-if=" currentView === 'myOrders'">
+          <MyOrders :role="currentOrderView" />
         </div>
 
 
@@ -532,6 +613,9 @@ import defaultImg from '@/assets/img.png'
 const authStore = useAuthStore()
 const {userInfo, isLoggedIn, role} = storeToRefs(authStore)
 const currentView = ref('products')
+const showOrderSubNav = ref(false);
+const currentOrderView = ref('buyer');
+
 
 function switchView(view) { currentView.value = view }
 
@@ -1400,6 +1484,19 @@ const createOrder = () => {
 
 };
 
+const toggleMyOrders = () => {
+  // 切换展开状态
+  showOrderSubNav.value = !showOrderSubNav.value;
+
+  // 如果展开，设置当前视图为 myOrders
+  if(showOrderSubNav.value) {
+    currentView.value = 'myOrders';
+  } else {
+    currentView.value = '';
+  }
+}
+
+
 //=============搜索商品相关============
 const searchKeyword = ref('') // 搜索关键词
 const isSearching = ref(false) // 是否处于搜索状态
@@ -1472,15 +1569,73 @@ async function resetSearch() {
 </script>
 
 <style scoped>
+.nav-btn {
+  width: 100%;
+  text-align: left;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+}
 
+.parent-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-/* 左侧分类栏
-.category-sidebar {
-  width: 100px;
-  background-color: #f8f8f8;
-  border-radius: 8px;
+.arrow {
+  font-size: 12px;
+  transition: transform 0.2s ease;
+}
+
+.arrow.open {
+  transform: rotate(90deg);
+}
+
+.order-sub-nav {
+  margin-left: 12px;
+  padding-left: 12px;
+  border-left: 2px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  /* 展开动画 */
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sub-btn {
+  padding: 6px 14px;
   font-size: 13px;
-} */
+  background: #f9fafb;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.sub-btn:hover {
+  background: #f3f4f6;
+}
+
+.sub-btn.active {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
 
 .cat-title {
   font-weight: bold;
@@ -1737,82 +1892,55 @@ async function resetSearch() {
   display: flex;
   flex-direction: column;
   gap: 14px; /* 更舒适的卡片间距 */
-  max-width: 800px;
   margin: 0 auto;
 }
-
 .request-card {
-  width: 100%;
-  padding: 16px 20px;
-  border-radius: 14px;
-  background: #ffffff;
-  border: 1px solid #eef0f3;
+  display: flex;
+  align-items: stretch;
+  background: #fff;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
 
+/* 左侧大号商品名 */
+.request-main {
+  min-width: 140px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #246a3d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 中间竖线 */
+.request-divider {
+  width: 1px;
+  background-color: #e0e0e0;
+  margin: 0 16px;
+}
+
+/* 右侧信息区 */
+.request-info {
+  flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 6px;
-
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  font-size: 14px;
+  color: #555;
 }
 
-.request-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+.info-row {
+  line-height: 1.5;
 }
 
-/* 第一行：用户 + 商品标题 */
-.request-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.info-row .label {
+  color: #888;
+  margin-right: 4px;
 }
-
-/* 用户头像样式（如果你未来要加头像也兼容） */
-.request-user {
-  font-weight: 600;
-  font-size: 1rem;
-  color: #333;
-}
-
-/* 商品名突出显示 */
-.request-product {
-  font-weight: bold;
-  color: #2a7bf6;
-  font-size: 1.05rem;
-}
-
-/* 第二行：需求量 */
-.request-quantity {
-  font-size: 0.95rem;
-  color: #333;
-  margin-top: 4px;
-}
-
-/* 需求描述 */
-.request-details {
-  font-size: 0.9rem;
-  color: #666;
-  line-height: 1.4;
-}
-
-/* 发布按钮 */
-.create-btn {
-  margin: 20px auto 0;
-  padding: 10px 24px;
-  border-radius: 20px;
-  background: #2a7bf6;
-  color: #fff;
-  font-size: 1rem;
-  border: none;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.create-btn:hover {
-  background: #1f63c5;
-}
-
 
 .cart-view {
   padding: 20px;

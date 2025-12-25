@@ -13,21 +13,28 @@
         :key="item.knowledgeId"
         @click="openDetail(item)"
     >
-      <h4 class="qa-question">
-        {{ item.title }}
-      </h4>
+      <h4 class="qa-question">{{ item.title }}</h4>
 
-      <p class="qa-answer">
-        {{ item.summary }}
-      </p>
+      <p class="qa-answer">{{ item.summary }}</p>
 
-      <!-- 卡片底部专家信息 -->
+      <!-- 卡片底部信息 -->
       <div class="qa-footer">
         <span class="specialization">{{ item.specialization || '未标注领域' }}</span>
         <span class="userName">作者: {{ item.userName || '未知' }}</span>
-        <span class="time">更新时间: {{ formatTime(item.createTime) || '未知时间' }}</span>
+        <span class="time">发布时间: {{ formatTime(item.createTime) || '未知时间' }}</span>
+      </div>
+
+      <!-- 右侧操作按钮 -->
+      <div
+          v-if="role === 'expert'"
+          class="qa-actions"
+          @click.stop
+      >
+        <button class="edit-btn" @click="emitEdit(item)">编辑</button>
+        <button class="delete-btn" @click="emitDelete(item)">删除</button>
       </div>
     </div>
+
 
     <!-- ================= 弹窗（知识详情） ================= -->
     <teleport to="body">
@@ -68,6 +75,21 @@
 <script setup>
 import { ref, onMounted, defineExpose } from 'vue';
 import axios from '@/utils/axios';
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '@/stores/authStore';
+const authStore = useAuthStore();
+const { role } = storeToRefs(authStore);
+
+const emit = defineEmits(['edit', 'delete'])
+
+const emitEdit = (item) => {
+  emit('edit', item)
+}
+
+const emitDelete = (item) => {
+  emit('delete', item)
+}
+
 
 const knowledgeList = ref([]);
 const loading = ref(false);
@@ -318,5 +340,49 @@ onMounted(fetchKnowledge);
   font-weight: 600;
   color: #2D7D4F;
 }
+
+.qa-item {
+  position: relative;
+  padding-right: 140px; /* 给右侧按钮留空间 */
+}
+
+/* 右侧按钮容器 */
+.qa-actions {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
+
+  display: flex;
+  gap: 1rem;
+}
+
+/* 按钮通用样式（复用 profile-actions） */
+.qa-actions button {
+  padding: 8px 16px;
+  border-radius: 5px;
+  border: 1px solid #2D7D4F;
+  background-color: #2D7D4F;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-size: 13px;
+}
+
+/* hover */
+.qa-actions button:hover {
+  background-color: #256842;
+}
+
+/* 删除按钮 */
+.qa-actions .delete-btn {
+  background-color: #c82333;
+  border-color: #bd2130;
+}
+
+.qa-actions .delete-btn:hover {
+  background-color: #a71d2a;
+}
+
 
 </style>

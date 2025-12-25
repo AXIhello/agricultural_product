@@ -1,8 +1,5 @@
 <template>
   <div class="my-orders-container">
-<!--    <div class="page-header">-->
-<!--      <h2>我的订单</h2>-->
-<!--    </div>-->
 
     <div class="order-list">
       <div v-if="loading" class="loading-state">
@@ -15,7 +12,20 @@
       
       <!-- 订单卡片 -->
       <template v-else>
-        <div v-for="order in orders" :key="order.orderId" class="order-card">
+        <div class="status-filter">
+            <span
+                v-for="opt in computedStatusOptions"
+                :key="opt.value"
+                class="status-pill"
+                :class="{ active: statusFilter === opt.value }"
+                @click="statusFilter = opt.value"
+            >
+                  {{ opt.label }}
+            </span>
+        </div>
+
+
+        <div v-for="order in filteredOrders" :key="order.orderId" class="order-card">
           
           <!-- 1. 卡片头部：浅灰色背景，强调订单号和状态 -->
           <div class="card-header">
@@ -214,10 +224,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import axios from '../utils/axios' 
 import router from "@/router"
-import { useAuthStore } from '@/stores/authStore'
+import { useAuthStore} from '@/stores/authStore'
 import { storeToRefs } from 'pinia'
 import defaultImg from '@/assets/img.png'
 import {ElMessage} from "element-plus"; // 默认图片占位符
@@ -225,10 +235,56 @@ import {ElMessage} from "element-plus"; // 默认图片占位符
 // 获取全局状态
 const authStore = useAuthStore()
 // 必须获取 userInfo 以便拿到 userId 进行过滤
-const { role, isLoggedIn, userInfo } = storeToRefs(authStore)
+const { isLoggedIn, userInfo, role} = storeToRefs(authStore)
 
 const orders = ref([])
 const loading = ref(false)
+
+const props = defineProps({
+  role: { type: String, default: 'buyer' } // buyer = 我买到的, farmer = 我卖出的
+})
+
+const statusFilter = ref('all'); // all = 全部，其他如 'PENDING', 'PAID', ...
+const BUYER_STATUS_OPTIONS = [
+  { label: '全部', value: 'ALL' },
+  { label: '待支付', value: 'PENDING' },
+  { label: '待发货', value: 'PAID' },
+  { label: '待收货', value: 'SHIPPED' },
+  { label: '已完成', value: 'COMPLETED' },
+  { label: '售后中', value: 'AFTER_SALE' }
+]
+
+const FARMER_STATUS_OPTIONS = [
+  { label: '全部', value: 'ALL' },
+  { label: '待发货', value: 'PAID' },
+  { label: '已发货', value: 'SHIPPED' },
+  { label: '已完成', value: 'COMPLETED' },
+  { label: '退款处理', value: 'REFUND' }
+]
+
+const computedStatusOptions = computed(() => {
+  console.log('角色1：',role.value)
+  return role.value === 'buyer'
+      ? BUYER_STATUS_OPTIONS
+      : FARMER_STATUS_OPTIONS
+})
+
+
+
+const filteredOrders = computed(() => {
+  if(statusFilter.value === 'all') return orders.value;
+
+  return orders.value.filter(order => {
+    // 获取订单显示状态
+    const orderStatus = getComputedStatus(order).text;
+
+    // 买家/卖家状态映射成对应 value
+    const statusValue = Object.entries(STATUS_MAP).find(([k,v]) => v.text === orderStatus)?.[0];
+
+    return statusValue === statusFilter.value;
+  })
+})
+
 
 // 弹窗状态
 const showReviewModal = ref(false)
@@ -240,54 +296,44 @@ const reviewForm = ref({ rating: 5, content: '', isAnonymous: false })
 const refundReason = ref('')
 const rejectRefundReason = ref('')
 const showViewReviewModal = ref(false)
-const currentReviewDetail = ref(null) 
+const currentReviewDetail = ref(null)
 
-// 初始化加载
+
 onMounted(() => {
-  if (role.value) {
-    loadOrders()
-  }
+  loadOrders()
 })
 
 // 监听角色变化（防止刷新页面时Pinia未就绪）
-watch(role, (newRole) => {
-  if (newRole) loadOrders()
+watch(() => props.role, () => {
+  loadOrders()
 })
 
 // 加载订单核心逻辑
 const loadOrders = async () => {
+  console.log('订单开始加载')
+  console.log('角色2：',role.value)
   if (!isLoggedIn.value) return
   loading.value = true
   try {
-    let url = '/orders'; // 默认买家接口
-    const currentRole = role.value ? role.value.toLowerCase() : '';
-
-    if (currentRole === 'farmer') {
-      url = '/orders/seller';
-    }
+    let url = '/orders'
+    if(props.role === 'farmer') url = '/orders/seller'
 
     const res = await axios.get(url)
     let rawOrders = res.data || []
 
     // 农户过滤逻辑
-    if (currentRole === 'farmer' && userInfo.value?.userId) {
-      const myId = String(userInfo.value.userId);
-      
+    if(props.role === 'farmer' && userInfo.value?.userId){
+      console.log('已进入农夫过滤')
+      const myId = String(userInfo.value.userId)
       rawOrders.forEach(order => {
-        if (order.orderItems) {
-          order.orderItems = order.orderItems.filter(item => {         
-            return String(item.farmerId) === myId
-          });
+        if(order.orderItems) {
+          order.orderItems = order.orderItems.filter(item => item.farmerId === myId)
         }
-      });
-
-      // 再次过滤：如果一个订单过滤完 items 是空的，就不显示这个订单
-      rawOrders = rawOrders.filter(order => order.orderItems && order.orderItems.length > 0);
+      })
+      rawOrders = rawOrders.filter(order => order.orderItems && order.orderItems.length > 0)
     }
 
     //图片加载逻辑
-    // 遍历所有订单，再遍历所有订单项，去请求图片
-    // 使用 Promise.all 并发请求，提高速度
     await Promise.all(rawOrders.map(async (order) => {
       if (order.orderItems && order.orderItems.length > 0) {
         await Promise.all(order.orderItems.map(async (item) => {
@@ -316,6 +362,7 @@ const loadOrders = async () => {
     }));
 
     orders.value = rawOrders
+    console.log('订单:', orders.value)
     
   } catch (e) {
     console.error("加载订单失败", e)
@@ -540,7 +587,7 @@ const openViewReviewModal = async (itemId) => {
   margin: 0 auto;
   padding: 20px;
   /*  background-color: #f4f6f8; 整个页面的浅灰背景 */
-  min-height: 100vh;
+  flex: 1;
 }
 
 .page-header h2 {
@@ -924,4 +971,31 @@ const openViewReviewModal = async (itemId) => {
   background: #e0e4eb;
   color: #303133;
 }
+
+.status-filter {
+  display: flex;
+  gap: 10px;
+  padding: 8px 0;
+  flex-wrap: wrap;
+}
+
+.status-pill {
+  padding: 6px 14px;
+  border-radius: 16px;
+  background: #f3f3f3;
+  font-size: 13px;
+  cursor: pointer;
+  color: #555;
+  transition: all 0.2s;
+}
+
+.status-pill:hover {
+  background: #e6e6e6;
+}
+
+.status-pill.active {
+  background: #4caf50;
+  color: #fff;
+}
+
 </style>

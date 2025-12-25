@@ -60,18 +60,24 @@
           <p v-if="!products.length" class="empty-state">暂无融资产品</p>
 
           <!-- bank 才能创建产品 -->
-          <button
-              v-if="role === 'bank'"
-              class="create-btn"
-              @click="showCreateProduct = true"
-          >
-            + 发布新产品
-          </button>
+        <div
+            v-if="role === 'bank'"
+            class="add-application-card"
+            @click="showCreateProduct = true"
+        >
+          <div class="add-content">
+            <span class="plus">＋</span>
+            <p>发布新产品</p>
+          </div>
+        </div>
+
 
         <!-- 弹窗：银行发布新产品 -->
         <div v-if="showCreateProduct" class="modal-overlay" @click.self="showCreateProduct = false">
           <div class="model-container">
-            <h3>发布新产品</h3>
+            <div class="modal-title-div">
+              <h3 class="modal-title">发布新产品</h3>
+            </div>
 
             <form @submit.prevent="submitNewProduct" class="modal-form">
 
@@ -119,7 +125,6 @@
           <div class="model-container product-detail-modal">
             <div class="modal-title-div">
               <h3 class="modal-title">产品详情</h3>
-<!--              <button @click="closeProductDetail" class="modal-close-btn">关闭</button>-->
             </div>
 
 
@@ -244,45 +249,77 @@
           </span>
         </div>
 
-        <div class="view-header" style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
-          <!-- farmer 可以发起申请 -->
-        <div class="bottom-action-bar">
-          <button
-              v-if="role === 'farmer'"
-              class="create-btn"
-              @click="showCreateApplication = true"
-          >
-            + 发起申请
-          </button>
-        </div>
-        </div>
+        <p v-if="!applications.length" class="empty-state">暂无申请</p>
 
-        <p v-if="!applications.length" class="empty-state">暂无申请</p>   
 
-        
+        <!-- 新增融资申请卡片（仅 farmer） -->
+        <div
+            v-if="role === 'farmer'"
+            class="add-application-card"
+            @click="showCreateApplication = true"
+        >
+          <div class="add-content">
+            <span class="plus">＋</span>
+            <p>发起融资申请</p>
+          </div>
+        </div>
 
         <!-- 弹窗：农户新建申请 -->
-        <div v-if="showCreateApplication" class="modal-overlay" @click.self="showCreateApplication = false">
+        <div
+            v-if="showCreateApplication"
+            class="modal-overlay"
+            @click.self="showCreateApplication = false"
+        >
           <div class="modal-container">
-            <h3>发起融资申请</h3>
-            <form @submit.prevent="submitNewApplication" class="modal-form">
-              <div class="form-row">
-                <label>金额（元）：</label>
-                <input type="number" v-model="newApp.amount" required />
+
+            <!-- 标题 -->
+            <h2 class="modal-title">发起融资申请</h2>
+
+            <!-- Body（可滚动） -->
+            <div class="modal-body">
+              <div class="modal-form-group">
+                <label>金额（元）</label>
+                <input
+                    type="number"
+                    v-model="newApp.amount"
+                    placeholder="请输入融资金额"
+                    required
+                />
               </div>
-              <div class="form-row">
-                <label>用途：</label>
-                <input v-model="newApp.purpose" required />
+
+              <div class="modal-form-group">
+                <label>用途</label>
+                <input
+                    v-model="newApp.purpose"
+                    placeholder="请输入资金用途"
+                    required
+                />
               </div>
-              <div class="form-row">
-                <label>期限（月）：</label>
-                <input type="number" v-model="newApp.term" required />
+
+              <div class="modal-form-group">
+                <label>期限（月）</label>
+                <input
+                    type="number"
+                    v-model="newApp.term"
+                    placeholder="请输入期限"
+                    required
+                />
               </div>
-              <div class="form-actions">
-                <button class="submit-btn">提交</button>
-                <button type="button" class="cancel-btn" @click="showCreateApplication = false">取消</button>
-              </div>
-            </form>
+            </div>
+
+            <!-- 底部按钮 -->
+            <div class="modal-footer">
+              <button class="modal-btn confirm" @click="submitNewApplication">
+                提交
+              </button>
+              <button
+                  class="modal-btn cancel"
+                  @click="showCreateApplication = false"
+              >
+                取消
+              </button>
+            </div>
+
           </div>
         </div>
 
@@ -1423,6 +1460,7 @@ watch(currentView, val => {
   border-radius: 8px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
+
 
 /* ================== 融资申请表格 ================== */
 /* 列: [ID, 角色, 发起人, 金额, 期限, 状态, 操作] */

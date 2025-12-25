@@ -92,9 +92,6 @@ public class OrderController {
      */
     @GetMapping
     public ResponseEntity<List<OrderDTO>> getUserOrders(HttpServletRequest request) {
-        // **注意：我们暂时去掉了分页参数，因为 Mapper 里的查询不是分页的**
-        // @RequestParam(defaultValue = "1") Integer pageNum,
-        // @RequestParam(defaultValue = "10") Integer pageSize
         
         Long userId = getUserIdFromToken(request);
         
