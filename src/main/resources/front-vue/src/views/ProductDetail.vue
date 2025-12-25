@@ -1,5 +1,13 @@
 <template>
   <div class="product-detail-page">
+    <button v-if="props.showBackButton" @click="goBack" class="back-button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        返回
+    </button>
+
     <!-- 加载中 -->
     <div v-if="loading" class="loading-state">
       <p>正在努力加载商品信息...</p>
@@ -163,6 +171,13 @@ const currentSpec = ref({})      // 当前选中的规格
 const quantity = ref(1)
 const loading = ref(true)
 const isAddingToCart = ref(false)
+
+const props = defineProps({
+  showBackButton: { 
+    type: Boolean,
+    default: true // 默认显示返回按钮
+  }
+});
 
 //打开农户详细信息弹窗
 const openFarmerDetail = () => {
@@ -355,6 +370,10 @@ onMounted(() => {
   loadProductDetail()
   loadReviews()
 })
+
+function goBack() {
+  router.back();
+}
 </script>
 
 <style scoped>
@@ -409,10 +428,6 @@ onMounted(() => {
   background: #ffffff;
   width: 50%;            /* 占一半宽度 */
   max-width: 600px;      /* 限制最大宽度，防止溢出 */
-  height:calc(100vh - 40px);
-  position: fixed;
-  right: 60px;
-  top: 40px;
   box-sizing: border-box;
 
   display: flex;
@@ -689,5 +704,34 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+
+/* ================== 返回按钮样式 ================== */
+.back-button {
+  position: absolute; /* <--- 绝对定位 */
+  top: 15px; /* 距离顶部 */
+  left: 20px; /* 距离左侧 */
+  z-index: 100; /* 确保在最上层 */
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  color: #2D7D4F; /* 主题绿色 */
+  font-size: 16px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 5px;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.back-button:hover {
+  background-color: #e6f4ea; /* 浅绿色背景 */
+  color: #246640;
+}
+
+.back-button svg {
+  stroke-width: 2.5;
 }
 </style>

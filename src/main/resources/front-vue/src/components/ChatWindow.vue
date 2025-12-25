@@ -2,15 +2,23 @@
   <div class="chat-wrapper">
     <div class="chat-container">
 
+      <button v-if="props.showBackButton" @click="goBack" class="back-button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        返回
+      </button>
+
       <!-- 头部 -->
-      <div class="chat-header">
-<!--        <button @click="goBack()" class="icon-btn back-btn" title="返回">-->
-<!--          <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">-->
-<!--            <path d="M15 18l-6-6 6-6"/>-->
-<!--          </svg>-->
-<!--        </button>-->
+      <div class="chat-header" :class="headerPaddingClass">
         <div class="header-info">
-          <h3>用户 {{ receiverId }}</h3>
+          <h3>
+            {{ receiverInfo?.name || `用户 ${internalReceiverId}` }}
+            <span v-if="formattedReceiverRole" class="receiver-role">
+              ({{ formattedReceiverRole }}) 
+            </span>
+          </h3>
         </div>
       </div>
 
@@ -77,27 +85,22 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import axios from '../utils/axios.js'
-import { useAuthStore } from '@/stores/authStore.js'
-import { storeToRefs } from 'pinia'
-import router from '@/router/index.js'
+import { ref, onMounted, onUnmounted, nextTick, watch, computed } from 'vue';
+import { useRoute } from 'vue-router';
+import axios from '../utils/axios.js';
+import { useAuthStore } from '@/stores/authStore.js';
+import { storeToRefs } from 'pinia';
+import router from "@/router/index.js";
 
-// ---------- props ----------
-const props = defineProps({
-  receiverId: {
-    type: Number,
-    required: true
-  },
-  currentRole: {
-    type: String,
-    required: true
-  },
-  peerRole: {
-    type: String,
-    required: true
-  }
-})
+// --- Reactive State ---
+const route = useRoute();
+const internalReceiverId = ref(null);
+const currentSession = ref(null);
+const messages = ref([]);
+const newMessageContent = ref('');
+const isLoading = ref(true);
+const messageContainer = ref(null);
+const receiverInfo = ref(null);//对方用户信息
 
 // ---------- store ----------
 const authStore = useAuthStore()
@@ -110,40 +113,130 @@ const newMessageContent = ref('')
 const isLoading = ref(true)
 const messageContainer = ref(null)
 
-let eventSource = null
+// 定义 props
+const props = defineProps({
+  receiverId: {
+    type: Number,
+    default: null // 默认值为 null
+  },
+  showBackButton:{
+    type : Boolean,
+    default: true
+  }
+});
 
-// ---------- lifecycle ----------
-onMounted(() => {
+//调整头部样式（有无返回按钮
+const headerPaddingClass = computed(() => {
+  return props.showBackButton ? 'has-back-button-padding' : '';
+});
+
+// 优先使用 prop 传入的 receiverId，如果 prop 为空，则尝试从路由参数获取
+const getActualReceiverId = () => {
+  if (props.receiverId !== null && props.receiverId !== undefined) {
+    return props.receiverId;
+  }
+  const idFromRoute = parseInt(route.params.receiverId, 10);
+  return !isNaN(idFromRoute) ? idFromRoute : null;
+};
+
+//格式化角色名称
+const formattedReceiverRole = computed(() => {
+  if (!receiverInfo.value?.role) {
+    return ''; // 如果没有角色信息，返回空字符串
+  }
+  switch (receiverInfo.value.role) {
+    case 'buyer':   
+      return '普通用户';
+    case 'expert':
+      return '专家';
+    case 'farmer':
+      return '农户';
+    default:
+      return receiverInfo.value.role; 
+  }
+});
+
+// --- Lifecycle ---
+onMounted(async () => {
   if (!isLoggedIn.value) {
     alert('请先登录后再进行聊天！')
     router.push('/login')
     return
   }
 
-  console.log(
-      'ChatWindow mount:',
-      'receiverId=', props.receiverId,
-      'currentRole=', props.currentRole,
-      'peerRole=', props.peerRole
-  )
-  initForReceiver(props.receiverId)
-})
+  internalReceiverId.value = getActualReceiverId(); // 获取实际的 receiverId
+
+  console.log('ChatWindow mounted. Actual receiverId:', internalReceiverId.value);
+
+  if (internalReceiverId.value) {
+    await fetchReceiverInfo(internalReceiverId.value); 
+    await nextTick(); 
+    initializeChat(internalReceiverId.value);
+    setupSseConnection();
+  } else {
+    // 如果没有 receiverId，直接结束加载状态，显示空消息提示
+    isLoading.value = false;
+    console.warn('ChatWindow: No valid receiverId found from props or route params.');
+    // 可以在这里添加一个用户友好的提示，例如 ElMessage.warning('请选择一个联系人开始聊天。');
+  }
+});
 
 onUnmounted(() => {
-  closeSse()
-})
+  if (eventSource) {
+    eventSource.close();
+    eventSource = null; // 清除引用
+  }
+});
 
-// ⭐ 当左侧切换联系人时
+// 当左侧切换联系人时
 watch(
-    () => props.receiverId,
-    async (newId, oldId) => {
-      if (!newId || newId === oldId) return
+    () => [props.receiverId, route.params.receiverId], // 监听两个可能来源
+    async ([newPropId, newRouteId], [oldPropId, oldRouteId]) => {
+      const newActualId = getActualReceiverId(); // 获取新的实际ID
 
-      console.log('切换聊天对象:', oldId, '->', newId)
-      resetChat()
-      await initForReceiver(newId)
-    }
-)
+      // 只有当实际的 receiverId 发生变化时才重新初始化
+      if (newActualId !== null && !isNaN(newActualId) && newActualId !== internalReceiverId.value) {
+        console.log(`ReceiverId changed from ${internalReceiverId.value} to ${newActualId}. Reinitializing chat.`);
+        internalReceiverId.value = newActualId;
+        messages.value = [];
+        currentSession.value = null;
+        receiverInfo.value = null; // 重置对方用户信息
+
+        if (eventSource) { // 如果有旧的 SSE 连接，先关闭
+          eventSource.close();
+          eventSource = null;
+        }
+
+        if (internalReceiverId.value) {
+          await fetchReceiverInfo(internalReceiverId.value);
+          await nextTick(); // <--- 添加这一行
+          initializeChat(internalReceiverId.value);
+          setupSseConnection();
+        } else {
+          isLoading.value = false; // 如果新的ID为空，则停止加载
+          console.warn('ChatWindow: New receiverId is invalid after change.');
+        }
+      }else if (newActualId === null || isNaN(newActualId)) {
+        // 如果 newActualId 变为无效值，并且 internalReceiverId 之前是有效的，也重置状态
+        if (internalReceiverId.value !== null) {
+          console.warn(`Condition met: newActualId (${newActualId}) is invalid. Resetting chat state.`);
+          internalReceiverId.value = null;
+          messages.value = [];
+          currentSession.value = null;
+          receiverInfo.value = null;
+          isLoading.value = false; // 停止加载
+          if (eventSource) {
+            eventSource.close();
+            eventSource = null;
+          }
+        }
+      } else {
+        console.log(`Condition not met: newActualId (${newActualId}) is either null/NaN or same as internalReceiverId (${internalReceiverId.value}). No reinitialization.`);
+      }
+    },
+    { immediate: true } // 确保在组件挂载时也触发一次
+);
+
 
 // ---------- core ----------
 async function initForReceiver(peerId) {
@@ -160,34 +253,34 @@ function resetChat() {
 
 // ---------- api ----------
 async function initializeChat(peerId) {
-  console.log('初始化聊天，peerId:', peerId)
+  isLoading.value = true;
+  console.log('initializeChat started for peerId:', peerId);
 
   try {
-    const sessionRes = await axios.post(
-        `/chat/session/${peerId}`,
-        {
-          currentRole: props.currentRole,
-          peerRole: props.peerRole
-        }
-    )
+    const requestBody = {
+      currentRole: currentUser.value?.role, // 获取当前用户的角色
+      peerRole: receiverInfo.value?.role    // 获取对方用户的角色
+    };
 
-    currentSession.value = sessionRes.data
+    const sessionRes = await axios.post(`/chat/session/${peerId}`, requestBody);
+    currentSession.value = sessionRes.data;
+    console.log('Session response:', sessionRes.data);
 
     if (currentSession.value?.sessionId) {
-      const msgRes = await axios.get(
-          `/chat/messages/${currentSession.value.sessionId}`
-      )
-      messages.value = msgRes.data.sort(
-          (a, b) => new Date(a.sendTime) - new Date(b.sendTime)
-      )
+      const msgRes = await axios.get(`/chat/messages/${currentSession.value.sessionId}`);
+      messages.value = msgRes.data.sort((a, b) => new Date(a.sendTime) - new Date(b.sendTime));
+      console.log('Messages loaded:', messages.value.length); 
+    }else {
+      console.log('No chat session found or created.'); 
     }
 
     console.log('消息加载完成，消息数:', messages.value.length)
   } catch (err) {
-    console.error('初始化失败:', err)
+    console.error('Chat initialization failed:', err.response?.data || err.message || err);
   } finally {
-    isLoading.value = false
-    await scrollToBottom()
+    isLoading.value = false;
+    console.log('initializeChat finished. isLoading is now:', isLoading.value);
+    await scrollToBottom();
   }
 }
 
@@ -211,40 +304,46 @@ async function sendMessage() {
 
 // ---------- SSE ----------
 function setupSseConnection() {
-  if (!token.value) return
+  if (!token.value) {
+    console.warn('SSE: No auth token available.');
+    return;
+  }
+  // 如果已经存在 EventSource，先关闭
+  if (eventSource) {
+    eventSource.close();
+    eventSource = null;
+  }
 
   const url = `/api/chat/stream?token=${token.value}`
   eventSource = new EventSource(url)
 
   eventSource.onmessage = async (event) => {
-    const msg = JSON.parse(event.data)
-    if (
-        currentSession.value &&
-        msg.sessionId === currentSession.value.sessionId
-    ) {
-      messages.value.push(msg)
-      await scrollToBottom()
-    }
-  }
+    try {
+      const msg = JSON.parse(event.data);
+      // 检查接收到的消息是否属于当前活跃的聊天对象
+      // 并且确保是与当前用户的会话
+      if (currentSession.value && msg.sessionId === currentSession.value.sessionId) {
+        messages.value.push(msg);
+        console.log('New message received via SSE:', msg);
+        await scrollToBottom();
+        // 通知父组件更新会话列表中的最新消息时间
+        // emit('messageReceived', msg.sessionId, msg.sendTime);
+      }
+    } catch (e) {
+      console.error('Failed to parse SSE message:', e, event.data);
+    }   
+  };
 
-  eventSource.onerror = () => {
-    closeSse()
-  }
-}
+  eventSource.onerror = (error) => {
+    console.error('SSE Error:', error);
+    eventSource.close();
+    eventSource = null; // 清除引用
+    // 重新连接逻辑可以在这里实现，如果需要的话
+  };
 
-function closeSse() {
-  if (eventSource) {
-    eventSource.close()
-    eventSource = null
-  }
-}
-
-// ---------- ui ----------
-async function scrollToBottom() {
-  await nextTick()
-  if (messageContainer.value) {
-    messageContainer.value.scrollTop = messageContainer.value.scrollHeight
-  }
+  eventSource.onopen = () => {
+    console.log('SSE connection opened.');
+  };
 }
 
 function formatMessageTime(time) {
@@ -272,6 +371,35 @@ function formatMessageTime(time) {
 
   return `${d.getFullYear()}-${m}-${day} ${hhmm}`
 }
+
+async function scrollToBottom() {
+  await nextTick();
+  if (messageContainer.value) {
+    messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
+  }
+}
+
+function goBack() {
+  router.back();
+}
+
+// 获取对方用户信息函数
+async function fetchReceiverInfo(userId) {
+  try {
+    const response = await axios.get(`user/info/${userId}`); 
+    if (response.data && response.data.success) {
+      receiverInfo.value = response.data.user;
+      console.log('Receiver info fetched:', receiverInfo.value);
+    } else {
+      console.warn(`Failed to fetch info for user ID ${userId}:`, response.data?.message);
+      receiverInfo.value = { name: `用户 ${userId}`, role: '' }; // 提供一个默认值
+    }
+  } catch (error) {
+    console.error(`Error fetching receiver info for ID ${userId}:`, error);
+    receiverInfo.value = { name: `用户 ${userId}`, role: '' }; // 错误时也提供默认值
+  }
+}
+
 </script>
 
 <style scoped>
@@ -280,14 +408,17 @@ function formatMessageTime(time) {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: calc(100vh - 80px); /* 减去顶部导航高度 */
+
   width: 100%;
   background-color: #f0f9f0;
   padding: 20px;
+
+  justify-content: center; 
+  position: relative; 
+
   height: 100%; 
   min-height: calc(100vh - 80px);
-  justify-content: center; 
-   position: relative; 
+  height: calc(100vh - 80px); /* 减去顶部导航高度 */
 }
 
 .chat-container {
@@ -313,6 +444,10 @@ function formatMessageTime(time) {
   align-items: center;
   justify-content: space-between;
   z-index: 10;
+}
+
+.chat-header.has-back-button-padding {
+  padding-top: 20px; /* 只有当有返回按钮时才增加顶部内边距 */
 }
 
 .header-info {
@@ -375,6 +510,7 @@ function formatMessageTime(time) {
   padding: 20px;
   overflow-y: auto;
   scroll-behavior: smooth;
+  min-height: 400px; 
 }
 
 /* 滚动条美化 */
@@ -566,4 +702,57 @@ function formatMessageTime(time) {
   cursor: default;
   transform: none;
 }
+</style>
+
+//聊天框顶部 返回按钮
+<style scoped>
+.header-info h3 {
+  display: flex; /* 让名字和角色在一行并对齐 */
+  align-items: center;
+  gap: 8px; /* 名字和角色之间的间距 */
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.receiver-role {
+  font-size: 13px; /* 角色字体小一点 */
+  font-weight: 500;
+  color: #6c757d; /* 灰色 */
+  background-color: #e9ecef; /* 浅背景色 */
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+
+/* ================== 返回按钮样式 ================== */
+.back-button {
+  position: absolute; /* <--- 绝对定位 */
+  top: 15px; /* 距离顶部 */
+  left: 20px; /* 距离左侧 */
+  z-index: 100; /* 确保在最上层 */
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  color: #2D7D4F; /* 主题绿色 */
+  font-size: 16px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 5px;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.back-button:hover {
+  background-color: #e6f4ea; /* 浅绿色背景 */
+  color: #246640;
+}
+
+.back-button svg {
+  stroke-width: 2.5;
+}
+
+
 </style>

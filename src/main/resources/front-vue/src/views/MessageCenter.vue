@@ -36,8 +36,11 @@
 
               <div class="session-details">
                 <div class="session-header">
-                <span class="peer-user-id">
-                  用户 {{ getPeerUser(session).id }}
+                <span class="peer-user-name">
+                  {{ session.peerUserInfo?.name || `用户 ${getPeerUser(session).id}` }}
+                  <span v-if="session.peerUserInfo?.formattedRole" class="peer-user-role">
+                    ({{ session.peerUserInfo.formattedRole }})
+                  </span>
                 </span>
                   <span class="last-message-time">
                   {{ formatTime(session.lastMessageTime) }}
@@ -55,13 +58,7 @@
 
       <!-- 右侧：聊天窗口 -->
       <main class="chat-content">
-        <ChatWindow
-            v-if="activePeerId"
-            :receiver-id="activePeerId"
-            :current-role="activeCurrentRole"
-            :peer-role="activePeerRole"
-        />
-
+        <ChatWindow v-if="activePeerId" :receiver-id="activePeerId" :show-back-button="false"/>
         <div v-else class="empty-chat-hint">
           ← 请选择左侧联系人开始聊天
         </div>
@@ -178,23 +175,49 @@ async function openChatWithPeer(peerId, currentRole, peerRole) {
 
 /** 加载会话列表 */
 async function loadSessions() {
+  isLoading.value = true;
   try {
-    const response = await axios.get("/chat/sessions")
+    const response = await axios.get("/chat/sessions");
+    let fetchedSessions = response.data || [];
 
-    console.log('加载出来的response:', response.data);
-    // 按 sessionId 去重
-    const map = new Map()
-    ;(response.data || []).forEach(s => {
-      map.set(s.sessionId, s)
-    })
+    if (!Array.isArray(fetchedSessions)) {
+      console.warn("API returned non-array data for chat sessions:", fetchedSessions);
+      fetchedSessions = [];
+    }
 
-    sessions.value = Array.from(map.values()).sort(
-        (a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime)
-    )
+     // 批量获取所有会话中 peer 用户的详细信息
+    const peerUserIds = fetchedSessions.length > 0
+        ? fetchedSessions.map(session => getPeerUser(session).id)
+        : [];
+    const uniquePeerUserIds = [...new Set(peerUserIds)];
 
-    console.log('去重后的 sessions:', sessions.value)
-  } finally {
-    isLoading.value = false
+    const userPromises = uniquePeerUserIds.map(userId => fetchUserInfo(userId));
+    const usersInfo = await Promise.all(userPromises);
+
+    const userInfoMap = new Map();
+    usersInfo.forEach(user => {
+      if (user) userInfoMap.set(user.userId, user);
+    });
+
+    sessions.value = fetchedSessions
+        .map(session => {
+          const peerId = getPeerUser(session).id;
+          const peerInfo = userInfoMap.get(peerId);
+          return {
+            ...session,
+            peerUserInfo: peerInfo ? {
+              name: peerInfo.name,
+              role: peerInfo.role,
+              formattedRole: formatUserRole(peerInfo.role)
+            } : null
+          };
+        })
+        .sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
+
+  } catch (error) {
+    console.error('Failed to load chat sessions or user info:', error);
+  }finally {
+    isLoading.value = false;
   }
 }
 
@@ -211,6 +234,36 @@ function formatTime(dateTimeStr) {
   if (!dateTimeStr) return "";
   const date = new Date(dateTimeStr);
   return date.toLocaleDateString();
+}
+
+/** 获取单个用户详细信息 */
+async function fetchUserInfo(userId) {
+  try {
+    const response = await axios.get(`/user/info/${userId}`);
+    if (response.data && response.data.success) {
+      return response.data.user;
+    } else {
+      console.warn(`Failed to fetch info for user ID ${userId}:`, response.data?.message);
+      return null;
+    }
+  } catch (error) {
+    console.error(`Error fetching user info for ID ${userId}:`, error);
+    return null;
+  }
+}
+
+/** 格式化用户角色 */
+function formatUserRole(role) {
+  switch (role) {
+    case 'buyer':
+      return '普通用户';
+    case 'expert':
+      return '专家';
+    case 'farmer':
+      return '农户';
+    default:
+      return role;
+  }
 }
 </script>
 
@@ -287,20 +340,49 @@ function formatTime(dateTimeStr) {
 
 .session-header {
   display: flex;
+  align-items: center; /* 垂直居中对齐 */
+  justify-content: space-between; /* 将时间和名字角色分开 */
 }
 
 .peer-user-id {
   font-weight: 600;
+  display: flex; /* 让名字和角色在同一行 */
+  align-items: center;
+  gap: 5px; /* 名字和角色之间的间距 */
+  font-size: 0.95rem; /* 调整字体大小 */
+}
+
+.peer-user-role {
+  font-size: 0.75rem; /* 角色字体小一点 */
+  font-weight: 500;
+  color: #6c757d; /* 灰色 */
+  background-color: #e9ecef; /* 浅背景色 */
+  padding: 2px 6px;
+  border-radius: 10px;
+  white-space: nowrap; /* 防止角色名称换行 */
 }
 
 .last-message-time {
   margin-left: auto;
   font-size: 0.8rem;
   color: #888;
+  white-space: nowrap; /* 防止时间换行 */
+}
+
+.last-message-preview {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .status-indicator {
   padding: 2rem;
   text-align: center;
+  color: #888;
 }
 </style>
+
+
