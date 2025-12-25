@@ -106,6 +106,8 @@ const receiverInfo = ref(null);//对方用户信息
 const authStore = useAuthStore()
 const { userInfo: currentUser, isLoggedIn, token } = storeToRefs(authStore)
 
+let eventSource = null
+
 // 定义 props
 const props = defineProps({
   receiverId: {
@@ -117,6 +119,7 @@ const props = defineProps({
     default: true
   }
 });
+
 
 //调整头部样式（有无返回按钮
 const headerPaddingClass = computed(() => {
