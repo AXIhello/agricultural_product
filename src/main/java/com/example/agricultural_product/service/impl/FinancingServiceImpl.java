@@ -147,6 +147,25 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
         return financingId;
     }
 
+    private boolean canBankHandleFinancing(Integer financingId) {
+        LambdaQueryWrapper<FinancingFarmer> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FinancingFarmer::getFinancingId, financingId)
+               .eq(FinancingFarmer::getRoleInFinancing, "共同申请人");
+        List<FinancingFarmer> coApplicants = financingFarmerMapper.selectList(wrapper);
+        if (coApplicants.isEmpty()) {
+            return true;
+        }
+        return coApplicants.stream()
+                .allMatch(rec -> rec.getInvitationStatus() != null && rec.getInvitationStatus().equalsIgnoreCase("accepted"));
+    }
+
+    private void appendCoApplicantAcceptedConstraint(LambdaQueryWrapper<Financing> wrapper) {
+        wrapper.apply("NOT EXISTS (SELECT 1 FROM tb_financing_farmers ff " +
+                "WHERE ff.financing_id = tb_financing.financing_id " +
+                "AND ff.role_in_financing = '共同申请人' " +
+                "AND (ff.invitation_status IS NULL OR ff.invitation_status <> 'accepted'))");
+    }
+
     @Override
     public Page<Financing> listProductApplications(Long bankUserId, Integer productId, Integer pageNum, Integer pageSize) {
         // 找到该银行的产品集合（可按单个productId筛选）
@@ -167,8 +186,9 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
         Set<Integer> pids = products.stream().map(BankProduct::getProductId).collect(Collectors.toSet());
         Page<Financing> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Financing> qw = new LambdaQueryWrapper<>();
-        qw.in(Financing::getProductId, pids)
-                .orderByDesc(Financing::getCreateTime);
+        qw.in(Financing::getProductId, pids);
+        appendCoApplicantAcceptedConstraint(qw);
+        qw.orderByDesc(Financing::getCreateTime);
         return financingMapper.selectPage(page, qw);
     }
 
@@ -252,6 +272,7 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
     public Page<Financing> listAllFinancings(Integer pageNum, Integer pageSize) {
         Page<Financing> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Financing> wrapper = new LambdaQueryWrapper<>();
+        appendCoApplicantAcceptedConstraint(wrapper);
         wrapper.orderByDesc(Financing::getCreateTime);
         return financingMapper.selectPage(page, wrapper);
     }
@@ -341,8 +362,9 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
     public Page<Financing> listSubmittedFinancings(Integer pageNum, Integer pageSize) {
         Page<Financing> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Financing> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Financing::getApplicationStatus, "submitted")
-                .orderByDesc(Financing::getCreateTime);
+        wrapper.eq(Financing::getApplicationStatus, "submitted");
+        appendCoApplicantAcceptedConstraint(wrapper);
+        wrapper.orderByDesc(Financing::getCreateTime);
         return financingMapper.selectPage(page, wrapper);
     }
 
@@ -353,6 +375,9 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
         // 仅允许对 submitted 的融资申请报价
         Financing financing = financingMapper.selectById(financingId);
         if (financing == null || !"submitted".equals(financing.getApplicationStatus())) {
+            return false;
+        }
+        if (!canBankHandleFinancing(financingId)) {
             return false;
         }
 
@@ -469,6 +494,9 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
     public boolean rejectFinancing(Long bankUserId, Integer financingId, String rejectReason) {
         Financing financing = financingMapper.selectById(financingId);
         if (financing == null) return false;
+        if (!canBankHandleFinancing(financingId)) {
+            return false;
+        }
 
         financing.setApplicationStatus("rejected");
         financing.setUpdateTime(LocalDateTime.now());
@@ -768,3 +796,4 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
 
 
 }
+
