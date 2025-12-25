@@ -385,7 +385,7 @@ CREATE TABLE IF NOT EXISTS `tb_chat_session` (
   `session_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '会话ID',
   `user_a_id` BIGINT NOT NULL COMMENT '用户A(较小ID)',
   `user_b_id` BIGINT NOT NULL COMMENT '用户B(较大ID)',
-  `user_a_role` VARCHAR(50) NOT NULL DEFAULT 'unknown' COMMENT '用户A在会话中的身份（buyer/seller/expert等）',
+  `user_a_role` VARCHAR(50) NOT NULL DEFAULT 'unknown' COMMENT '用户A在会话中的身份（buyer/farmer/expert等）',
   `user_b_role` VARCHAR(50) NOT NULL DEFAULT 'unknown' COMMENT '用户B在会话中的身份',
   `last_message_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '最近消息时间',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',

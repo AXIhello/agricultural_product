@@ -156,7 +156,7 @@ import FarmerProfileModal from '@/components/FarmerProfileModal.vue'
 
 const authStore = useAuthStore()
 const {userInfo, isLoggedIn, role} = storeToRefs(authStore)
-const currentUserId = userInfo.value.userId
+const currentUserId = userInfo.value?.userId
 
 const imgUrl = ref(placeholder)
 const showPreview = ref(false)
@@ -167,6 +167,7 @@ const farmerProfileRef = ref(null)
 // 规格相关
 const productSpecs = ref([])     // 所有规格（同名的不同商品）
 const currentSpec = ref({})      // 当前选中的规格
+const farmerInfo = ref(null) 
 
 const quantity = ref(1)
 const loading = ref(true)
@@ -190,8 +191,6 @@ const openFarmerDetail = () => {
   }
 }
 
-
-
 //时间格式化
 const formatTime = (t) => (t ? new Date(t).toLocaleString() : '')
 
@@ -211,6 +210,23 @@ const loadImage = async (productId) => {
   }
 }
 
+// 获取农户详细信息（包括角色）
+const fetchFarmerInfo = async (farmerId) => {
+  try {
+    const res = await axios.get(`/user/info/${farmerId}`);
+    console.log(`fetchFarmerInfo for ${farmerId} response:`, res.data); // 添加这行调试
+    if (res.data && res.data.success) {
+      farmerInfo.value = res.data.user; // 确认这里是 res.data.data 还是 res.data.user
+      console.log('Fetched farmerInfo:', farmerInfo.value); // 添加这行调试
+    } else {
+      console.error(`获取农户 ${farmerId} 信息失败:`, res.data?.message);
+      farmerInfo.value = null;
+    }
+  } catch (error) {
+    console.error(`获取农户 ${farmerId} 信息时发生错误:`, error);
+    farmerInfo.value = null;
+  }
+}
 
 // 主方法：加载详情 + 同名规格
 const loadProductDetail = async () => {
@@ -262,11 +278,22 @@ async function contactSeller(product) {
     alert('无法联系卖家，卖家信息丢失。');
     return;
   }
-  await goToChat(product.farmerId);
+
+  if (!farmerInfo.value || farmerInfo.value.userId !== product.farmerId || !farmerInfo.value.role) {
+    console.warn("未能获取到农户的详细角色信息，尝试重新获取...");
+    await fetchFarmerInfo(product.farmerId); // 确保获取到最新的农户信息
+    
+    if (!farmerInfo.value || !farmerInfo.value.role) {
+      alert('无法获取农户角色信息，无法发起聊天。');
+      return;
+    }
+  }
+
+  goToChat(product.farmerId, farmerInfo.value.role);
 }
 
 // 发起与指定用户的聊天
-async function goToChat(receiverId) {
+async function goToChat(receiverId, receiverRole) {
   // 检查用户是否已登录
   if (!isLoggedIn.value) {
     ElMessage.warning('请先登录才能发起聊天！');
@@ -276,29 +303,21 @@ async function goToChat(receiverId) {
 
   // 检查 receiverId 是否有效
   if (!receiverId) {
-    alert('无法联系，对方信息丢失。');
+    ElMessage.error('无法联系，对方信息丢失。');
     return;
   }
 
-  const userId = userInfo.value.userId;
 
   // 3. 检查用户是否在和自己聊天
   //    使用 String() 转换以确保类型一致
-  if (String(userId.value) === String(receiverId)) {
-    alert('您不能和自己发起聊天。');
-    return;
-  }
+  if (String(currentUserId) === String(receiverId)) { 
+      ElMessage.info('您不能和自己发起聊天。'); 
+      return;
+    }
 
   // 4. 跳转到聊天页面
-  console.log(`准备跳转到与用户 ${receiverId} 的聊天室`);
-  await router.push({
-    path: '/messages',
-    query: {
-      peerId: receiverId,
-      currentRole: role.value,
-      peerRole: 'seller'
-    }
-  });
+  console.log(`准备跳转到与用户 ${receiverId} 的聊天室，对方角色: ${receiverRole}`);
+  router.push({ name: 'Chat', params: { receiverId: receiverId } }); 
 }
 
 

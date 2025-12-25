@@ -53,9 +53,9 @@
         <button class="action-btn" @click="toggleStatus(tpl)">
           {{ tpl.status === 'active' ? '停用' : '启用' }}
         </button>
-        <button class="action-btn" @click="openEditModal(tpl)">
-          编辑
-        </button>
+<!--        <button class="action-btn" @click="openEditModal(tpl)">-->
+<!--          编辑-->
+<!--        </button>-->
         <button class="action-btn" @click="openBatchIssueModal(tpl)">
           批量发放
         </button>
