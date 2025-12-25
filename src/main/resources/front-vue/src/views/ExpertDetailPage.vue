@@ -1,6 +1,13 @@
 <template>
   <div class="main-bg">
     <section class="content">
+      <button @click="goBack" class="back-button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        返回
+      </button>
       <div v-if="isLoadingProfile">正在加载专家信息...</div>
       <div v-else-if="!expertProfile">未找到该专家的信息。</div>
       
@@ -17,6 +24,15 @@
               <p><strong>简介：</strong></p>
               <p class="bio">{{ expertProfile.bio }}</p>
             </div>
+            <button
+                v-if="authStore.isLoggedIn &&
+                      authStore.userInfo?.userId !== expertId && 
+                      ((authStore.userInfo?.role === 'farmer') || (authStore.userInfo?.role === 'buyer'))"
+                @click="goToChatWithExpert"
+                class="consult-btn"
+              >
+                咨询专家
+              </button>
           </div>
         </div>
 
@@ -65,7 +81,7 @@
 
 <script setup>
 import { ref, onMounted, reactive,computed} from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter} from 'vue-router';
 import axios from '../utils/axios';
 import HeaderComponent from '@/components/HeaderComponent.vue';
 import defaultAvatar from '@/assets/default.jpg';
@@ -73,6 +89,7 @@ import { ElMessage } from 'element-plus';
 import { useAuthStore } from '@/stores/authStore';
 
 const route = useRoute();
+const router = useRouter();
 const authStore = useAuthStore();
 
 const expertProfile = ref(null);
@@ -100,7 +117,7 @@ async function fetchExpertProfile() {
     const res = await axios.get(`/expert/profile/${expertId}`);
     const profile = res.data?.data || null;
 
-    console.log('🔥 后端原始返回 profile：', res.data);
+    console.log('后端原始返回 profile：', res.data);
 
     if (!profile) {
       expertProfile.value = null;
@@ -217,12 +234,32 @@ async function bookAppointment(slotId) {
   }
 }
 
+//===========咨询专家功能===========
+function goToChatWithExpert() {
+  if (!authStore.isLoggedIn) {
+    ElMessage.warning('请先登录才能咨询专家！');
+    router.push('/login'); // 跳转到登录页
+    return;
+  }
+  if (authStore.userInfo?.userId === expertId) {
+    ElMessage.info('您不能和自己聊天哦！');
+    return;
+  }
+  
+  router.push({ name: 'Chat', params: { receiverId: expertId } });
+}
+
 //分页切换
 function changePage(page) {
   if (page > 0 && page <= pagination.pages) {
     pagination.current = page;
     fetchAvailableSlots();
   }
+}
+
+// 返回上一页
+function goBack() {
+  router.back();
 }
 
 onMounted(() => {
@@ -355,4 +392,54 @@ onMounted(() => {
     color: #ccc; 
     cursor: not-allowed; 
     }
+</style>
+
+//咨询按钮容器样式
+<style scoped>
+.profile-details {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+    position: relative; /* 添加 relative 以便定位子元素 */
+}
+
+/* 咨询按钮容器样式 */
+.consult-action {
+  position: absolute; /* 绝对定位 */
+  top: 0;             /* 距离顶部 */
+  right: 0;           /* 距离右侧 */
+  /* 或者使用 flexbox 将按钮放在最右边 */
+  /* margin-left: auto; */
+}
+
+.consult-btn {
+  padding: 8px 16px;
+  background-color: #2D7D4F; /* 你的主题绿色 */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+  box-shadow: 0 4px 10px rgba(45, 125, 79, 0.2);
+}
+
+.consult-btn:hover {
+  background-color: #246640; /* hover 颜色 */
+}
+
+.consult-btn:active {
+  transform: translateY(1px);
+}
+
+.login-prompt, .self-expert-tip {
+  font-size: 14px;
+  color: #888;
+  padding: 8px 16px;
+  background-color: #f0f0f0;
+  border-radius: 8px;
+  white-space: nowrap; /* 防止文字换行 */
+  display: inline-block; /* 确保 padding 和背景正常显示 */
+}
 </style>
