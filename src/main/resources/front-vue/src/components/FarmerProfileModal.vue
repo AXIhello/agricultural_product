@@ -47,7 +47,9 @@
           <div class="mini-list-box">
             <div v-if="products.length === 0" class="empty-text">暂无上架商品</div>
             <div v-else v-for="prod in products" :key="prod.id" class="mini-row">
-              <span class="prod-name">{{ prod.productName }}</span>
+              <a href="javascript:void(0);" @click="goToProductDetail(prod)" class="prod-name-link">
+                {{ prod.productName }}
+              </a>
               <span class="prod-meta">
                 销量: {{ prod.sales || 0 }} 
                 <span v-if="prod.ratingCount > 0">
@@ -88,6 +90,10 @@
 <script setup>
 import { ref } from 'vue'
 import axios from '../utils/axios'
+import { useRouter } from 'vue-router'
+
+//初始化
+const router = useRouter()
 
 // 状态控制
 const visible = ref(false)
@@ -128,6 +134,12 @@ const open = async (userId, options = {}) => {
 // 关闭方法
 const close = () => {
   visible.value = false
+}
+
+async function goToProductDetail(product) {
+  if (product && product.productId) {
+    await router.push(`/product/${product.productId}`);
+  }
 }
 
 // 核心数据获取逻辑
@@ -271,9 +283,19 @@ defineExpose({
 .mini-row:last-child { border-bottom: none; }
 .empty-text { padding: 10px; text-align: center; color: #999; font-size: 12px; }
 
-.prod-name { font-weight: 500; color: #333;}
-.prod-meta { color: #999; }
+.prod-name-link { 
+  font-weight: 500; 
+  color: #2D7D4F; /* 使用主题色或蓝色 */
+  cursor: pointer;
+  text-decoration: none; /* 默认不带下划线 */
+  transition: color 0.2s, text-decoration 0.2s;
+}
+.prod-name-link:hover {
+  text-decoration: underline; /* 鼠标悬停时显示下划线 */
+  color: #246640; /* 鼠标悬停时颜色变深 */
+}
 
+.prod-meta { color: #999; }
 .history-row .his-date { color: #888; flex: 1; }
 .history-row .his-amount { font-weight: bold; flex: 1; text-align: left; }
 .history-row .his-status { flex: 0 0 60px; text-align: right; font-weight: bold; font-size: 12px;}
