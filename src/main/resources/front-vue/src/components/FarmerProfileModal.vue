@@ -108,6 +108,10 @@ const financingHistory = ref([])
 const totalSales = ref(0)
 const avgRating = ref(0)
 
+// === 记录是否从FinancingService打开 ===
+const isOpenedFromFinancingApp = ref(false);
+const fromFinancingProductId = ref(null);
+
 // 打开弹窗的方法
 const open = async (userId, options = {}) => {
   if (!userId) return
@@ -116,6 +120,9 @@ const open = async (userId, options = {}) => {
 
   showFinancing.value = !options.hideFinancing
   showCredit.value = !options.hideCredit 
+
+  isOpenedFromFinancingApp.value = options.fromFinancingApp || false;
+  fromFinancingProductId.value = options.fromFinancingProductId || null;
   
   // 重置数据
   userInfo.value = {}
@@ -137,8 +144,26 @@ const close = () => {
 }
 
 async function goToProductDetail(product) {
-  if (product && product.productId) {
-    await router.push(`/product/${product.productId}`);
+    console.log('传入 goToProductDetail 的 product 对象:', product); // 这行可以保留用于调试
+    console.log('product.productId 是:', product ? product.productId : 'undefined'); // 检查 product.productId
+
+    if (product && product.productId) { 
+      const targetRoute = {
+        name: 'ProductDetail',
+        params: { id: product.productId }, 
+        query: {}
+      };
+
+      // 如果是从 FinancingApp 打开的，则添加返回的农户ID
+    if (isOpenedFromFinancingApp.value && userInfo.value.userId && fromFinancingProductId.value) {
+        targetRoute.query.returnToFarmerId = userInfo.value.userId;
+        targetRoute.query.fromParentPage = 'FinancingApp'; 
+        targetRoute.query.returnToFinancingProductId = fromFinancingProductId.value;
+        
+    }
+
+    router.push(targetRoute);
+    close();
   }
 }
 

@@ -36,19 +36,13 @@ const routes = [
   {
     path: '/main',
     name: 'MainInterface',
-    component: MainInterface,
-    children: [  // 添加子路由
-      {
-        path: '/products',
-        name: 'ProductList',
-        component: ProductList
-      },
-      {
-        path: '/products/:id',
-        name: 'ProductDetail',
-        component: () => import('../views/ProductDetail.vue')
-      }
-    ]
+    component: MainInterface
+  },
+
+  {
+    path: '/products/:id', 
+    name: 'ProductDetail', 
+    component: ProductDetail,
   },
 
   {

@@ -391,8 +391,28 @@ onMounted(() => {
 })
 
 function goBack() {
-  router.back();
+  const returnToFarmerId = route.query.returnToFarmerId;
+  const returnToFinancingProductId = route.query.returnToFinancingProductId; // <--- 新增
+  const fromParentPage = route.query.fromParentPage;
+
+  if (fromParentPage === 'FinancingApp') {
+    // 目标路由始终是 FinancingApp
+    const targetQuery = {};
+    if (returnToFarmerId && returnToFinancingProductId) {
+      targetQuery.returnToFarmerId = returnToFarmerId;
+      targetQuery.returnToFinancingProductId = returnToFinancingProductId;
+    }
+
+    router.push({ 
+      name: 'FinanceService', 
+      query: targetQuery
+    });
+  } else {
+    // 否则执行默认的返回行为
+    router.back();
+  }
 }
+
 </script>
 
 <style scoped>

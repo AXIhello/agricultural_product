@@ -113,4 +113,16 @@ public interface FinancingService extends IService<Financing> {
 
     // 查询指定用户的融资记录
     Page<Financing> listFinancingsByTargetUser(Long userId, Integer pageNum, Integer pageSize);
+    
+    /**
+     * 查询用户参与的所有融资申请（包括作为主申请人和共同申请人）
+     * 并关联产品名称和发起人名称
+     */
+    List<Financing> getFinancingsByUserWithDetails(Long userId);
+    
+    /**
+     * 分页查询用户参与的所有融资申请
+     */
+    Page<Financing> getFinancingsByUserWithDetailsPage(Long userId, Integer pageNum, Integer pageSize);
+
 }

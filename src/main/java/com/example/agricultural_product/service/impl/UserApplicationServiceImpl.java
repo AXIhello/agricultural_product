@@ -23,6 +23,12 @@ public class UserApplicationServiceImpl implements UserApplicationService {
     private PasswordEncoder passwordEncoder; // 需要在配置类中配置这个Bean
 
     @Override
+    public UserApplication findById(String id) {
+        // 调用Mapper的selectById方法来查询数据库
+        return mapper.selectById(id);
+    }
+
+    @Override
     @Transactional
     public boolean submitApplication(UserApplicationDTO applicationDTO, MultipartFile file) {
         try {
@@ -63,4 +69,5 @@ public class UserApplicationServiceImpl implements UserApplicationService {
             throw new RuntimeException("提交申请失败: " + e.getMessage());
         }
     }
+
 }

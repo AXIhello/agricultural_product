@@ -31,6 +31,9 @@ public class Financing {
     @TableField("product_id")
     private Integer productId;
 
+    @TableField(exist = false)
+    private String productName;
+
     @TableField("application_status")
     private String applicationStatus;
 
@@ -47,4 +50,7 @@ public class Financing {
     //非数据库字段，用于前端展示当前用户邀请状态
     @TableField(exist = false)
     private String myInvitationStatus; 
+
+    @TableField(exist = false)
+    private String initiatingFarmerName; 
 }

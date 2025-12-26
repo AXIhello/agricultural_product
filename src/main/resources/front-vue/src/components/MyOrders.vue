@@ -89,7 +89,7 @@
               </div>
 
               <!-- 卖家操作 -->
-              <div class="product-actions" v-if="role === 'farmer'">
+              <div class="product-actions" v-if="props.role === 'farmer'">
                  <button 
                     v-if="item.status === 'PAID'" 
                     class="btn-primary small" 
@@ -124,7 +124,7 @@
             
             <div class="main-actions">
               <!-- 买家主操作 -->
-              <template v-if="role === 'buyer'">
+              <template v-if="props.role === 'buyer'">
                 <button v-if="order.status === 'pending'" class="btn-text gray" @click="cancelOrder(order.orderId)">取消订单</button>
                 <button v-if="order.status === 'pending'" class="btn-primary" @click="goToPay(order.orderId)">立即支付</button>
               </template>
@@ -312,6 +312,8 @@ watch(() => props.role, () => {
 const loadOrders = async () => {
   console.log('订单开始加载')
   console.log('角色2：',role.value)
+  console.log('订单状态:', orders.value[0]?.status)
+  console.log('Role:', props.role) 
   if (!isLoggedIn.value) return
   loading.value = true
   try {

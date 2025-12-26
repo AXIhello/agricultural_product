@@ -607,7 +607,7 @@ import {useAuthStore} from '@/stores/authStore'
 import {storeToRefs} from 'pinia'
 import {ElMessage} from "element-plus";
 import defaultImg from '@/assets/img.png'
-
+import { useRoute, useRouter } from 'vue-router';
 
 // ====== 主逻辑 ======
 const authStore = useAuthStore()
@@ -615,43 +615,153 @@ const {userInfo, isLoggedIn, role} = storeToRefs(authStore)
 const currentView = ref('products')
 const showOrderSubNav = ref(false);
 const currentOrderView = ref('buyer');
-
+const route = useRoute();
 
 function switchView(view) { currentView.value = view }
+// ----------------------------------------------------
+// onMounted 和 watch
+// ----------------------------------------------------
 
+// 辅助函数：根据视图名称加载对应数据
+const loadDataForView = async (viewName, subViewName = null) => {
+  console.log(`Loading data for view: ${viewName}, subView: ${subViewName}`);
+
+  // 统一的登录检查
+  const requiresLoginViews = ['cart', 'myProducts', 'myOrders'];
+  if (requiresLoginViews.includes(viewName) && !isLoggedIn.value) {
+    ElMessage.warning('请先登录以查看此内容！');
+    // 如果没有登录，且视图需要登录，重定向到默认视图
+    currentView.value = 'products';
+    return;
+  }
+
+  switch (viewName) {
+    case 'products':
+      await loadProducts(); // 假设 loadProducts 加载所有产品
+      // 如果 loadAllProducts 有额外功能或不同数据，可以在这里调用
+      await loadAllProducts();
+      break;
+    case 'predict': // 对应行情大厅
+      await loadMarketHallData();
+      break;
+    case 'demands':
+      await loadDemands();
+      break;
+    case 'myProducts':
+      if (role.value === 'farmer') {
+        await loadMyProducts();
+      } else {
+        ElMessage.warning('您没有权限管理产品。');
+        currentView.value = 'products'; // 切换到默认视图
+      }
+      break;
+    case 'cart':
+      // 登录检查已在开头处理
+      await loadAddresses();
+      await loadCart();
+      break;
+    case 'myOrders': // 处理我的订单主视图
+      // 如果有子视图，加载子视图的数据
+      if (subViewName === 'buyer') {
+        await loadMyOrdersAsBuyer();
+      } else if (subViewName === 'farmer' && role.value === 'farmer') {
+        await loadMyOrdersAsFarmer();
+      } else if (subViewName === 'farmer' && role.value !== 'farmer') {
+        ElMessage.warning('您没有权限查看卖出订单。');
+        // 如果是普通用户尝试查看卖出，默认切换到买家订单
+        currentOrderView.value = 'buyer';
+        await loadMyOrdersAsBuyer();
+      } else {
+        // 默认加载买家订单
+        await loadMyOrdersAsBuyer();
+      }
+      break;
+    default:
+      // 如果 currentView 设置了未知值，默认回到所有产品
+      currentView.value = 'products';
+      await loadProducts();
+      await loadAllProducts();
+      break;
+  }
+};
+
+// 辅助函数：只加载订单子视图的数据
+const loadOrderSubViewData = async (subViewName) => {
+  if (!isLoggedIn.value) {
+    ElMessage.warning('请先登录以查看此内容！');
+    currentView.value = 'products'; // 回到默认视图
+    return;
+  }
+
+  if (subViewName === 'buyer') {
+    await loadMyOrdersAsBuyer();
+  } else if (subViewName === 'farmer') {
+    if (role.value === 'farmer') {
+      await loadMyOrdersAsFarmer();
+    } else {
+      ElMessage.warning('您没有权限查看卖出订单。');
+      // 如果是普通用户尝试查看卖出，默认切换到买家订单
+      currentOrderView.value = 'buyer';
+      await loadMyOrdersAsBuyer();
+    }
+  }
+};
+
+
+// 组件挂载时执行
 onMounted(async () => {
+  let initialView = 'products';
+  let initialOrderSubView = 'buyer';
 
-  await loadProducts();
-  await loadAllProducts();
-  await loadDemands();
+  // 1. 根据 URL 参数初始化主视图和子视图
+  if (route.query.view) {
+    initialView = route.query.view;
+
+    // 处理来自 pay-result 的跳转，例如 /trading?view=myOrders
+    if (initialView === 'myOrders') {
+      // 假设从支付结果页跳转过来，默认看我买到的
+      initialOrderSubView = route.query.subView || 'buyer';
+      showOrderSubNav.value = true; // 确保子导航打开
+    }
+  }
+
+  currentView.value = initialView;
+  currentOrderView.value = initialOrderSubView; // 设置子视图
+
+  // 2. 首次挂载时加载所有产品和默认视图数据 (例如 allProducts)
+  await loadProducts(); // 假设这个是所有用户都能看的基本产品数据
+  await loadAllProducts(); // 如果与 loadProducts 不同
+
+  // 3. 根据最终确定的 initialView 和 initialOrderSubView 加载对应数据
+  await loadDataForView(currentView.value, currentOrderView.value);
+
+  // 4. 针对登录用户加载一些通用数据
   if (isLoggedIn.value) {
     await loadAddresses();
     await loadCart();
-
-    if (role.value === 'farmer') {
-      await loadMyProducts();
-    }
   }
-})
-
-watch(currentView, (val) => {
-  if (val === 'cart') {
-    loadAddresses()
-    loadCart()
-  }
-  if(val === 'products') {
-    loadProducts()
-  }
-  if(val === 'demands') {
-    loadDemands()
-  }
-
-  if(val === 'myProducts'&& role.value === 'farmer') {
-    loadMyProducts()
-  }
-})
+});
 
 
+// 监听 currentView 变化，加载对应数据
+watch(currentView, async (newView) => {
+  // 如果 newView 是 'myOrders'，则由 currentOrderView 的 watch 来处理数据加载，
+  // 否则直接调用 loadDataForView。
+  if (newView !== 'myOrders') {
+    await loadDataForView(newView);
+  } else {
+    // 切换到 'myOrders' 时，确保加载当前子视图的数据
+    await loadOrderSubViewData(currentOrderView.value);
+  }
+});
+
+// 监听 currentOrderView 变化，加载对应的订单数据
+watch(currentOrderView, async (newSubView) => {
+  // 只有当主视图是 'myOrders' 并且子视图发生变化时才加载
+  if (currentView.value === 'myOrders') {
+    await loadOrderSubViewData(newSubView);
+  }
+});
 // ====== 产品逻辑 ======
 const mainCategories = ref(['蔬菜','水产','水果','肉类'])
 const products = ref([])

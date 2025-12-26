@@ -5,14 +5,14 @@
       <h2>支付成功</h2>
       <p class="info">订单号：{{ orderId }}</p>
       <p class="info">支付金额：¥{{ amount }}</p>
-      <router-link :to="`/orders/confirm`" class="link">返回订单详情</router-link>
+      <router-link :to="{ path: '/trading', query: { view: 'myOrders' } }" class="link">返回订单详情</router-link>
     </div>
 
     <div v-else class="result-card fail">
       <div class="icon">✖</div>
       <h2>支付失败</h2>
       <p class="info">请检查订单状态或稍后重试</p>
-      <router-link :to="`/orders/confirm`" class="link fail-link">返回订单详情</router-link>
+      <router-link :to="{ path: '/trading', query: { view: 'myOrders' } }" class="link fail-link">返回订单详情</router-link>
     </div>
   </div>
 </template>

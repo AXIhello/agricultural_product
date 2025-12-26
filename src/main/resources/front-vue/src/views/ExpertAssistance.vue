@@ -37,7 +37,7 @@
                 @delete="handleDeleteKnowledge"
             />
 
-            <!-- 新增知识卡片（专家可见） -->
+            <!-- 知识卡片（专家可见） -->
             <div
                 v-if="role === 'expert'"
                 class="qa-item add-card"
@@ -453,6 +453,17 @@ const submitAnswer = async (questionId) => {
   }
   if (!isLoggedIn.value) {
     answerMessages.value[questionId] = '请先登录！';
+    return;
+  }
+
+  const currentQuestion = selectedQuestion.value;
+
+  // 检查问题状态，如果是已解决（answered），则不允许提交回答
+  if (currentQuestion && currentQuestion.status === 'answered') {
+    answerMessages.value[questionId] = '该问题已截止收集回答。';
+    setTimeout(() => {
+      answerMessages.value[questionId] = '';
+    }, 3000);
     return;
   }
 
