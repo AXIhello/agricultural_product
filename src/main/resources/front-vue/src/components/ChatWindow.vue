@@ -179,7 +179,7 @@ onUnmounted(() => {
 
 watch(
     () => [props.receiverId, route.params.receiverId], // 监听两个可能来源
-    async ([newPropId, newRouteId], [oldPropId, oldRouteId]) => {
+    async () => {
       const newActualId = getActualReceiverId(); // 获取新的实际ID
 
       // 只有当实际的 receiverId 发生变化时才重新初始化

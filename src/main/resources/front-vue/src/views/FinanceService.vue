@@ -25,7 +25,7 @@
       <div v-if="currentView === 'products'" class="view-wrapper product-table">
 
           <!-- 表格头 -->
-          <div class="table-header-f">
+          <div class="table-header-p">
             <span>产品名称</span>
             <span>银行</span>
             <span>期限</span>
@@ -210,7 +210,7 @@
         
 
         <!-- 表格头 -->
-        <div class="table-header-f ">
+        <div class="table-header-a ">
           <span>申请编号</span>         
           <span>角色</span>
           <span>发起人</span>
@@ -327,7 +327,7 @@
 
       <!-- 合作邀请视图 -->
       <div v-if="currentView === 'invitations'" class="view-wrapper invite-table">
-        <div class="table-header-f">
+        <div class="table-header-c">
           <span>申请ID</span>
           <span>发起人</span>
           <span>金额</span>
@@ -1420,8 +1420,8 @@ watch(currentView, val => {
 /* ================= 表格整体布局 ================= */
 <style scoped>
   /* 通用 */
-.financing-app .table-header-f span,
-.financing-app .table-row-f span {
+.financing-app .table-header-a span,
+.financing-app .table-row-a span {
   display: flex !important;
   justify-content: center !important;
   align-items: center !important;
@@ -1431,27 +1431,43 @@ watch(currentView, val => {
 }
 
   /* 表格容器基础样式  */
-.table-header-f,
+.table-header-p,.table-header-c,
 .table-row-f {
-  display: flex;              /* 关键：开启弹性布局，让子元素横向排布 */
+  display: grid;              /* 关键：开启弹性布局，让子元素横向排布 */
   align-items: center;        /* 垂直居中 */
   justify-content: space-between; 
   padding: 12px 10px;         /* 给每一行加点内边距 */
   border-bottom: 1px solid #ebeef5; /*底部分割线 */
+  grid-template-columns: 100px 120px 150px 100px 100px 160px;
 }
 
-/* 表头特别样式 */
-.table-header-f {
+  /* 表格容器基础样式  */
+  .table-header-a,
+  .table-row-f {
+    display: grid;              /* 关键：开启弹性布局，让子元素横向排布 */
+    align-items: center;        /* 垂直居中 */
+    justify-content: space-between;
+    padding: 12px 10px;         /* 给每一行加点内边距 */
+    border-bottom: 1px solid #ebeef5; /*底部分割线 */
+    grid-template-columns: 100px 120px 150px 100px 100px 100px 160px;
+  }
+
+
+  /* 表头特别样式 */
+  .table-header-a,.table-header-c,.table-header-p {
   background-color: #f5f7fa;  /* 表头浅灰色背景 */
   font-weight: bold;
   color: #606266;
   border-radius: 4px 4px 0 0; /* 顶部圆角 */
+
 }
 
 /* 数据行鼠标悬停效果 */
 .table-row-f:hover {
   background-color: #f5f7fa;
 }
+
+
 
 /* 外层包裹容器，防止表格太宽溢出 */
 .view-wrapper {

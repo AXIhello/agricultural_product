@@ -1308,18 +1308,6 @@ async function handleAddDemand() {
   }
 }
 
-
-// 查看详情
-const viewDetail = (orderId) => {
-  router.push(`/orderDetail/${orderId}`)
-}
-
-// 支付
-const goToPay = (orderId) => {
-  router.push(`/orders/${orderId}`)
-}
-
-
 // ====== 购物车逻辑 ======
 // 从后端加载购物车 + 获取产品详情
 const cartItems = ref([])
@@ -1576,7 +1564,6 @@ async function resetSearch() {
   border: none;
   background: transparent;
   cursor: pointer;
-  font-size: 14px;
 }
 
 .parent-nav {
