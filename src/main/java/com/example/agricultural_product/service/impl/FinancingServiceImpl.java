@@ -268,13 +268,18 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
         return financingMapper.updateById(financing) > 0;
     }
 
+    // @Override
+    // public Page<Financing> listAllFinancings(Integer pageNum, Integer pageSize) {
+    //     Page<Financing> page = new Page<>(pageNum, pageSize);
+    //     LambdaQueryWrapper<Financing> wrapper = new LambdaQueryWrapper<>();
+    //     wrapper.orderByDesc(Financing::getCreateTime);
+    //     return financingMapper.selectPage(page, wrapper);
+    // }
     @Override
     public Page<Financing> listAllFinancings(Integer pageNum, Integer pageSize) {
         Page<Financing> page = new Page<>(pageNum, pageSize);
-        LambdaQueryWrapper<Financing> wrapper = new LambdaQueryWrapper<>();
-        appendCoApplicantAcceptedConstraint(wrapper);
-        wrapper.orderByDesc(Financing::getCreateTime);
-        return financingMapper.selectPage(page, wrapper);
+        // 使用新的查询方法，包含发起人名称和产品名称
+        return financingMapper.selectAllFinancingsWithDetails(page);
     }
 
     @Override
@@ -286,11 +291,15 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
         return financingOfferMapper.selectList(wrapper);
     }
 
+    // @Override
+    // public Page<Financing> listUserFinancings(Long userId, Integer pageNum, Integer pageSize) {
+    //     Page<Financing> page = new Page<>(pageNum, pageSize);
+
+    //     return financingOfferMapper.selectMyRelatedFinancing(page, userId);
+    // }
     @Override
     public Page<Financing> listUserFinancings(Long userId, Integer pageNum, Integer pageSize) {
-        Page<Financing> page = new Page<>(pageNum, pageSize);
-
-        return financingOfferMapper.selectMyRelatedFinancing(page, userId);
+        return getFinancingsByUserWithDetailsPage(userId, pageNum, pageSize);
     }
 
     @Override
@@ -794,6 +803,17 @@ public class FinancingServiceImpl extends ServiceImpl<FinancingMapper, Financing
         return financingMapper.selectPage(page, queryWrapper);
     }
 
+    @Override
+    public List<Financing> getFinancingsByUserWithDetails(Long userId) {
+        return financingMapper.selectFinancingByUserIdWithProductAndFarmerName(userId);
+    }
+    
+    @Override
+    public Page<Financing> getFinancingsByUserWithDetailsPage(Long userId, Integer pageNum, Integer pageSize) {
+        Page<Financing> page = new Page<>(pageNum, pageSize);
+        return financingMapper.selectFinancingPageByUserIdWithProductAndFarmerName(page, userId);
+    }
 
+    
+    
 }
-

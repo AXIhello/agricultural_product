@@ -130,13 +130,24 @@ public class FinancingController {
     /**
      * 农户查看自己融资申请列表（分页）
      */
+    // @GetMapping("/my")
+    // public ResponseEntity<Page<Financing>> listUserFinancings(
+    //         HttpServletRequest request,
+    //         @RequestParam(defaultValue = "1") Integer pageNum,
+    //         @RequestParam(defaultValue = "10") Integer pageSize) {
+
+    //     Long userId = getUserIdFromToken(request);
+    //     return ResponseEntity.ok(financingService.listUserFinancings(userId, pageNum, pageSize));
+    // }
     @GetMapping("/my")
     public ResponseEntity<Page<Financing>> listUserFinancings(
             HttpServletRequest request,
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize) {
-
         Long userId = getUserIdFromToken(request);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
         return ResponseEntity.ok(financingService.listUserFinancings(userId, pageNum, pageSize));
     }
 
@@ -199,6 +210,10 @@ public class FinancingController {
         String bankNotes = (String) params.get("bankNotes");
 
         boolean result = financingService.submitOffer(bankUserId, financingId, offeredAmount, interestRate, bankNotes);
+        financingService.lambdaUpdate()
+        .set(Financing::getApplicationStatus, "approved")
+        .eq(Financing::getFinancingId, financingId)
+        .update();
         return ResponseEntity.ok(result);
     }
 
@@ -362,4 +377,35 @@ public class FinancingController {
         
         return ResponseEntity.ok(financingService.listFinancingsByTargetUser(userId, pageNum, pageSize));
     }
+
+    /**
+     * 农户查看自己参与的所有融资申请（包括主申请人和共同申请人）
+     * 返回包含产品名称和发起人名称的详细信息
+     */
+    @GetMapping("/participated")
+    public ResponseEntity<List<Financing>> getMyParticipatedFinancings(
+            HttpServletRequest request) {
+        Long userId = getUserIdFromToken(request);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        return ResponseEntity.ok(financingService.getFinancingsByUserWithDetails(userId));
+    }
+
+    /**
+     * 农户查看自己参与的所有融资申请（分页版）
+     */
+    @GetMapping("/participated/page")
+    public ResponseEntity<Page<Financing>> getMyParticipatedFinancingsPage(
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+        Long userId = getUserIdFromToken(request);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        return ResponseEntity.ok(financingService.getFinancingsByUserWithDetailsPage(userId, pageNum, pageSize));
+    }
+
+    
 }

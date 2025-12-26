@@ -19,7 +19,6 @@
 
       <!-- 卡片底部信息 -->
       <div class="qa-footer">
-        <span class="specialization">{{ item.specialization || '未标注领域' }}</span>
         <span class="userName">作者: {{ item.userName || '未知' }}</span>
         <span class="time">发布时间: {{ formatTime(item.createTime) || '未知时间' }}</span>
       </div>
@@ -47,9 +46,7 @@
 
           <div class="news-footer">
             <span>{{ selectedKnowledge?.userName || '未知发布人' }}</span>
-            <span v-if="selectedKnowledge?.specialization" class="news-specialization">
-              {{ selectedKnowledge.specialization }}
-            </span>
+            
             <span>{{ formatTime(selectedKnowledge?.createTime) }}</span>
           </div>
 
